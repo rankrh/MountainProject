@@ -11,9 +11,9 @@ Details:
 The ultimate purpose of the program is to help users optimize their time by
 finding climbing areas based on their preferences.  By combining metrics such
 as distance to user, type and difficulty of routes, and concentration of
-routes, we can find where climbers can best use their time. The first step of
-the process is to create a database of route information. This program grabs
-raw data from the web pages that will later be processed and organized.
+routes, we can find where climbers can make best use of their time. The first
+step of process is to create a database of route information. This program
+grabs data from the web pages that will later be processed and organized.
 Because the program depends on an internet connection, it has been written to
 be restartable.  This is also useful because of the sheer number of routes on
 the website require a long period of time to download.
@@ -46,18 +46,100 @@ import pandas as pd
 import os
 
 
-def MPScraper(path='C:/Program\ Files/MountainProject/',
-              DBname='MPRoutes'):
+def MPScraper(path='C:/Users/',
+              folder='/MountainProject'):
     
     
-    # FIXME: Add Documentation
+    ''' Sets up SQL database for climbing areas and routes.
+    
+    Creates a database with two tables.  The first, 'Areas', holds climbing
+    areas and regions.  'Regions' are defined by Mountain Project, and are
+    either countries or states in the US. Climbing areas hold either other
+    areas or, at the lowest level, routes. The 'Areas' table holds the columns:
+        
+        id - a unique identifier for the area
+        name - the area name
+        from_id - the id of the area that the current area falls under
+            i.e., if area 12 is a sub-area of area 4, area 12 would have a
+            from_id of 4
+        latitude - geographic latitude for the area
+        longitude - geographic latitude for the area
+        error - if any errors occur while reading the URL for the area, records
+            the error number
+        complete - Boolean value that helps keep track of what areas have been
+            visited before
+
+    Since routes are what we really are interested in, they get their own
+    table.
+        name - route name
+        route_id - unique identifier
+        url - URL on Mountain Project
+        stars - Average rating by MP users
+        votes - Number of votes
+        bayes - Weighted average rating
+        latitude, longitude - Geographic location
+        trad, tr, sport, aid, snow, ice, mixed, boulder, alpine - Boolean value
+            that records the style of climbing
+        pitches, length - Basic route length information
+        nccs_rating, nccs_conv - alpine difficulty rating and conversion to
+            decimal value
+        hueco_rating, font_rating, boulder_conv - bouldering difficulty rating
+            and conversion to decimal value
+        yds_rating, french_rating, ewbanks_rating, uiaa_rating, za_rating, 
+        british_rating, rope_conv - Roped rock climbing difficulty rating and
+            conversion to decimal value
+        ice_rating, ice_conv - Ice climbing difficulty rating and conversion to
+            decimal value
+        snow_rating, snow_conv - Snow climbing/mountaineering rating and
+            conversion to decimal value
+        aid_rating, aid_conv - Aid climbing difficulty rating and conversion to
+            decimal value
+        mixed_rating, mixed_conv - Mixed climbing difficulty rating and
+            conversion to decimal value
+        danger_rating, danger_conv - Route danger and conversion to decimal
+            value
+        area_id - Area ID for parent area
+        area_group - ID of area cluster
+        area_counts - Number of other routes in that route cluster
+        error - ID of any errors that occur during data retrieval
+        edit - Keeps track of what routes have been collected'''    
     
     
+    # FIXME: Handle exceptions more elegantly and create folders, files only
+    # if they need to be created
+    username = os.getlogin()
+    if path == 'C:/Users/':
+        path += username
     try:
-        os.mkdir(path)
+        os.chdir(path + folder)        
+        directory = os.getcwd()
+        print(directory)
+    except OSError.winerror as e:
+        return e
+    return path
+
+
+
+    DBname='MPRoutes'
+
+    """
+    try:
+        os.chdir(path)
+        try:
+            os.mkdir('Test')
+        except:
+            try:
+                os.mkdir(folder)
+#            os.chdir(path + folder)
+            except:
+                print('Fail')
+        directory = os.getcwd()
+        print(directory)
+        return
     except OSError:
         message = "Creation of the directory %s failed" % path
-        return message
+        print(message)
+        return"""
 
     # Ignore SSL certificate errors
     ctx = ssl.create_default_context()
@@ -65,7 +147,7 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
     ctx.verify_mode = ssl.CERT_NONE
 
     # Connect to SQLite database and create database 'Routes.sqlite'
-    conn = sqlite3.connect(path + DBname + '.sqlite')
+    conn = sqlite3.connect(DBname + '.sqlite')
     # Create cursor
     cursor = conn.cursor()
 
@@ -87,7 +169,7 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
     # been processed by the cleaner program.
     cursor.execute('''CREATE TABLE IF NOT EXISTS Routes(
             name TEXT,
-            route_id INTEGER PRIMARY KEY
+            route_id INTEGER PRIMARY KEY,
             route_info TEXT,
             url TEXT UNIQUE,
             stars FLOAT,
@@ -154,10 +236,6 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
             get_sub_areas(fn): function that expands areas
         """
 
-        # FIXME: See what potential arguments could be addded
-
-
-
         # Also known as the 'climbing directory'
         route_guide = urlopen('https://www.mountainproject.com/route-guide',
                               context=ctx)
@@ -182,8 +260,24 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
             conn.commit()
 
     def get_areas(region_id=None):
-    # FIXME: Add Documentation
-
+        ''' Gets sub-areas for given area or group of areas in SQL database.
+        
+        Mountain Project organizes climbing areas intu an arbitrary number of
+        sub-areas.  This function gets the sub areas in a given area.  For each
+        sub-area it finds, it finds sub-areas.  This function was written
+        primarily to grab the data from region-level areas, and then pass it on
+        to lower-level and route-level sub-areas.  As such, it only needs the
+        area_id, while the get_sub_areas functino requires the url and name as
+        well.
+        
+        Args:
+            region_id(int): Optional locator for the region.  If no region_id
+                is passed, this function will find any that has not been found
+                yet.
+        ReturnsL
+            get_sub_areas(fn): Finds sub-areas and returns data.
+        '''
+        
         if region_id is None:
             # Finds one area that has not been found and pulls out the
             # information (url, name and id) that will be needed to expand it
@@ -227,7 +321,7 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
         Returns:
             If area contains other areas:
                 get_sub_areas(fn): Dives deeper into nested areas and pulls
-                                   information
+                    information
             If area contains routes:
                 get_route_urls(fn): Gathers route urls for an area
         """
@@ -332,8 +426,8 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
 
         Args:
             area_url(str): url for a specific climbing area.  MP areas can
-                           contain either routes or other areas, and this
-                           function only works on lowest-level areas.
+                contain either routes or other areas, and this function only
+                works on lowest-level areas.
 
         Returns:
             get_route_features(fn): Gathers data on the type of climbing route
@@ -860,11 +954,15 @@ def MPScraper(path='C:/Program\ Files/MountainProject/',
                           SET edit = 1 WHERE url = ?''', (route_data['url'],))
         conn.commit()
 
-    get_areas(region_id=None)
+    get_regions()
+    
+    error = None
+    while error == None:
+        error = get_areas(region_id=None)
+        
 
 if __name__ == '__main__':
-    MPScraper(path='C:/Program\ Files/MountainProject/',
-              DBname='MPRoutes')
+    print(MPScraper())
 # FIXME: See what else needs to be included for a __main__ file
 
 
