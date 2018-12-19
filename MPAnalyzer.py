@@ -13,19 +13,47 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
 
 
-def MPAnalyzer(path='C:/Program\ Files/MountainProject/',
-               DBname='MPRoutes'):
-    # FIXME: Add Documentation
+def MPAnalyzer(path='C:/Users/',
+              folder='/Mountain Project'):
+    '''Finishes cleaning routes using formulas that require information about
+    the whole database.
 
+    The Bayesian rating system, route clustering algorithm and calculation of
+    TFIDF values require information about all routes, and not just one that is
+    of interest.  Therefore, this file must be run after all data collection
+    has finished. This function is a handler for five functions:
+        - bayesian_rating: Calculates the weighted quality rating for each
+            route
+        - route_clusters: Groups routes together based on geographic distance
+        - idf: Calculates inverse-document-frequency for words in the route
+            descriptions
+        - tfidf: Calclates term-frequency-inverse-document-frequency for words
+            in route descriptions
+        - normalize: Normalizes vectors for TFIDF values
+
+    Args:
+        path(str): Location of the route database
+        folder(str): Lower level location of the route database
+    Returns:
+        Updated SQL Database
+        
+    '''
+
+
+    username = os.getlogin()
+    if path == 'C:/Users/':
+        path += username
+    else:
+        folder = ''
 
     try:
-        os.mkdir(path)
-    except OSError:
-        message = "Creation of the directory %s failed" % path
-        return message
+        os.chdir(path + folder)        
+    except OSError as e:
+        return e
 
+    DBname='MPRoutes'
     # Connect to SQLite database and create database 'Routes.sqlite'
-    conn = sqlite3.connect(path + DBname + '.sqlite')
+    conn = sqlite3.connect(DBname + '.sqlite')
     # Create cursor
     cursor = conn.cursor()
 
@@ -124,7 +152,7 @@ def MPAnalyzer(path='C:/Program\ Files/MountainProject/',
         # Converted into df
         locs = StandardScaler().fit_transform(locs)
         # Max distance in latitude
-        epsilon = 0.007
+        epsilon = 0.0007
         # Min number of routes in a cluster
         min_routes = 3
         # Distance baced scan
@@ -154,21 +182,80 @@ def MPAnalyzer(path='C:/Program\ Files/MountainProject/',
         return routes
 
     def idf(word, num_docs):
-        # FIXME: Add Documentation
+        ''' Findes inverse document frequency for each word in the selected
+        corpus.
 
+        Inverse document frequency(IDF) is a measure of how often a word appears in
+        a body of documents.  The value is calculated by:
+
+                            IDF = 1 + log(N / dfj)
+    
+            Where N is the total number of documents in the corpus and dfj is
+        the document frequency of a certain word, i.e., the number of documents
+        that the word appears in.
+
+        Args:
+            word(pandas dataframe): A dataframe composed of all instances of a
+                word in a corpus.
+            num_docs(int): The total number of documents in the corpus
+
+        Returns:
+            word(pandas dataframe): The same document with the calculated
+                IDF score appended.
+        '''
 
         word['idf'] = 1 + np.log(num_docs / len(word))
         return word
 
     def normalize(routes):
-        # FIXME: Add Documentation
+        ''' Normalizes vector length.
+        
+        TFIDF values must be normalized to a unit vector to control for
+        document length.  This process is done by calculating the length of the
+        vector and dividing each term by that value.  The resulting
+        'unit-vector' will have a length of 1.
 
+        Args:
+            routes(pandas dataframe): The TFIDF scores for a word connected to
+                its route_id.
+
+        Returns:
+            routes(pandas dataframe): The same dataframe with an appended
+                column for nomalized TFIDF values.
+        '''
+        
         length = np.sqrt(np.sum(routes['tfidf'] ** 2))
         routes['tfidfn'] = routes['tfidf'] / length
-        return(routes)
+        return routes['tfidfn'].to_frame()
 
     def tfidf(min_occur=None, max_occur=None):
-        # FIXME: Add Documentation
+        ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
+        documents.
+        
+        Term-Frequency-Inverse-Document-Frequency(TFIDF) is a measure of the
+        importance of words in a body of work measured by how well they help to
+        distinguish documents.  Words that appear frequently in documents score
+        high on the Term-Frequency metric, but if they are common across the
+        corpus, they will have low Inverse-Document-Frequency scores.  TFIDF
+        can then be used to compare documents to each other, or, in this case,
+        to documents with known topics.
+        
+        Args:
+            min_occur(int): The minimum number of documents that a word has to
+                appear in to be counted. Included to ignore words that only
+                appear in a few documents, and are therefore not very useful
+                for categorization.
+            max_occur(int): The maximum number of documents that a word can
+                appear in to be counted.  This is included to ignore highly
+                common words that don't help with categorization.
+                
+        Returns:
+            routes(pandas Dataframe): Holds route-document information,
+                including term-frequency, inverse-document-frequency, TFIDF,
+                and normalized TFIDF values
+            Updated SQL Database: Updates the TFIDF table on main DB with the
+                routes dataframe
+        '''
 
         cursor.execute('SELECT COUNT(route_id) FROM Routes')
         num_docs = cursor.fetchone()[0]
@@ -183,41 +270,34 @@ def MPAnalyzer(path='C:/Program\ Files/MountainProject/',
         routes = routes.groupby('word').apply(idf, num_docs=num_docs)
         routes['tfidf'] = routes['tf'] * routes['idf']
         routes = routes.groupby('route_id').apply(normalize)
-        routes.to_sql('IDF', con=conn, if_exists='replace')
+        routes.to_sql('TFIDF', con=conn, if_exists='replace')
 
         return routes
 
-    def analyze_routes():
-        # FIXME: Add Documentation
-
-        cluster_text = '''SELECT route_id, latitude, longitude
-                          FROM Routes'''
-        clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
-        clusters = route_clusters(clusters)
-
-        bayes_text = '''SELECT route_id, stars, votes
-                        FROM Routes'''
-        bayes = pd.read_sql(bayes_text, con=conn, index_col='route_id')
-        bayes = bayesian_rating(bayes)
-
-        add = pd.concat([bayes, clusters], axis=1)
-
-        for route in add.index:
-            rate = add.loc[route]['bayes']
-            group = add.loc[route]['area_group']
-            cnt = add.loc[route]['area_counts']
-
-            cursor.execute('''UPDATE Routes
-                             SET bayes = ?, area_group = ?, area_counts = ?
-                             WHERE route_id = ?''', (rate, group, cnt, route))
-            conn.commit()
 
     tfidf(min_occur=0.001, max_occur=0.9)
-    analyze_routes()
+    cluster_text = '''SELECT route_id, latitude, longitude
+                      FROM Routes'''
+    clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
+    clusters = route_clusters(clusters)
+
+    bayes_text = '''SELECT route_id, stars, votes
+                    FROM Routes'''
+    bayes = pd.read_sql(bayes_text, con=conn, index_col='route_id')
+    bayes = bayesian_rating(bayes)
+
+    add = pd.concat([bayes, clusters], axis=1)
+
+    for route in add.index:
+        rate = add.loc[route]['bayes']
+        group = add.loc[route]['area_group']
+        cnt = add.loc[route]['area_counts']
+
+        cursor.execute('''UPDATE Routes
+                         SET bayes = ?, area_group = ?, area_counts = ?
+                         WHERE route_id = ?''', (rate, group, cnt, route))
+    conn.commit()
+
 
 if __name__ == '__main__':
-    MPAnalyzer(path='C:/Program\ Files/MountainProject/',
-               DBname='MPRoutes')
-
-
-# FIXME: See what else needs to be included for a __main__ file
+    print(MPAnalyzer())

@@ -47,7 +47,7 @@ import os
 
 
 def MPScraper(path='C:/Users/',
-              folder='/MountainProject'):
+              folder='/Mountain Project'):
     
     
     ''' Sets up SQL database for climbing areas and routes.
@@ -101,51 +101,31 @@ def MPScraper(path='C:/Users/',
         area_id - Area ID for parent area
         area_group - ID of area cluster
         area_counts - Number of other routes in that route cluster
-        error - ID of any errors that occur during data retrieval
-        edit - Keeps track of what routes have been collected'''    
-    
-    
-    # FIXME: Handle exceptions more elegantly and create folders, files only
-    # if they need to be created
+        error - ID of any errors that occur during data retrieval'''
+   
     username = os.getlogin()
     if path == 'C:/Users/':
         path += username
     try:
         os.chdir(path + folder)        
-        directory = os.getcwd()
-        print(directory)
-    except OSError.winerror as e:
-        return e
-    return path
-
-
-
-    DBname='MPRoutes'
-
-    """
-    try:
-        os.chdir(path)
-        try:
-            os.mkdir('Test')
-        except:
+    except OSError as e:
+        if e.winerror == 2:
             try:
-                os.mkdir(folder)
-#            os.chdir(path + folder)
-            except:
-                print('Fail')
-        directory = os.getcwd()
-        print(directory)
-        return
-    except OSError:
-        message = "Creation of the directory %s failed" % path
-        print(message)
-        return"""
+                os.chdir(path)
+                os.mkdir(path + folder)
+                os.chdir(path + folder)
+            except OSError as e:
+                print(e)
+                return e.winerror
+        else:
+            return e
 
     # Ignore SSL certificate errors
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
+    DBname='MPRoutes'
     # Connect to SQLite database and create database 'Routes.sqlite'
     conn = sqlite3.connect(DBname + '.sqlite')
     # Create cursor
@@ -164,13 +144,10 @@ def MPScraper(path='C:/Users/',
             error INTEGER,
             complete BOOLEAN DEFAULT 0)''')
 
-    # The lowest level pages are routes.  This DB stores all route data. The
-    # 'edit' column defaults to false, and will indicate that the route has
-    # been processed by the cleaner program.
+    # The lowest level pages are routes.  This DB stores all route data.
     cursor.execute('''CREATE TABLE IF NOT EXISTS Routes(
             name TEXT,
             route_id INTEGER PRIMARY KEY,
-            route_info TEXT,
             url TEXT UNIQUE,
             stars FLOAT,
             votes INTEGER,
@@ -214,8 +191,18 @@ def MPScraper(path='C:/Users/',
             area_id INTEGER,
             area_group INTEGER,
             area_counts INTEGER
-            error INTETER,
-            edit BOOLEAN DEFAULT 0)''')
+            error INTETER)''')
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS Words(
+            route_id INTEGER,
+            word TINYTEXT,
+            word_count INTEGER,
+            tf FLOAT)''')
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS TFIDF(
+            route_id INTEGER,
+            word TINYTEXT,
+            tfidf)''')
 
     def get_regions():
         """ Collects region data, the broadest category of climbing area on MP.
@@ -284,6 +271,7 @@ def MPScraper(path='C:/Users/',
             cursor.execute('''SELECT url, name, id FROM Areas
                                       WHERE complete IS 0
                                       AND error is Null
+                                      ORDER BY RANDOM()
                                       LIMIT 1''')
             area_data = cursor.fetchone()
         else:
@@ -487,7 +475,7 @@ def MPScraper(path='C:/Users/',
         else:
             route_html = route_doc.read()
             # Parses html with BS package
-            route_soup = BeautifulSoup(route_html, 'html.parser').prettify()
+            route_soup = BeautifulSoup(route_html, 'html.parser')
 
             # metadata includes name, url, lat, long, stars, and votes
             data = get_route_metadata(route_url, route_soup, lat, long)
@@ -507,7 +495,7 @@ def MPScraper(path='C:/Users/',
             write_to_sql(data)
 
             cursor.execute('SELECT route_id FROM Routes WHERE url = ?',
-                           (route_url))
+                           (route_url,))
             route_id = cursor.fetchone()[0]
 
             # Includes output from analysis of the route description and
@@ -543,6 +531,7 @@ def MPScraper(path='C:/Users/',
         '''
 
         # URL, Name, and Location are in raw DB
+
         route_name = route_soup.body.find('h1').get_text().strip()
         # Updates user
         print('Gathering data on:', route_name)
@@ -622,7 +611,7 @@ def MPScraper(path='C:/Users/',
         climb_type = {'trad': False, 'tr': False, 'sport': False, 'aid': False,
                       'snow': False, 'ice': False, 'mixed': False,
                       'boulder': False, 'alpine': False, 'pitches': pitches,
-                      'length': length, 'nccs_rating': None}
+                      'length': length, 'nccs_rating': None, 'nccs_conv': None}
 
         # Matches a string starting with 'Grade', then any combination of
         # 'V', 'I' of any length, then returns the 'V', 'I' characters
@@ -830,6 +819,8 @@ def MPScraper(path='C:/Users/',
     def get_text(route_soup, route_name, route_id):
         ''' Gathers and analyzes text data from route description and
         user comments.
+        
+        
         '''
         # FIXME: Add Documentation
 
@@ -890,68 +881,64 @@ def MPScraper(path='C:/Users/',
         '''
 
         # Enters data
+        
         cursor.execute('''
                          INSERT OR IGNORE INTO
                          Routes(name, url, stars, votes, latitude, longitude,
                                 trad, tr, sport, aid, snow, ice, mixed,
                                 boulder, alpine, pitches, length, nccs_rating,
-                                hueco_rating, font_rating, yds_rating,
-                                french_rating, ewbanks_rating, uiaa_rating,
-                                za_rating, british_rating, ice_rating,
-                                snow_rating, aid_rating, mixed_rating,
-                                danger_rating, text, area_id, boulder_conv,
-                                rope_conv, ice_conv, snow_conv, aid_conv,
-                                mixed_conv, danger_conv)
-                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                        ((route_data['name'],
-                          route_data['url'],
-                          route_data['stars'],
-                          route_data['votes'],
-                          route_data['latitude'],
-                          route_data['longitude'],
-                          route_data['trad'],
-                          route_data['tr'],
-                          route_data['sport'],
-                          route_data['aid'],
-                          route_data['snow'],
-                          route_data['ice'],
-                          route_data['mixed'],
-                          route_data['boulder'],
-                          route_data['alpine'],
-                          route_data['pitches'],
-                          route_data['length'],
-                          route_data['nccs_rating'],
-                          route_data['hueco_rating'],
-                          route_data['font_rating'],
-                          route_data['yds_rating'],
-                          route_data['french_rating'],
-                          route_data['ewbanks_rating'],
-                          route_data['uiaa_rating'],
-                          route_data['za_rating'],
-                          route_data['british_rating'],
-                          route_data['ice_rating'],
-                          route_data['snow_rating'],
-                          route_data['aid_rating'],
-                          route_data['mixed_rating'],
-                          route_data['danger_rating'],
-                          route_data['text'],
-                          route_data['area_id'],
-                          route_data['boulder_conv'],
-                          route_data['rope_conv'],
-                          route_data['ice_conv'],
-                          route_data['snow_conv'],
-                          route_data['aid_conv'],
-                          route_data['mixed_conv'],
-                          route_data['danger_conv'])))
+                                nccs_conv, hueco_rating, font_rating,
+                                boulder_conv, yds_rating, french_rating,
+                                ewbanks_rating, uiaa_rating, za_rating,
+                                british_rating, rope_conv, ice_rating,
+                                ice_conv, snow_rating, snow_conv, aid_rating,
+                                aid_conv, mixed_rating, mixed_conv,
+                                danger_rating, danger_conv, area_id)
+                         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                                ?, ?, ?, ?, ?, ?, ?, ?)''',
+                        ((route_data['name'], 
+                          route_data['url'], 
+                          route_data['stars'], 
+                          route_data['votes'], 
+                          route_data['latitude'], 
+                          route_data['longitude'], 
+                          route_data['trad'], 
+                          route_data['tr'], 
+                          route_data['sport'], 
+                          route_data['aid'], 
+                          route_data['snow'], 
+                          route_data['ice'], 
+                          route_data['mixed'], 
+                          route_data['boulder'], 
+                          route_data['alpine'], 
+                          route_data['pitches'], 
+                          route_data['length'], 
+                          route_data['nccs_rating'], 
+                          route_data['nccs_conv'], 
+                          route_data['hueco_rating'], 
+                          route_data['font_rating'], 
+                          route_data['boulder_conv'], 
+                          route_data['yds_rating'], 
+                          route_data['french_rating'], 
+                          route_data['ewbanks_rating'], 
+                          route_data['uiaa_rating'], 
+                          route_data['za_rating'], 
+                          route_data['british_rating'], 
+                          route_data['rope_conv'], 
+                          route_data['ice_rating'], 
+                          route_data['ice_conv'], 
+                          route_data['snow_rating'], 
+                          route_data['snow_conv'], 
+                          route_data['aid_rating'], 
+                          route_data['aid_conv'], 
+                          route_data['mixed_rating'], 
+                          route_data['mixed_conv'], 
+                          route_data['danger_rating'], 
+                          route_data['danger_conv'], 
+                          route_data['area_id'])))
 
         # Commits
-        conn.commit()
-        # Changes edit value to 1 (True) for the route in question so that the
-        # program will skip it the next time it grabs a route
-        cursor.execute('''UPDATE Routes
-                          SET edit = 1 WHERE url = ?''', (route_data['url'],))
         conn.commit()
 
     get_regions()

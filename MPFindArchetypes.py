@@ -11,7 +11,7 @@ import pandas as pd
 pd.options.display.max_rows = 1000
 pd.options.display.max_columns = 1000
 
-conn = sqlite3.connect('Routes-Cleaned-Limited.sqlite')
+conn = sqlite3.connect('Routes-Cleaned.sqlite')
 cursor = conn.cursor()
 
 folder = 'classic_routes/'
@@ -53,7 +53,7 @@ for style, routes in styles.items():
     total = int(np.sum(word_count))
     word_count['tf'] = word_count['word_count'] / total
     
-    query = 'SELECT word, idf FROM idf_vals'
+    query = 'SELECT word, idf FROM IDF'
     idf = pd.read_sql(query, con=conn)
     
     word_count = pd.merge(word_count, idf, how='inner', on='word')
