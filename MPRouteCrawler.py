@@ -197,7 +197,8 @@ def MPScraper(path='C:/Users/',
             route_id INTEGER,
             word TINYTEXT,
             word_count INTEGER,
-            tf FLOAT)''')
+            tf FLOAT,
+            idf FLOAT)''')
     
     cursor.execute('''CREATE TABLE IF NOT EXISTS TFIDF(
             route_id INTEGER,

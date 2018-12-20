@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 pd.options.display.max_rows = 1000
-pd.options.display.max_columns = 1000
+pd.options.display.max_columns = 10000
 
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 cursor = conn.cursor()
@@ -42,42 +42,44 @@ def cos_sim(a, b):
     dot_prod =  np.sum(a * b)
     return dot_prod
 
-all_terrain = pd.DataFrame()
-for style, routes in styles.items():
-    rid = get_ids(routes)
-    print(style)
+ids = get_ids(slab)
+cossims = np.array([[0.0] * len(ids)] * len(ids))
 
-    query = 'SELECT word, word_count FROM Words WHERE route_id IN ' + str(rid)
-    terrain = pd.read_sql(query, con=conn).groupby('word')
-    word_count = np.sum(terrain['word_count']).to_frame()
-    total = int(np.sum(word_count))
-    word_count['tf'] = word_count['word_count'] / total
+n = 1
+for id1 in ids[:-1]:
+    for id2 in ids[n:]:
+        query = 'SELECT word, tfidfn FROM TFIDF WHERE route_id = %d' %id1
+        idf = pd.read_sql(query, con=conn, index_col='word')
+        idf = idf.rename(columns = {idf.columns[0]: 'A'})
+        
+        query2 = 'SELECT word, tfidfn FROM TFIDF WHERE route_id = %d' %id2
+        idf2 = pd.read_sql(query2, con=conn, index_col='word')
+        idf2 = idf2.rename(columns = {idf2.columns[0]: 'B'})
+        
+        tidf = pd.concat([idf, idf2], axis=1, join='inner', sort=True)
+        tidf['t'] = tidf['A'] * tidf['B']
+        cossim = cos_sim(tidf['A'], tidf['B'])
+        cossim = round(cossim, 4)
+        x = ids.index(id1)
+        y = ids.index(id2)
+        cossims[y][x] = cossim
+    n += 1
     
-    query = 'SELECT word, idf FROM IDF'
-    idf = pd.read_sql(query, con=conn)
-    
-    word_count = pd.merge(word_count, idf, how='inner', on='word')
-    word_count['tfidf'] =  word_count['tf'] * word_count['idf']
-    length = np.sqrt(np.sum(word_count['tfidf'] ** 2))
-    word_count['tfidfn'] = word_count['tfidf'] / length 
-    word_count = word_count.set_index('word')['tfidfn']
-    
-    
-    query = 'select word, route_id, tfidfn FROM TFIDFN'
-    routes = pd.read_sql(query, con=conn, index_col='word').groupby('route_id')
-    
-    cossim = {}
-    
-    for route, word in routes:
-        cossim[route] = [np.sum(word['tfidfn'] * word_count)]
-    
-    
-    cossim = pd.DataFrame.from_dict(cossim, orient='index',
-                                    columns = [style])
-    cossim.index.rename('route_id')
-    print(cossim.head())
-    all_terrain = pd.concat([all_terrain, cossim], axis=1)
+cossims[cossims == 0] = np.nan
+print(ids)
+print(cossims)
+print(np.nanmean(cossims))
 
 
 
-all_terrain.to_sql('Terrain', con=conn, if_exists='replace')
+
+
+
+
+
+
+
+
+
+
+

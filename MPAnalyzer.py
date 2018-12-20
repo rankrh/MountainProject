@@ -13,8 +13,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
 
 
-def MPAnalyzer(path='C:/Users/',
-              folder='/Mountain Project'):
+def MPAnalyzer(path='C:/Users/', 
+               folder='/Mountain Project',
+               DBname='MPRoutes'):
+    
     '''Finishes cleaning routes using formulas that require information about
     the whole database.
 
@@ -39,7 +41,12 @@ def MPAnalyzer(path='C:/Users/',
         
     '''
 
+    # Connect to SQLite database and create database 'Routes.sqlite'
+    conn = sqlite3.connect('Routes-Cleaned.sqlite')
+    # Create cursor
+    cursor = conn.cursor()
 
+    """
     username = os.getlogin()
     if path == 'C:/Users/':
         path += username
@@ -51,11 +58,10 @@ def MPAnalyzer(path='C:/Users/',
     except OSError as e:
         return e
 
-    DBname='MPRoutes'
     # Connect to SQLite database and create database 'Routes.sqlite'
     conn = sqlite3.connect(DBname + '.sqlite')
     # Create cursor
-    cursor = conn.cursor()
+    cursor = conn.cursor()"""
 
     def bayesian_rating(routes):
         ''' Updates route quality with weighted average.
@@ -226,7 +232,7 @@ def MPAnalyzer(path='C:/Users/',
         
         length = np.sqrt(np.sum(routes['tfidf'] ** 2))
         routes['tfidfn'] = routes['tfidf'] / length
-        return routes['tfidfn'].to_frame()
+        return routes
 
     def tfidf(min_occur=None, max_occur=None):
         ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
@@ -275,7 +281,7 @@ def MPAnalyzer(path='C:/Users/',
         return routes
 
 
-    tfidf(min_occur=0.001, max_occur=0.9)
+    tfidf(min_occur=0.001, max_occur=0.6)
     cluster_text = '''SELECT route_id, latitude, longitude
                       FROM Routes'''
     clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
