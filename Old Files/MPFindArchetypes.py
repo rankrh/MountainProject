@@ -42,7 +42,7 @@ def cos_sim(a, b):
     dot_prod =  np.sum(a * b)
     return dot_prod
 
-ids = get_ids(slab)
+ids = get_ids(crack)
 cossims = np.array([[0.0] * len(ids)] * len(ids))
 
 n = 1

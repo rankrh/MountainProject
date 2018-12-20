@@ -5,12 +5,12 @@ Created on Mon Dec 17 19:51:21 2018
 @author: Bob
 """
 
-import sqlite3
-import pandas as pd
-import os
-import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
+import pandas as pd
+import numpy as np
+import sqlite3
+import os
 
 
 def MPAnalyzer(path='C:/Users/', 
@@ -38,15 +38,8 @@ def MPAnalyzer(path='C:/Users/',
         folder(str): Lower level location of the route database
     Returns:
         Updated SQL Database
-        
     '''
 
-    # Connect to SQLite database and create database 'Routes.sqlite'
-    conn = sqlite3.connect('Routes-Cleaned.sqlite')
-    # Create cursor
-    cursor = conn.cursor()
-
-    """
     username = os.getlogin()
     if path == 'C:/Users/':
         path += username
@@ -57,11 +50,26 @@ def MPAnalyzer(path='C:/Users/',
         os.chdir(path + folder)        
     except OSError as e:
         return e
+    
+    try:
+        os.chdir(path + folder + '/Descriptions')
+    except OSError as e:
+        if e.winerror == 2:
+            try:
+                os.mkdir(path + folder + 'Descriptions')
+                os.chdir(path + folder + 'Descriptions')
+            except OSError as e:
+                print(e)
+                return e.winerror
+        else:
+            return e
+        
+    os.chdir(path + folder)        
 
     # Connect to SQLite database and create database 'Routes.sqlite'
     conn = sqlite3.connect(DBname + '.sqlite')
     # Create cursor
-    cursor = conn.cursor()"""
+    cursor = conn.cursor()
 
     def bayesian_rating(routes):
         ''' Updates route quality with weighted average.
@@ -279,9 +287,86 @@ def MPAnalyzer(path='C:/Users/',
         routes.to_sql('TFIDF', con=conn, if_exists='replace')
 
         return routes
+    
+    def archetype_tfidf():
+        # FIXME: Add Documentation
+        try:
+            os.chdir(path + folder + '/Descriptions')
+        except OSError as e:
+            if e.winerror == 2:
+                try:
+                    os.mkdir(path + folder + 'Descriptions')
+                    os.chdir(path + folder + 'Descriptions')
+                except OSError as e:
+                    print(e)
+                    return e.winerror
+            else:
+                return e
+        
+        def archetype_idf(word, idf):
+        # FIXME: Add Documentation
+            try:
+                val = idf.loc[word.name]['idf']
+                word['idf'] = val
+                word['tfidf'] = word['tf'] * word['idf']
+                return word
+                
+            except KeyError:
+                print(word.name, end=' ')
+                print('Not in idf DF')
+                
+        def archetype_tf(path):
+        # FIXME: Add Documentation
+            archetypes = pd.DataFrame()
+            names = ['arete', 'chimney', 'crack', 'slab', 'overhang', 'face']
+            
+            for name in names:    
+                 tf = pd.read_csv(filepath_or_buffer=path + name)
+                 tf = tf.rename(columns={tf.columns[0]: 'word'})
+                 tf['style'] = name
+                 tf = tf.set_index(['style', 'word'])
+                 archetypes = pd.concat([archetypes, tf])
+
+        def cos_sim(a, b):
+            #FIXME: What is the best way to get cossim for an arbitrary number
+            # of different styles that can be added to without forcing me to 
+            # circle back around OR to go back here and adjust the number of arguments?
+            # FIXME: Add Documentation
+            print(a.name)
+            dot_prod =  np.sum(a['tfidfn'] * b)
+            return dot_prod
+
+        
+        archetypes = archetype_tf(path)
+        
+        unique = archetypes.index.levels[1].unique().tolist()
+        unique = tuple(unique)
+        query = 'SELECT DISTINCT(word), idf from TFIDF WHERE word IN {}'.format(unique)
+        idf = pd.read_sql(query, con=conn, index_col='word')
+         
+        archetypes = archetypes.groupby(level=[1]).apply(archetype_idf,
+                                        idf=idf)
+        archetypes = archetypes.reset_index(level=0, drop=True)
+        
+        archetypes = archetypes.groupby('style').apply(normalize)
+        
+        arete = archetypes.loc['arete', 'tfidfn']
+        chimney = archetypes.loc['chimney', 'tfidfn']
+        crack = archetypes.loc['crack', 'tfidfn']
+        slab = archetypes.loc['slab', 'tfidfn']
+        overhang = archetypes.loc['overhang', 'tfidfn']
+        face = archetypes.loc['face', 'tfidfn']
+        
+    
+        
+        
 
 
+    
+    
+        
     tfidf(min_occur=0.001, max_occur=0.6)
+
     cluster_text = '''SELECT route_id, latitude, longitude
                       FROM Routes'''
     clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
