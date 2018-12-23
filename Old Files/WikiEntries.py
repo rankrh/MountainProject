@@ -14,8 +14,9 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 import pandas as pd
 import unidecode
+import os
 
-
+pd.options.display.max_rows = 200000
 
 # Connect to SQLite database and create database 'Routes.sqlite'
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
@@ -57,10 +58,9 @@ def wiki_tf(url, name):
     text = ''
     for section in sections:
         text += section.get_text()
-    return text
     tf(text, name)
         
-def thought_co(url):
+def thought_co(url, name):
     page = urlopen(url)
     # Opens HTML
     html = page.read()
@@ -77,27 +77,49 @@ def thought_co(url):
     for heading in headings:
         text += heading.get_text()
     tf(text, name)
-    
-wikipages = {'crack': 'https://en.wikipedia.org/wiki/Crack_climbing',
-             'overhang': 'https://en.wikipedia.org/wiki/Overhang_(rock_formation)',
-             'slab': 'https://en.wikipedia.org/wiki/Slab_climbing',
-             'face': 'https://en.wikipedia.org/wiki/Face_climbing',}
 
+def rockandice(url, name):
+    page = urlopen(url)
+    # Opens HTML
+    html = page.read()
+    # Parses HTML with BS package
+    soup = BeautifulSoup(html, 'html.parser')
+    article = soup.find('div', class_='col-md-10')
+    paragraphs = article.find_all('p')
+    text = ''
+    for paragraph in paragraphs:
+        text += paragraph.get_text()
+    return text
+    tf(text, name)
+
+    
 thoughtcopages = {'chimney': 'https://www.thoughtco.com/how-to-climb-chimneys-755279',
                  'arete': 'https://www.thoughtco.com/how-to-climb-aretes-755292'}
 
-  
-for name, url in wikipages.items():
-    file = open(path + name + '.txt', 'w', encoding='utf-8')
-    file.write(wiki_tf(url, name))
+rockandicepages = {'crack': 'https://www.rockandice.com/how-to-climb/how-to-crack-climb'} 
 
-for name, url in thoughtcopages.items():
-    file = open(path + name + '.txt', 'w', encoding='utf-8')
-    file.write(thought_co(url))
+touchstonepages = {'slab': 'https://touchstoneclimbing.com/slab-climbing-secrets/'}   
 
+os.chdir('C:\\Users\\Bob\\Documents\\Python\\Mountain Project\\Descriptions')
 
+def overhang():
+    overhang = open('overhang.txt')   
+    text = ''     
+    for line in overhang:
+        text += line
         
-        
-
+    tf(text, 'overhang')
     
 
+def slab():
+    slab = open('slab.txt')   
+    text = ''     
+    for line in slab:
+        text += line
+        
+    tf(text, 'slab')
+
+
+
+print(slab())
+print(overhang())

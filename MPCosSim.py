@@ -20,7 +20,7 @@ path = 'Descriptions/'
 
 def tfidf_values():
     archetypes = pd.DataFrame()
-    names = ['arete', 'chimney', 'crack', 'slab', 'overhang', 'face']
+    names = ['arete', 'chimney', 'crack', 'slab', 'overhang'] #, 'face']
     
     for name in names:    
          tf = pd.read_csv(filepath_or_buffer=path + name)
@@ -51,6 +51,7 @@ def tfidf_values():
     
     print(archetypes)    
     archetypes.to_csv(path + 'TFIDF')
+    return archetypes
 
 def normalize(routes):
     
@@ -60,24 +61,55 @@ def normalize(routes):
 
 
 def get_tfidfn():
+    normalize(tfidf_values())
+
     styles = pd.read_csv(filepath_or_buffer=path+'TFIDF',
                          index_col=['style', 'word'])
     styles = styles.groupby('style').apply(normalize).sort_index(level=[0, 1])
     styles.to_csv(path + 'TFIDF')
     
-def cos_sim(a, b):
-    print(a.name)
-    dot_prod =  np.sum(a['tfidfn'] * b)
-    return dot_prod
- 
-normalized = pd.read_csv(filepath_or_buffer=path+'TFIDF',
-                     index_col=['style', 'word'])
-slab = normalized.loc['slab', 'tfidfn']
+    
+def cos_sim(route, styles):
+    global terrain_data
+    terrain = pd.DataFrame(index=[route.name], columns = list(styles.keys()))
+    for style, data in styles.items():
+        dot_prod = np.sum(data * route)
+        terrain[style] = dot_prod
+    terrain_data = pd.concat([terrain_data, terrain])
+    if route.name % 100 == 0:
+        print(terrain_data)
+        terrain_data.to_sql('Terrain', con=conn, if_exists='append', index_label='route_id')
+        terrain_data = pd.DataFrame()
+        
 
-query = 'SELECT route_id, word, tfidfn FROM TFIDF WHERE route_id'
-route = pd.read_sql(query, con=conn, index_col=['route_id', 'word'])
-
-route = route.groupby('route_id').apply(cos_sim, b=slab)
-
-print(route)
-
+def get_terrain(normalized):
+    arete = normalized.loc['arete']
+    chimney = normalized.loc['chimney']
+    crack = normalized.loc['crack']
+    slab = normalized.loc['slab']
+    overhang = normalized.loc['overhang']
+    #face = normalized.loc['face']
+    
+    styles = {'arete': arete, 'chimney': chimney, 'crack': crack,
+              'slab': slab, 'overhang': overhang} #, 'face': face}
+    
+    
+    query = '''SELECT route_id, word, tfidfn
+               FROM TFIDF
+               WHERE route_id
+               NOT IN (SELECT route_id FROM Terrain)'''
+    
+    routes = pd.read_sql(query, con=conn, index_col=['route_id', 'word'])
+        
+    routes = routes['tfidfn'].groupby('route_id').apply(cos_sim, styles)
+    
+    terrain_data.to_sql('Terrain', con=conn, if_exists='append', index_label='route_id')
+    
+    
+    #print(route)
+    
+terrain_data = pd.DataFrame()
+normalized = pd.read_csv(filepath_or_buffer=path+'TFIDF.csv',
+                     index_col=['style', 'word'])['tfidfn']
+get_terrain(normalized)
+    
