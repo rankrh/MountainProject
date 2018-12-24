@@ -221,7 +221,10 @@ def MPAnalyzer(path='C:/Users/',
         word['idf'] = 1 + np.log(num_docs / len(word))
         return word
 
-    def normalize(routes):
+    def normalize(table, column):
+            # FIXME: Update documentation to reflect the table, column style to
+            # generalize normalization.
+
         ''' Normalizes vector length.
         
         TFIDF values must be normalized to a unit vector to control for
@@ -237,10 +240,10 @@ def MPAnalyzer(path='C:/Users/',
             routes(pandas dataframe): The same dataframe with an appended
                 column for nomalized TFIDF values.
         '''
-        
-        length = np.sqrt(np.sum(routes['tfidf'] ** 2))
-        routes['tfidfn'] = routes['tfidf'] / length
-        return routes
+        column_norm = column + 'n'
+        length = np.sqrt(np.sum(table[column] ** 2))
+        table[column_norm] = table[column] / length
+        return table
 
     def tfidf(min_occur=None, max_occur=None):
         ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
@@ -283,12 +286,69 @@ def MPAnalyzer(path='C:/Users/',
         routes = pd.read_sql(query, con=conn, index_col=['route_id', 'word'])
         routes = routes.groupby('word').apply(idf, num_docs=num_docs)
         routes['tfidf'] = routes['tf'] * routes['idf']
-        routes = routes.groupby('route_id').apply(normalize)
+        routes = routes.groupby('route_id').apply(normalize, 'tfidf')
         routes.to_sql('TFIDF', con=conn, if_exists='replace')
 
         return routes
     
+    def find_route_styles(path):
+            # FIXME: Add documentation
+
+        
+        def archetypal_tf(path):
+                # FIXME: Add documentation
+
+            archetypes = pd.DataFrame()
+            names = ['arete', 'chimney', 'crack', 'slab', 'overhang']
+            
+            for name in names:    
+                 tf = pd.read_csv(filepath_or_buffer=path + name)
+                 tf = tf.rename(columns={tf.columns[0]: 'word'})
+                 tf['style'] = name
+                 tf = tf.set_index(['style', 'word'])
+                 archetypes = pd.concat([archetypes, tf])     
+            
+            return archetypes
+        
+        def archetypal_idf(unique_words):
+            # FIXME: Add documentation
+
+                    
+            query = '''SELECT DISTINCT(word), idf
+                       FROM TFIDF WHERE word IN {}'''.format(unique_words)
+            archetypal_idf = pd.read_sql(query, con=conn, index_col='word')
+            
+            return archetypal_idf
     
+        def archetypal_tfidf(word, archetypal_idf):
+            # FIXME: Add documentation
+
+            try:
+                val = archetypal_idf.loc[word.name]['idf']
+                word['idf'] = val
+                word['tfidf'] = word['tf'].values * val
+                return word
+                
+            except KeyError:
+                print(word.name, 'Not in idf DF')
+        
+        path += 'Descriptions/'
+        archetypes = archetypal_tf(path)
+        
+        unique_words = archetypes.index.levels[1].unique().tolist()
+        unique_words = tuple(unique_words)
+        archetypal_idf = archetypal_idf(unique_words)
+
+
+        archetypes = archetypes.groupby(level=[1]).apply(archetypal_tfidf,
+                                                         archetypal_idf)
+        archetypes = archetypes.reset_index(level=0, drop=True)
+        archetypes = normalize(archetypes, 'tfidf')
+        
+        archetypes.to_csv(path + 'TFIDF')
+    # FIXME: Add documentation
+        
+        
     # FIXME:  Add archetypes here
 
     tfidf()

@@ -821,41 +821,69 @@ def MPScraper(path='C:/Users/',
         return difficulty
 
     def text_splitter(text):
-        # FIXME: Add Documentation
+        '''Splits text into words and removes punctuation.
+        
+        Once the text has been scraped it must be split into individual words
+        for further processing.  The text is all put in lowercase, then
+        stripped of punctuation and accented letters. Tokenizing helps to
+        further standardize the text, then converts it to a list of words. Each
+        word is then stemmed using a Porter stemmer.  This removes suffixes
+        that make similar words look different, turning, for example, 'walking'
+        or 'walked' into 'walk'.
+        
+        Args:
+            text(str): Single string of text to be handled
+            
+        Returns:
+            text(list): List of processed words.'''
 
-        # Want to match both upper and lowercase instances
+        # Converts to lowercase
         text = text.lower()
-        ps = PorterStemmer()
-        # Splits into words as a list
+        # Strips punctuation and converts accented characters to unaccented
         text = re.sub(r"[^\w\s']", '', text)
         text = unidecode.unidecode(text)
+        # Tokenizes words and returns a list
         text = word_tokenize(text)
-        # Finds stems for each word, if there are any
+        # Stems each word in the list
+        ps = PorterStemmer()
         text = [ps.stem(word) for word in text]
         
         return text
 
 
     def get_text(route_soup, route_name, route_id):
-        ''' Gathers and analyzes text data from route description and
+        ''' Gathers and analyzes text data from route name and description and,
         user comments.
         
+        Route data is stored in three places in the HTML, and must be joined
+        into one string to fully process. After creating a master list of the
+        text, it passes the text to the splitter.  The splitter returns a list
+        of processed words, which are then written to the database.
         
+        Args:
+            route_soup(BS Object): HTML processed with BeautifulSoup holding
+                all route data
+            route_name(str): name of route
+            route_id(integer): unique route identifier
+            
+        Returns:
+            Updated SQL database on Words table
         '''
-        # FIXME: Add Documentation
+
+        # Finds description of the route of BS data
+        description = route_soup.find('div', class_="fr-view").get_text()
+        text = route_name + description
 
         # Finds comment section of the BS data
         cmt = 'comment-body max-height max-height-md-300 max-height-xs-150'
         comments = route_soup.find_all('div', class_=cmt)
-        # Finds description of the route of BS data
-        description = route_soup.find('div', class_="fr-view").get_text()
 
         # Creates a single text that combines the description, route name and
         # user comments that can be searched for keywords
-        text = route_name + description
         for comment in comments:
             comment = comment.get_text().strip().split('\n')[0].strip()
             text += ' ' + comment
+            
         text = text_splitter(text)
         doc_length = len(text)
         # Converts to dataframe
