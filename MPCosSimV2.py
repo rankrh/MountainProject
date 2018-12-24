@@ -14,56 +14,15 @@ cursor = conn.cursor()
 path = 'Descriptions/TFIDF.csv'
 pd.options.display.max_rows = 200000
 
-def conversion_to_side_by_side():
-    archetypes = pd.read_csv(filepath_or_buffer=path,
-                             index_col=['style','word'])['tfidfn']
-    arete = archetypes.loc['arete'].rename('arete')
-    chimney = archetypes.loc['chimney'].rename('chimney')
-    crack = archetypes.loc['crack'].rename('crack')
-    slab = archetypes.loc['slab'].rename('slab')
-    overhang = archetypes.loc['overhang'].rename('overhang')
-    
-    archetypes = pd.concat([arete, chimney, crack, slab, overhang],
-                           axis=1,
-                           sort=True)
-    
-    archetypes.to_csv(path)
-    
-def cossim(route, archetypes):
-    print(archetypes['arete'])    
+query = '''SELECT route_id, url FROM Routes
+           WHERE route_id IN 
+           (SELECT route_id FROM Scores ORDER BY overhang DESC LIMIT 10)'''
 
-cursor.execute('''CREATE TABLE IF NOT EXISTS Terrain(
-                    route_id INTEGER,
-                    arete FLOAT,
-                    chimney FLOAT,
-                    crack FLOAT,
-                    slab FLOAT,
-                    overhang FLOAT)''')
+urls = pd.read_sql(query, con=conn)
 
-archetypes = pd.read_csv(filepath_or_buffer=path,
-                         index_col='word')
-query = '''SELECT route_id, word, tfidfn
-           FROM TFIDF
-           WHERE route_id < 10'''
-           #NOT IN (SELECT route_id FROM Terrain)'''
+for url in urls['url']:
+    print(url)
+    
+print(urls['route_id'])
            
-routes = pd.read_sql(query, con=conn, index_col='route_id') #.groupby(level=0)
-#routes = routes.apply(cossim, archetypes)
-cossim(1, archetypes)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+           

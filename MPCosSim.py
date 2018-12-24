@@ -107,9 +107,106 @@ def get_terrain(normalized):
     
     
     #print(route)
-    
 terrain_data = pd.DataFrame()
-normalized = pd.read_csv(filepath_or_buffer=path+'TFIDF.csv',
-                     index_col=['style', 'word'])['tfidfn']
-get_terrain(normalized)
+
+def get_data():
     
+    normalized = pd.read_csv(filepath_or_buffer=path+'TFIDF.csv',
+                         index_col=['style', 'word'])['tfidfn']
+    get_terrain(normalized)
+    
+
+def normalize_cossim():
+    routes = pd.read_sql('SELECT * FROM Terrain',
+                         con=conn,
+                         index_col='route_id')
+    routes['arete_norm'] = routes['arete'].values / routes['arete'].max()
+    routes['chimney_norm'] = routes['chimney'].values / routes['chimney'].max()
+    routes['crack_norm'] = routes['crack'].values / routes['crack'].max()
+    routes['slab_norm'] = routes['slab'].values / routes['slab'].max()
+    routes['overhang_norm'] = routes['overhang'].values / routes['overhang'].max()
+    
+    return routes[['arete_norm', 'chimney_norm', 'crack_norm',
+                   'slab_norm', 'overhang_norm']]
+    
+def get_word_count():
+    raw = pd.read_sql('SELECT route_id, word_count FROM Words',
+                      con=conn,
+                      index_col='route_id').groupby(level=0)\
+                      .apply(lambda x: np.sum(x))
+    raw['log'] = 1 + np.log(raw['word_count'])
+    raw_max = raw['log'].max()
+    raw['count_normal'] = raw['log'] / raw_max
+    return raw['count_normal']
+
+   
+routes = normalize_cossim()
+count = get_word_count()
+
+routes = pd.concat([routes, count], axis=1, sort=False)
+
+avg_arete = routes['arete_norm'].mean()
+avg_chim = routes['chimney_norm'].mean()
+avg_crack = routes['crack_norm'].mean()
+avg_slab = routes['slab_norm'].mean()
+avg_overhang = routes['overhang_norm'].mean()
+
+routes['arete_score'] = (routes['arete_norm'].values
+                         * np.sqrt(routes['count_normal'].values ** 2
+                                   + routes['arete_norm'].values ** 2) 
+                         + ((1 - routes['count_normal']) 
+                         * (1 - routes['arete_norm']) * avg_arete))
+
+routes['chimney_score'] = (routes['chimney_norm'].values
+                           * np.sqrt(routes['count_normal'].values ** 2
+                                     + routes['chimney_norm'].values ** 2)
+                           + ((1 - routes['count_normal'])
+                           * (1 - routes['chimney_norm']) * avg_chim))
+
+routes['crack_score'] = (routes['crack_norm'].values
+                         * np.sqrt(routes['count_normal'].values ** 2
+                                   + routes['crack_norm'].values ** 2)
+                         + ((1 - routes['count_normal'])
+                         * (1 - routes['crack_norm']) * avg_crack))
+
+routes['slab_score'] = (routes['slab_norm'].values
+                        * np.sqrt(routes['count_normal'].values ** 2
+                                  + routes['slab_norm'].values ** 2)
+                        + ((1 - routes['count_normal'])
+                        * (1 - routes['slab_norm']) * avg_slab))
+
+routes['overhang_score'] = (routes['overhang_norm'].values
+                            * np.sqrt(routes['count_normal'].values ** 2
+                                      + routes['overhang_norm'].values ** 2)
+                            + (1 - routes['count_normal'])
+                            * (1 - routes['overhang_norm']) * avg_overhang)
+
+max_arete = routes['arete_score'].max()
+max_chimney = routes['chimney_score'].max()
+max_crack = routes['crack_score'].max()
+max_slab = routes['slab_score'].max()
+max_overhang = routes['overhang_score'].max()
+
+routes['arete'] = routes['arete_score'].values / max_arete
+routes['chimney'] = routes['chimney_score'].values / max_chimney
+routes['crack'] = routes['crack_score'].values / max_crack
+routes['slab'] = routes['slab_score'].values / max_slab
+routes['overhang'] = routes['overhang_score'].values / max_overhang
+
+routes = routes[['arete', 'chimney', 'crack', 'slab', 'overhang']]
+
+routes.to_sql('Scores', con=conn, if_exists='replace')
+
+query = '''SELECT route_id, url FROM Routes
+           WHERE route_id IN 
+           (SELECT route_id FROM Scores ORDER BY chimney DESC LIMIT 10)'''
+
+urls = pd.read_sql(query, con=conn)
+
+for url in urls['url']:
+    print(url)
+    
+print(urls['route_id'])
+           
+           
+
