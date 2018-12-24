@@ -20,7 +20,7 @@ path = 'Descriptions/'
 
 def tfidf_values():
     archetypes = pd.DataFrame()
-    names = ['arete', 'chimney', 'crack', 'slab', 'overhang'] #, 'face']
+    names = ['arete', 'chimney', 'crack', 'slab', 'overhang']
     
     for name in names:    
          tf = pd.read_csv(filepath_or_buffer=path + name)

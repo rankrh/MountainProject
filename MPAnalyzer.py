@@ -288,84 +288,10 @@ def MPAnalyzer(path='C:/Users/',
 
         return routes
     
-    def archetype_tfidf():
-        # FIXME: Add Documentation
-        try:
-            os.chdir(path + folder + '/Descriptions')
-        except OSError as e:
-            if e.winerror == 2:
-                try:
-                    os.mkdir(path + folder + 'Descriptions')
-                    os.chdir(path + folder + 'Descriptions')
-                except OSError as e:
-                    print(e)
-                    return e.winerror
-            else:
-                return e
-        
-        def archetype_idf(word, idf):
-        # FIXME: Add Documentation
-            try:
-                val = idf.loc[word.name]['idf']
-                word['idf'] = val
-                word['tfidf'] = word['tf'] * word['idf']
-                return word
-                
-            except KeyError:
-                print(word.name, end=' ')
-                print('Not in idf DF')
-                
-        def archetype_tf(path):
-        # FIXME: Add Documentation
-            archetypes = pd.DataFrame()
-            names = ['arete', 'chimney', 'crack', 'slab', 'overhang', 'face']
-            
-            for name in names:    
-                 tf = pd.read_csv(filepath_or_buffer=path + name)
-                 tf = tf.rename(columns={tf.columns[0]: 'word'})
-                 tf['style'] = name
-                 tf = tf.set_index(['style', 'word'])
-                 archetypes = pd.concat([archetypes, tf])
-
-        def cos_sim(a, b):
-            #FIXME: What is the best way to get cossim for an arbitrary number
-            # of different styles that can be added to without forcing me to 
-            # circle back around OR to go back here and adjust the number of arguments?
-            # FIXME: Add Documentation
-            print(a.name)
-            dot_prod =  np.sum(a['tfidfn'] * b)
-            return dot_prod
-
-        
-        archetypes = archetype_tf(path)
-        
-        unique = archetypes.index.levels[1].unique().tolist()
-        unique = tuple(unique)
-        query = 'SELECT DISTINCT(word), idf from TFIDF WHERE word IN {}'.format(unique)
-        idf = pd.read_sql(query, con=conn, index_col='word')
-         
-        archetypes = archetypes.groupby(level=[1]).apply(archetype_idf,
-                                        idf=idf)
-        archetypes = archetypes.reset_index(level=0, drop=True)
-        
-        archetypes = archetypes.groupby('style').apply(normalize)
-        
-        arete = archetypes.loc['arete', 'tfidfn']
-        chimney = archetypes.loc['chimney', 'tfidfn']
-        crack = archetypes.loc['crack', 'tfidfn']
-        slab = archetypes.loc['slab', 'tfidfn']
-        overhang = archetypes.loc['overhang', 'tfidfn']
-        face = archetypes.loc['face', 'tfidfn']
-        
     
-        
-        
+    # FIXME:  Add archetypes here
 
-
-    
-    
-        
-    tfidf(min_occur=0.001, max_occur=0.6)
+    tfidf()
 
     cluster_text = '''SELECT route_id, latitude, longitude
                       FROM Routes'''

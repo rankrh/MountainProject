@@ -952,90 +952,12 @@ def MPScraper(path='C:/Users/',
 
         # Commits
         conn.commit()
-        
-    # FIXME: Finish updating this
-    def style_guides(path):
-        # FIXME: Add Documentation
-
-        crack = 'https://en.wikipedia.org/wiki/Crack_climbing'
-        overhang = 'https://en.wikipedia.org/wiki/Overhang_(rock_formation)'
-        slab = 'https://en.wikipedia.org/wiki/Slab_climbing'
-        face =  'https://en.wikipedia.org/wiki/Face_climbing'
-        
-        chimney = 'https://www.thoughtco.com/how-to-climb-chimneys-755279'
-        arete = 'https://www.thoughtco.com/how-to-climb-aretes-755292'
-    
-        wikis = {'crack': crack, 'overhang': overhang,
-                 'slab': slab, 'face': face}
-        thoughts = {'chimney': chimney, 'arete': arete}
-
-
-        def tf(text, name):
-            # FIXME: Add Documentation
-
-            text = text_splitter(text)
-            # Converts to dataframe
-            length = len(text)
-            text = pd.DataFrame({'word': text})['word']\
-                     .value_counts()\
-                     .rename('counts')\
-                     .to_frame()
-                     
-            text['tf'] = text['counts'] / length
-            text.to_csv(path + name)
-    
-        def thought_co(url, name):
-            # FIXME: Add Documentation
-
-            page = urlopen(url)
-            # Opens HTML
-            html = page.read()
-            # Parses HTML with BS package
-            soup = BeautifulSoup(html, 'html.parser')
-            article = soup.find_all('div',
-                                    class_='comp mntl-sc-block mntl-sc-block-html')
-            headings = soup.find_all('h3',
-                                     class_='comp mntl-sc-block mntl-sc-block-heading')
-            
-            text = ''
-            for section in article:
-                text += section.get_text()
-            for heading in headings:
-                text += heading.get_text()
-            tf(text, name)
-            
-        def wiki_tf(url, name):
-            # FIXME: Add Documentation
-
-            page = urlopen(url)
-            # Opens HTML
-            html = page.read()
-            # Parses HTML with BS package
-            region_soup = BeautifulSoup(html, 'html.parser')
-            body = region_soup.body
-            sections = body.find_all('p')
-            text = ''
-            for section in sections:
-                text += section.get_text()
-            tf(text, name)
-        
-        for name, url in wikis.items():
-            file = open(path + name + '.txt', 'w', encoding='utf-8')
-            file.write(wiki_tf(url, name))
-    
-        for name, url in thoughts.items():
-            file = open(path + name + '.txt', 'w', encoding='utf-8')
-            file.write(thought_co(url))
-            
             
     get_regions()
     
     error = None
     while error == None:
         error = get_areas(region_id=None)
-        
-    style_guides()
-
 
 if __name__ == '__main__':
     print(MPScraper())
