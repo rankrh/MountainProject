@@ -78,36 +78,34 @@ def MPAnalyzer(path='C:/Users/',
         user ratings for routes that only have a few reviews.  The weighted
         rating works by first finding the average rating for all routes, and
         using that to bring low-rated routes up and high-rated routes down.
+        The result - the Bayes rating - is an updated rating weighted by the
+        average number of stars across all routes.  The weight decreases
+        according to the number of votes cast.
+        
         Essentially, the function gives each route phantom-users who all give
         the route the average score.  For routes with a high number of ratings
         the effect of the additional phantom users is minimal, but for routes
         with only one or two actual user ratings, the effect is large.  This
         keeps 4-star rated routes from dominating the sorting algorithm if they
-        only have a few votes, and helps promote unrated routes that may be
-        quality.
+        only have a few votes, and helps promote unrated routes that may be of 
+        high quality. 
 
         Args:
             routes(pandas df): Pulled from cleaned route SQL DB with columns:
-                                - route_id (int, unique)
-                                    Unique route identifiers
-                                - stars (float)
-                                    Raw average rating
-                                - votes (int)
-                                    Number of user ratings
+                - route_id (int, unique): Unique route identifiers
+                - stars (float): Raw average rating
+                - votes (int): Number of user ratings
         Returns:
             routes(pandas df): Updated dataframe with Bayes rating and columns:
-                                - route_id (int, unique)
-                                    Unique route identifies
-                                - bayes (float)
-                                    Weighted average rating
+                - route_id (int, unique): Unique route identifies
+                - bayes (float): Weighted average rating
         '''
         # Average rating of all routes
         stars = pd.read_sql('SELECT stars FROM Routes', con=conn)
-        avg_stars = np.mean(stars)['stars'] * 10
-
+        avg_stars = np.mean(stars)['stars']
         # Weighted Bayesian rating
-        routes['bayes'] = (((routes['votes'] * routes['stars']) + avg_stars) /
-                            (routes['votes'] + 10))
+        routes['bayes'] = (((routes['votes'] * routes['stars'])
+                             + avg_stars * 10) / (routes['votes'] + 10))
         return routes['bayes'].to_frame()
 
     def route_clusters(routes):
@@ -224,6 +222,9 @@ def MPAnalyzer(path='C:/Users/',
     def normalize(table, column):
             # FIXME: Update documentation to reflect the table, column style to
             # generalize normalization.
+            
+            # FIXME: Update everything that uses this so that it can be used
+            # with *args
 
         ''' Normalizes vector length.
         
@@ -291,13 +292,13 @@ def MPAnalyzer(path='C:/Users/',
 
         return routes
     
+    
+    
+    ####################################
     def find_route_styles(path):
-            # FIXME: Add documentation
-
-        
         def archetypal_tf(path):
                 # FIXME: Add documentation
-
+        
             archetypes = pd.DataFrame()
             names = ['arete', 'chimney', 'crack', 'slab', 'overhang']
             
@@ -311,20 +312,18 @@ def MPAnalyzer(path='C:/Users/',
             return archetypes
         
         def archetypal_idf(unique_words):
-            # FIXME: Add documentation
-
+        
                     
             query = '''SELECT DISTINCT(word), idf
                        FROM TFIDF WHERE word IN {}'''.format(unique_words)
-            archetypal_idf = pd.read_sql(query, con=conn, index_col='word')
+            archetypes = pd.read_sql(query, con=conn, index_col='word')
             
-            return archetypal_idf
-    
-        def archetypal_tfidf(word, archetypal_idf):
-            # FIXME: Add documentation
-
+            return archetypes
+        
+        def archetypal_tfidf(word, archetypes):
+        
             try:
-                val = archetypal_idf.loc[word.name]['idf']
+                val = archetypes.loc[word.name]['idf']
                 word['idf'] = val
                 word['tfidf'] = word['tf'].values * val
                 return word
@@ -332,23 +331,24 @@ def MPAnalyzer(path='C:/Users/',
             except KeyError:
                 print(word.name, 'Not in idf DF')
         
-        path += 'Descriptions/'
+        path += '\\Descriptions\\'
         archetypes = archetypal_tf(path)
         
         unique_words = archetypes.index.levels[1].unique().tolist()
         unique_words = tuple(unique_words)
-        archetypal_idf = archetypal_idf(unique_words)
-
-
+        archetype_idf = archetypal_idf(unique_words)
+        
+        
         archetypes = archetypes.groupby(level=[1]).apply(archetypal_tfidf,
-                                                         archetypal_idf)
+                                                         archetype_idf)
         archetypes = archetypes.reset_index(level=0, drop=True)
-        archetypes = normalize(archetypes, 'tfidf')
+        archetypes = normalize(archetypes, 'tfidf')['tfidfn']
         
         archetypes.to_csv(path + 'TFIDF')
-    # FIXME: Add documentation
+        print(archetypes)
+
         
-        
+    ######################################    
     # FIXME:  Add archetypes here
 
     tfidf()
@@ -358,9 +358,9 @@ def MPAnalyzer(path='C:/Users/',
     clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
     clusters = route_clusters(clusters)
 
-    bayes_text = '''SELECT route_id, stars, votes
+    query = '''SELECT route_id, stars, votes
                     FROM Routes'''
-    bayes = pd.read_sql(bayes_text, con=conn, index_col='route_id')
+    bayes = pd.read_sql(query, con=conn, index_col='route_id')
     bayes = bayesian_rating(bayes)
 
     add = pd.concat([bayes, clusters], axis=1)

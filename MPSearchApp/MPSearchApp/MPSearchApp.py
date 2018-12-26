@@ -136,6 +136,7 @@ class SearchLayout(BoxLayout):
         elif not self.snow_d:
             self.ids.snow_diff.disable = True
             self.ids.snow_diff.opacity = 0.0
+            self.ids.snow_slide.opacity = 0.0
             
 
     def aid_diff(self):
@@ -159,10 +160,7 @@ class SearchLayout(BoxLayout):
         elif not self.alpine_d:
             self.ids.alpine_slide.disable = True
             self.ids.alpine_diff.opacity = 0.0
-            self.ids.alpine_slide.opacity = 0.0
-        
-    def terrain(self):
-        
+            self.ids.alpine_slide.opacity = 0.0        
             
             
 class MPSearchApp(App):
