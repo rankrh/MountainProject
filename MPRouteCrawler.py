@@ -858,7 +858,14 @@ def MPScraper(path='C:/Users/',
         Route data is stored in three places in the HTML, and must be joined
         into one string to fully process. After creating a master list of the
         text, it passes the text to the splitter.  The splitter returns a list
-        of processed words, which are then written to the database.
+        of processed words, which are then written to the database.  The term-
+        frequency for each word is calculated as well, which will be used later
+        to categorize routes.
+    
+                            Term-Frequency = t / L
+
+                    t = Number of appearances for a word in a document
+                    L = Number of total words in the document
         
         Args:
             route_soup(BS Object): HTML processed with BeautifulSoup holding
