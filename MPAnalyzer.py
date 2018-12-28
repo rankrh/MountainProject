@@ -17,8 +17,7 @@ from nltk.stem import PorterStemmer
 import unidecode
 
 
-
-def MPAnalyzer(path='C:/Users/', 
+def MPAnalyzer(path='C:/Users/',
                folder='/Mountain Project',
                DBname='MPRoutes'):
     # FIXME: Update which functions this handles
@@ -28,7 +27,7 @@ def MPAnalyzer(path='C:/Users/',
     The Bayesian rating system, route clustering algorithm and calculation of
     TFIDF values require information about all routes, and not just one that is
     of interest.  Therefore, this file must be run after all data collection
-    has finished. This function is a handler for five functions:
+    has finished. This function is a handler for six functions:
         - bayesian_rating: Calculates the weighted quality rating for each
             route
         - route_clusters: Groups routes together based on geographic distance
@@ -37,6 +36,7 @@ def MPAnalyzer(path='C:/Users/',
         - tfidf: Calclates term-frequency-inverse-document-frequency for words
             in route descriptions
         - normalize: Normalizes vectors for TFIDF values
+        - find_route_styles: Compares routes to the ideal to help categorize
 
     Args:
         path(str): Location of the route database
@@ -44,7 +44,6 @@ def MPAnalyzer(path='C:/Users/',
     Returns:
         Updated SQL Database
     '''
-
 
     # FIXME: Improve error handling and figure out the best way to guide users
     # and the program to the correct folders.
@@ -56,10 +55,10 @@ def MPAnalyzer(path='C:/Users/',
         folder = ''
 
     try:
-        os.chdir(path + folder)        
+        os.chdir(path + folder)
     except OSError as e:
         return e
-    
+
     try:
         os.chdir(path + folder + '/Descriptions')
     except OSError as e:
@@ -72,8 +71,8 @@ def MPAnalyzer(path='C:/Users/',
                 return e.winerror
         else:
             return e
-        
-    os.chdir(path + folder)        
+
+    os.chdir(path + folder)
 
     # Connect to SQLite database and create database 'Routes.sqlite'
     conn = sqlite3.connect(DBname + '.sqlite')
@@ -102,8 +101,8 @@ def MPAnalyzer(path='C:/Users/',
         the effect of the additional phantom users is minimal, but for routes
         with only one or two actual user ratings, the effect is large.  This
         keeps 4-star rated routes from dominating the sorting algorithm if they
-        only have a few votes, and helps promote unrated routes that may be of 
-        high quality. 
+        only have a few votes, and helps promote unrated routes that may be of
+        high quality.
 
         Args:
             routes(pandas df): Pulled from cleaned route SQL DB with columns:
@@ -116,13 +115,12 @@ def MPAnalyzer(path='C:/Users/',
                 - bayes (float): Weighted average rating
         '''
 
-
         # Average rating of all routes
         stars = pd.read_sql('SELECT stars FROM Routes', con=conn)
         avg_stars = np.mean(stars)['stars']
         # Weighted Bayesian rating
         routes['bayes'] = (((routes['votes'] * routes['stars'])
-                             + avg_stars * 10) / (routes['votes'] + 10))
+                            + avg_stars * 10) / (routes['votes'] + 10))
         return routes['bayes'].to_frame()
 
     def route_clusters(routes):
@@ -154,7 +152,6 @@ def MPAnalyzer(path='C:/Users/',
         This will allow the sorting algorithm to more heavily weight routes
         that are clustered near others.
 
-
         Args:
             routes(pandas df): Pulled from cleaned route SQL DB with columns:
                 - route_id (int, unique): Unique route identifies
@@ -166,7 +163,6 @@ def MPAnalyzer(path='C:/Users/',
                 - area_group (int): Cluster id
                 - area_counts (int): Number of routes in cluster
         '''
-
 
         # Route location
         lats = routes['latitude']
@@ -211,11 +207,11 @@ def MPAnalyzer(path='C:/Users/',
         ''' Findes inverse document frequency for each word in the selected
         corpus.
 
-        Inverse document frequency(IDF) is a measure of how often a word appears in
-        a body of documents.  The value is calculated by:
+        Inverse document frequency(IDF) is a measure of how often a word
+        appears in a body of documents.  The value is calculated by:
 
                             IDF = 1 + log(N / dfj)
-    
+
              N = Total number of documents in the corpus
              dfj = Document frequency of a certain word, i.e., the number of
                  documents that the word appears in.
@@ -230,13 +226,12 @@ def MPAnalyzer(path='C:/Users/',
                 score appended.
         '''
 
-
         word['idf'] = 1 + np.log(num_docs / len(word))
         return word
 
     def normalize(*columns, table, inplace=False):
         ''' Normalizes vector length.
-        
+
         Vector values must be normalized to a unit vector to control for
         differences in length.  This process is done by calculating the length
         of a vector and dividing each term by that value.  The resulting
@@ -248,11 +243,10 @@ def MPAnalyzer(path='C:/Users/',
             inplace(Boolean, default = False):
                 If inplace=False, adds new columns with normalized values.
                 If inplace=True, replaces the columns.
-                
+
         Returns:
             table(pandas dataframe): Updated dataframe with normalized values.
         '''
-
 
         for column in columns:
             if not inplace:
@@ -266,7 +260,7 @@ def MPAnalyzer(path='C:/Users/',
     def tfidf(min_occur=None, max_occur=None):
         ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
         documents.
-        
+
         Term-Frequency-Inverse-Document-Frequency(TFIDF) is a measure of the
         importance of words in a body of work measured by how well they help to
         distinguish documents.  Words that appear frequently in documents score
@@ -276,7 +270,7 @@ def MPAnalyzer(path='C:/Users/',
         to documents with known topics.
 
                                    TFIDF = TF * IDF
-                                   
+
                           TF = Term Frequency
                           IDF = Inverse Document Frequency
 
@@ -288,7 +282,7 @@ def MPAnalyzer(path='C:/Users/',
             max_occur(int): The maximum number of documents that a word can
                 appear in to be counted.  This is included to ignore highly
                 common words that don't help with categorization.
-                
+
         Returns:
             routes(pandas Dataframe): Holds route-document information,
                 including term-frequency, inverse-document-frequency, TFIDF,
@@ -296,7 +290,6 @@ def MPAnalyzer(path='C:/Users/',
             Updated SQL Database: Updates the TFIDF table on main DB with the
                 routes dataframe
         '''
-
 
         cursor.execute('SELECT COUNT(route_id) FROM Routes')
         num_docs = cursor.fetchone()[0]
@@ -318,7 +311,7 @@ def MPAnalyzer(path='C:/Users/',
     def find_route_styles(*styles, path):
         ''' Returns weighted scores that represent a route's likelihood of
         containing any of a series of features, e.g., a roof, arete, or crack.
-        
+
         Route names, descriptions, and user comments can indicate the presence
         of rock and route features. Term-Frequency-Inverse-Document-Frequency
         (TFIDF) values for the blocks of text gathered for each route can be
@@ -327,7 +320,7 @@ def MPAnalyzer(path='C:/Users/',
         measure the credibility of the comparision, and is then adjusted to
         reflect that.  At present, each route is compared against archetypal
         routes with the following features:
-            
+
             Aretes - A sharp vertical edge of a block, cliff or boulder
             Chimney - A large vertical crack that a climber can fit in and
                 climb using opposing pressure
@@ -335,38 +328,36 @@ def MPAnalyzer(path='C:/Users/',
                 wide (off-width)
             Slab - Low-angle rock faces (less than vertical)
             Overhang - Roofs, caves or more-than-vertical rock faces
-            
+
         More styles or archetypes can be added in the future by creating .txt
         files and adding them to the 'Descriptions' sub-folder, then adding the
         style to the *styles argument.
-        
+
         Args:
             *styles(str): The name of the files that each route will be
                 compared against.
             path(str): Folder location of the Database
-        
+
         Returns:
             Updated SQL Database with weighted route scores
         '''
 
-
         def text_splitter(text):
             '''Splits text into words and removes punctuation.
-            
+
             Once the text has been scraped it must be split into individual
             words for further processing.  The text is all put in lowercase,
             then stripped of punctuation and accented letters. Tokenizing helps
-            to further standardize the text, then converts it to a list of 
+            to further standardize the text, then converts it to a list of
             words. Each word is then stemmed using a Porter stemmer.  This
             removes suffixes that make similar words look different, turning,
             for example, 'walking' or 'walked' into 'walk'.
-            
+
             Args:
                 text(str): Single string of text to be handled
-                
+
             Returns:
                 text(list): List of processed words.'''
-
 
             # Converts to lowercase
             text = text.lower()
@@ -378,19 +369,19 @@ def MPAnalyzer(path='C:/Users/',
             # Stems each word in the list
             ps = PorterStemmer()
             text = [ps.stem(word) for word in text]
-            
+
             return text
 
         def archetypal_tf(*styles, path):
             ''' Returns term-frequency data for descriptions of archetypal
             climbing routes and styles.  This will be used later to categorize
             routes.
-            
+
                             Term-Frequency = t / L
 
                     t = Number of appearances for a word in a document
                     L = Number of total words in the document
-            
+
             Args:
                 *styles(str): Name of .txt file to parse.  Can either be the
                     plain name or have the .txt suffix
@@ -402,14 +393,13 @@ def MPAnalyzer(path='C:/Users/',
                 archetypes(Pandas Dataframe): Holds words term-frequency values
                     for words in the files.'''
 
-
             # Initializes Dataframe
             archetypes = pd.DataFrame()
             for style in styles:
                 # Formats suffix
                 if not styles.endswith('.txt'):
                     style += '.txt'
-                
+
                 # Opens .txt file
                 try:
                     file = open(path + style)
@@ -423,121 +413,119 @@ def MPAnalyzer(path='C:/Users/',
                     text += line
                 # Splits and processes text
                 text = text_splitter(text)
-                
+
                 # Length of document in words
                 length = len(text)
                 # Counts appearances of each word
                 text = pd.DataFrame({'word': text})['word']\
-                     .value_counts()\
-                     .rename('counts')\
-                     .to_frame()
-                     
+                         .value_counts()\
+                         .rename('counts')\
+                         .to_frame()
+
                 # Calculates Term-Frequency
                 text[style] = text['counts'].values / length
                 text = text[style]
-                
+
                 # Creates master Dataframe of Termfrequency data for each style
                 archetypes = pd.concat([archetypes, text], axis=1, sort=True)
             archetypes.to_csv(path + 'TF.csv')
             return archetypes
-        
+
         def archetypal_idf(words):
             ''' Findes inverse document frequency (IDF) for each word in the
             archetypal style documents.
-                 
+
             The archetypal documents should not be included in the calculation
             of IDF values, so this function just pulls the IDF values from the
             database after they are calculated. IDF is a measure of how often a
             word appears in a body of documents. The value is calculated by:
-    
+
                                 IDF = 1 + log(N / dfj)
-        
+
                  N = Total number of documents in the corpus
                  dfj = Document frequency of a certain word, i.e., the number
                      of documents that the word appears in.
-    
+
             Args:
                 word(list): All unique words in all the archetype documents
-    
+
             Returns:
                 archetypes(pandas dataframe): IDF values for each word pulled
                     from the Database.'''
-
 
             # Formats query to include list of unique words
             query = '''SELECT DISTINCT(word), idf
                        FROM TFIDF WHERE word IN {}'''.format(words)
             # Pulls SQL data into Pandas dataframe
             archetypes = pd.read_sql(query, con=conn, index_col='word')
-            
+
             return archetypes
 
         def get_routes():
             '''Creates Pandas Dataframe of normalized TFIDF values for each
             word in each route description.
-            
+
             Args:
             Returns:
                 routes(Pandas Series): MultiIndex series with indexes
                 'route_id' and 'word' and column 'tfidfn' - Normalized TFIDF'''
 
-
             # Pulls route_id, word, and normalized TFIDF value
             query = '''SELECT route_id, word, tfidfn FROM TFIDF'''
-            
+
             # Creates Pandas Dataframe
-            routes = pd.read_sql(query, con=conn, index_col=['route_id', 'word'])
-            
+            routes = pd.read_sql(query,
+                                 con=conn,
+                                 index_col=['route_id', 'word'])
+
             # Converts to series
             routes = routes.squeeze()
             return routes
-        
+
         def get_word_count():
             '''Finds length of route description in words.
-            
+
             Args:
             Returns:
                 word_count(Pandas dataframe): Dataframe with index route_id and
                     column 'word_count' - length of a route description in
                     words'''
 
-
             # Pulls route_id and word_count for each route
             query = 'SELECT route_id, word_count FROM Words'
-            
+
             # Calculates document length
             word_count = pd.read_sql(query,
-                              con=conn,
-                              index_col='route_id').groupby(level=0)\
-                              .apply(lambda x: np.sum(x))
+                                     con=conn,
+                                     index_col='route_id').groupby(level=0)
+            word_count = word_count.apply(lambda x: np.sum(x))
             return word_count
-        
+
         def cosine_similarity(route, archetypes):
             '''Compares routes to archetypes to help categorize route style.
-            
+
             Cosine similarity is the angle between two vectors.  Here, the
             normalized TFIDF values for each word in the route description and
             archetype documents serve as the coordinates of the vector. Finding
             the cosine similarity is therefore simply their dot-product.
-            
+
                     Cosine Similarity = Σ(ai * bi)
-                    
+
                     ai = TFIDF for a word in the route description
                     bi = TFIDF for the same word in the archetype document.
-                    
+
             The similarity will range between 0 and 1, 1 being identical and 0
             having no similarity.
-            
+
             Args:
                 route(Pandas dataframe): MultiIndex frame with indexes route_id
                     and word and columns normalized TFDIF values
                 archetypes(Pandas dataframe): Frame with index word and columns
                     normalized TFIDF values.
-                    
+
             Returns:
                 terrain(Pandas dataframe): Frame with columns for each style,
                     holding cosine simlarity values.'''
-
 
             # Removes the route_id level of the multiindex
             route.index = route.index.droplevel(0)
@@ -563,12 +551,12 @@ def MPAnalyzer(path='C:/Users/',
         def score_routes(word_count, *styles):
             '''Gets TF, IDF data for archetypes, then finds TFIDF and cosine
             similarity for each route/style combination.
-            
-            Finding the raw cosine similarity scores requires the functions 
+
+            Finding the raw cosine similarity scores requires the functions
             archetypal_tf, archetypal_idf, normalize, and get_routes.  This
             function helps organize the retrieval and processing of the data
             for those functions.
-            
+
             Args:
                 word_count(Pandas dataframe): Dataframe with index route_id and
                     column 'word_count' - length of a route description in
@@ -580,8 +568,7 @@ def MPAnalyzer(path='C:/Users/',
                 routes(Pandas dataframe): Holds cosine similarity for each
                     route/style combination'''
 
-
-            # Gets Term-Frequency data for words in archetype documents            
+            # Gets Term-Frequency data for words in archetype documents
             archetypes = archetypal_tf(*styles, path=path)
             # Gets list of unique words in archetype documents
             words = tuple(archetypes.index.tolist())
@@ -603,90 +590,89 @@ def MPAnalyzer(path='C:/Users/',
             # Groups words by route_id, then finds cosine similarity for each
             # route-style combination
             routes = routes.groupby('route_id').apply(cosine_similarity,
-                                                            archetypes)
+                                                      archetypes)
             # Reformats routes dataframe
             routes.index = routes.index.droplevel(1)
             routes = pd.concat([routes, word_count], axis=1, sort=False)
 
             return routes
-            
-        
+
         def weighted_scores(*styles, table, inplace=False):
             '''Weights cosine similarity based on credibility.
-            
+
             The cosine similarity between a route and a style archetype
             measures how close the two documents are.  Depending on the score
             and the word count of the route, however, this score can be more or
             less believable.  Using Bayesian statistics helps weight the scores
             based on the credibility.
-            
+
             We can plot word count and cosine similarity in two dimensions.
             Normalizing each so that the maximum value is one results in a
             plane with four edge cases:
-                        
+
                             cosine similarity | word count
                                     0               0
                                     1               0
                                     0               1
                                     1               1
-                                    
+
             (Note: We will actually take the log of the word count. The law of
             diminishing returns applies in this case.)
-                                    
+
             When both word count and cosine similarity is high, the
             believability of the cosine score is at its highest.  This is
             analagous to a route that scores well with the 'overhang' document,
             therefore mentioning words like 'overhang' or 'roof' frequently,
             that also has a lot of words.
-            
+
             If the word count is high and the cosine similarity is low the
             believability of the score is high, but not as high as before.
             This is analagous to a route that never mentions words associated
             with 'overhang' despite a high word count.  We can be reasonably
             sure in this case that the route does not have an overhang.
-            
+
             If the word count of a route is low but the cosine score is high,
             we can be reasonably sure that the score is somewhat accurate. This
             is a result of a route called, for instance, 'Overhang Route'.
             Despite the low word count, it is highly likely that the route has
             an overhang on it.
-            
+
             Finally, for routes that have both low word count and cosine score,
             we have no way to be sure of the presence (or absence) of a
             feature.  In this case, our best guess is that the route is at
             chance of featuring a given style of climbing.
-            
+
             If we chart word count, cosine similarity, and the credibility of
             the cosine score, we are left with a cone with a point at the
             origin, reaching up at a 45 degree angle along the credibility (z)
             axis. Each route will exist somewhere on the surface of the cone.
             To make use of this, we need to calculate this position. The height
             to the cone gives us the credibility, and can be calculated with:
-                            
+
                     Credibility = sqrt(W ** 2 + C ** 2) * tan(45 degrees)
-                    
+
             Since tan(45 degrees) is 1, this simplifies to:
-                
+
                     Credibility = sqrt(W ** 2 + C ** 2)
-                    
+
                     W = Word count
                     C = Cosine similarity
-                    
+
             The credibility of a route's score can be fed back into the score
             to find a weighted route score.  As the word count and cosine score
             get close to zero, the average score should play more of a role in
             the outcome. Therefore:
-                
-                
+
+
                 Score = C * sqrt(W ** 2 + C ** 2) + (1 - C)(1 - W) * Cm
-                
+
                     W = word count
                     C = cosine Similarity
                     Cm = Average cosine similarity across routes
-                    
+
             This final score is then normalized, and represents the percent
             chance that a given route has a given feature.
-            
+
             Args:
                 *styles(str): Names of the style archetypes
                 table(Pandas dataframe): Master dataframe of cosine scores for
@@ -704,8 +690,8 @@ def MPAnalyzer(path='C:/Users/',
             # As the word count increases, the credibility increases as a
             # logarithmic function
             table[count] = 1 + np.log(table['word_count'])
-            table[count] = table[count] / table[count].max() 
-        
+            table[count] = table[count] / table[count].max()
+
             # Gets weighted scores for each style
             for style in styles:
                 # Stores name to write data on
@@ -714,19 +700,20 @@ def MPAnalyzer(path='C:/Users/',
                 else:
                     column_name = style + '_weighted'
 
-                # Normalizes cosine score  
+                # Normalizes cosine score
                 max_val = table[style].max()
                 table[column_name] = table[style] / max_val
-                
+
                 # Find average cosine similarity across routes
                 style_avg = table[style].mean()
                 # Calculate weighted rating
                 table[column_name] = ((table[style].values
-                                     * np.sqrt(table[style].values ** 2 
-                                               + table[count].values ** 2))
-                                     + ((1 - table[count].values)
-                                     * (1 - table[style].values)
-                                     * style_avg))
+                                       * np.sqrt(table[style].values ** 2
+                                                 + table[count].values ** 2))
+                                      + ((1 - table[count].values)
+                                      * (1 - table[style].values)
+                                      * style_avg))
+
                 # Normalize weighted average
                 table[column_name] = table[style] / table[style].max()
             # Select route style columns from database
@@ -744,22 +731,26 @@ def MPAnalyzer(path='C:/Users/',
         # Write to Database
         routes.to_sql('Terrain', con=conn, if_exists='replace')
         return
-        
 
+    # Gets TFIDF values for routes
     tfidf()
 
+    # Gets cluster information for routes
     cluster_text = '''SELECT route_id, latitude, longitude
                       FROM Routes'''
     clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
     clusters = route_clusters(clusters)
 
+    # Gets Bayesian rating for routes
     query = '''SELECT route_id, stars, votes
                     FROM Routes'''
     bayes = pd.read_sql(query, con=conn, index_col='route_id')
     bayes = bayesian_rating(bayes)
 
+    # Combines metrics
     add = pd.concat([bayes, clusters], axis=1)
 
+    # Writes to the database
     for route in add.index:
         rate = add.loc[route]['bayes']
         group = add.loc[route]['area_group']
@@ -769,8 +760,9 @@ def MPAnalyzer(path='C:/Users/',
                          SET bayes = ?, area_group = ?, area_counts = ?
                          WHERE route_id = ?''', (rate, group, cnt, route))
     conn.commit()
-    find_route_styles('arete', 'chimney', 'crack', 'slab', 'overhang', path)
 
+    # Gets route scores for climbing styles
+    find_route_styles('arete', 'chimney', 'crack', 'slab', 'overhang', path)
 
 
 if __name__ == '__main__':
