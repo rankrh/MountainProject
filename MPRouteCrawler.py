@@ -35,8 +35,9 @@ that.
 """
 
 from nltk.tokenize import word_tokenize
-from urllib.request import urlopen
 from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import pandas as pd
 import urllib.error
@@ -822,18 +823,19 @@ def MPScraper(path='C:/Users/',
 
     def text_splitter(text):
         '''Splits text into words and removes punctuation.
-        
-        Once the text has been scraped it must be split into individual words
-        for further processing.  The text is all put in lowercase, then
-        stripped of punctuation and accented letters. Tokenizing helps to
-        further standardize the text, then converts it to a list of words. Each
-        word is then stemmed using a Porter stemmer.  This removes suffixes
-        that make similar words look different, turning, for example, 'walking'
-        or 'walked' into 'walk'.
-        
+
+        Once the text has been scraped it must be split into individual
+        words for further processing.  The text is all put in lowercase,
+        then stripped of punctuation and accented letters. Tokenizing helps
+        to further standardize the text, then converts it to a list of
+        words. Each word is then stemmed using a Porter stemmer.  This
+        removes suffixes that make similar words look different, turning,
+        for example, 'walking' or 'walked' into 'walk'.  Stop words are
+        also filtered out at this stage.
+
         Args:
             text(str): Single string of text to be handled
-            
+
         Returns:
             text(list): List of processed words.'''
 
@@ -844,10 +846,12 @@ def MPScraper(path='C:/Users/',
         text = unidecode.unidecode(text)
         # Tokenizes words and returns a list
         text = word_tokenize(text)
+        # Remove stopwords            
+        stop_words = set(stopwords.words('english'))
         # Stems each word in the list
         ps = PorterStemmer()
-        text = [ps.stem(word) for word in text]
-        
+        text = [ps.stem(word) for word in text if word not in stop_words]
+
         return text
 
 

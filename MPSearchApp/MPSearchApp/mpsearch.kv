@@ -130,6 +130,7 @@
             id: alpine_diff
             text: root.conversion(alpine_slide.value, style='alpine')
             opacity: 0
+            
     BoxLayout:
         orientation: 'vertical'
         id: specs
@@ -139,14 +140,19 @@
             text: 'Pitches'
         RangeSlider:
             id: pitch_num
-            range: (0, 25)
+            range: (0, 11)
+            step: 1
+            disable: False
+            opacity: 1
             step: 1
         Label:
-            text: str(pitch_num.value)
+            text: root.pitch_text(pitch_num.value)
         Slider:
             id: danger_slide
             range: (0, 3)
             step: 1
+        Label:
+            text: root.danger_conv(danger_slide.value)
 
         
         

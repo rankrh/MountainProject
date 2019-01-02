@@ -1,44 +1,61 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.rangeslider import RangeSlider
+import sqlite3
+
+path = 'C:\\Users\\Bob\\Documents\\Python\\Mountain Project\\'
+conn = sqlite3.connect(path + 'Routes-Cleaned.sqlite')
+cursor = conn.cursor()
 
 class SearchLayout(BoxLayout):
 
     def __init__(self):
         super(SearchLayout, self).__init__()
        
-    sport_d = False
-    trad_d = False
-    tr_d = False
-    boulder_d = False
-    mixed_d = False
-    ice_d = False
-    snow_d = False
-    aid_d = False
-    alpine_d = False
+    sport = False
+    trad = False
+    tr = False
+    boulder = False
+    mixed = False
+    ice = False
+    snow = False
+    aid = False
+    alpine = False
+    
+    def pitch_text(self, values):
+        low = int(values[0])
+        high = int(values[1])
+        
+        text = '%s to %s pitches' % (low, high)
+        
+        if high == 11:
+            text = '%s or more pitches' % low
+            
+        return text
 
     def manage_ropes(self):
-        if self.sport_d or self.tr_d or self.trad_d:
+        if self.sport or self.tr or self.trad:
             self.ids.rope_slide.disable = False
             self.ids.rope_diff.opacity = 1.0
             self.ids.rope_slide.opacity = 1.0
-        elif not self.sport_d and not self.tr_d and not self.trad_d:
+        elif not self.sport and not self.tr and not self.trad:
             self.ids.rope_slide.disable = True
             self.ids.rope_diff.opacity = 0.0
             self.ids.rope_slide.opacity = 0.0
 
     def sport_diff(self):
-        self.sport_d = not self.sport_d
+        self.sport= not self.sport
         self.manage_ropes()
 
 
     def trad_diff(self):
-        self.trad_d = not self.trad_d
+        self.trad = not self.trad
         self.manage_ropes()
         
         
+        
     def tr_diff(self):
-        self.tr_d = not self.tr_d
+        self.tr = not self.tr
         self.manage_ropes()    
         
         
@@ -92,77 +109,87 @@ class SearchLayout(BoxLayout):
 
 
     def boulder_diff(self):
-        self.boulder_d = not self.boulder_d
-        if self.boulder_d:
+        self.boulder = not self.boulder
+        if self.boulder:
             self.ids.boulder_slide.disable = False
             self.ids.boulder_diff.opacity = 1.0
             self.ids.boulder_slide.opacity = 1.0
-        elif not self.boulder_d:
+        elif not self.boulder:
             self.ids.boulder_slide.disable = True
             self.ids.boulder_diff.opacity = 0.0
             self.ids.boulder_slide.opacity = 0.0
 
 
     def mixed_diff(self):
-        self.mixed_d = not self.mixed_d
-        if self.mixed_d:
+        self.mixed = not self.mixed
+        if self.mixed:
             self.ids.mixed_slide.disable = False
             self.ids.mixed_diff.opacity = 1.0
             self.ids.mixed_slide.opacity = 1.0
-        elif not self.mixed_d:
+        elif not self.mixed:
             self.ids.mixed_slide.disable = True
             self.ids.mixed_diff.opacity = 0.0
             self.ids.mixed_slide.opacity = 0.0
         
+        
             
     def ice_diff(self):
-        self.ice_d = not self.ice_d
-        if self.ice_d:
+        self.ice = not self.ice
+        if self.ice:
             self.ids.ice_slide.disable = False
             self.ids.ice_diff.opacity = 1.0
             self.ids.ice_slide.opacity = 1.0
-        elif not self.ice_d:
+        elif not self.ice:
             self.ids.ice_slide.disable = True
             self.ids.ice_diff.opacity = 0.0
             self.ids.ice_slide.opacity = 0.0
+        
 
 
     def snow_diff(self):
-        self.snow_d = not self.snow_d
-        if self.snow_d:
+        self.snow = not self.snow
+        if self.snow:
             self.ids.snow_slide.disable = False
             self.ids.snow_diff.opacity = 1.0
             self.ids.snow_slide.opacity = 1.0
-        elif not self.snow_d:
+        elif not self.snow:
             self.ids.snow_diff.disable = True
             self.ids.snow_diff.opacity = 0.0
             self.ids.snow_slide.opacity = 0.0
+        
             
 
     def aid_diff(self):
-        self.aid_d = not self.aid_d
-        if self.aid_d:
+        self.aid = not self.aid
+        if self.aid:
             self.ids.aid_slide.disable = False
             self.ids.aid_diff.opacity = 1.0
             self.ids.aid_slide.opacity = 1.0
-        elif not self.aid_d:
+        elif not self.aid:
             self.ids.aid_slide.disable = True
             self.ids.aid_diff.opacity = 0.0
             self.ids.aid_slide.opacity = 0.0
+        
 
 
     def alpine_diff(self):
-        self.alpine_d = not self.alpine_d
-        if self.alpine_d:
+        self.alpine = not self.alpine
+        if self.alpine:
             self.ids.alpine_slide.disable = False
             self.ids.alpine_diff.opacity = 1.0
             self.ids.alpine_slide.opacity = 1.0
-        elif not self.alpine_d:
+        elif not self.alpine:
             self.ids.alpine_slide.disable = True
             self.ids.alpine_diff.opacity = 0.0
-            self.ids.alpine_slide.opacity = 0.0        
-            
-            
+            self.ids.alpine_slide.opacity = 0.0  
+
+
+    def danger_conv(self, max_danger):
+        danger = ['G', 'PG13', 'R', 'X']
+        return danger[max_danger]
+        
+        
+    
 class MPSearchApp(App):
     def build(self):
         return SearchLayout()
