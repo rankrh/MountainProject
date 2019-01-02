@@ -9,6 +9,7 @@
 
 # DB Files
 *.sqlite
+*.swlite-journal
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
