@@ -258,6 +258,12 @@ def MPAnalyzer(path='C:/Users/',
             table[column_name] = table[column] / length
         return table
 
+
+    def weed_out(table, min_occur, max_occur):
+        if min_occur < len(table) < max_occur:
+            return table.reset_index()
+
+
     def tfidf(min_occur=None, max_occur=None):
         ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
         documents.

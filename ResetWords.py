@@ -11,6 +11,7 @@ import ssl
 import re
 import os
 
+
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 # Create cursor
 cursor = conn.cursor()
@@ -84,3 +85,4 @@ while route is not None:
 
     word = handler(route_id, text)
     route = cursor.fetchone()
+
