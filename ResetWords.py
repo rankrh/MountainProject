@@ -1,19 +1,13 @@
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
-from urllib.request import urlopen
-from bs4 import BeautifulSoup
 import pandas as pd
-import urllib.error
 import unidecode
 import sqlite3
-import ssl
 import re
-import os
+import numpy as np
 
-
-conn = sqlite3.connect('Routes-Cleaned.sqlite')
-# Create cursor
+conn = sqlite3.connect('C:\\Users\\Bob\Documents\\Python\Mountain Project\\Routes-Cleaned.sqlite')
 cursor = conn.cursor()
 
 # Sets display options for pandas
@@ -72,6 +66,48 @@ def handler(route_id, text):
                 .rename(columns={'word': 'word_count'}))
         text['tf'] = text['word_count'] / doc_length
     text.to_sql('Words', con=conn, if_exists='append')
+    
+def idf(word, num_docs):
+    print('Finding IDF for', word.name)
+
+    word['idf'] = 1 + np.log(num_docs / len(word))
+    return word
+
+def normalize(routes):
+    print('Normalizing TFIDF values for', routes.name)
+    length = np.sqrt(np.sum(routes['tfidf'] ** 2))
+    routes['tfidfn'] = routes['tfidf'] / length
+    return routes.reset_index()
+
+
+def weed_out(table, min_occur, max_occur):
+    if min_occur < len(table) < max_occur:
+        return table.reset_index()
+    
+    
+def tfidf(min_occur=None, max_occur=None):
+
+    cursor.execute('SELECT COUNT(route_id) FROM Routes')
+    num_docs = cursor.fetchone()[0]
+
+    if min_occur is None:
+        min_occur = 0.001 * num_docs
+    if max_occur is None:
+        max_occur = 0.9 * num_docs
+        
+    # UPDATE TO COMBINE FUNCTIONS
+    query = 'SELECT route_id, word, tf FROM Words'
+    routes = pd.read_sql(query, con=conn, index_col='route_id')
+    routes = routes.groupby('word', group_keys=False)
+    routes = routes.apply(weed_out, min_occur, max_occur)
+    routes = routes.groupby('word')
+    routes = routes.apply(idf, num_docs=num_docs)
+    routes['tfidf'] = routes['tf'] * routes['idf']
+    routes = routes.groupby('route_id', group_keys=False).apply(normalize)
+    routes = routes.set_index('route_id').drop('index', axis=1)
+    routes.to_sql('TFIDF', con=conn, if_exists='replace')
+
+    return routes
 
 routes = cursor.execute('''SELECT route_id, text from Routes
                         WHERE route_id
@@ -85,4 +121,6 @@ while route is not None:
 
     word = handler(route_id, text)
     route = cursor.fetchone()
+
+print(tfidf())
 
