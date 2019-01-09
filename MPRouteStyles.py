@@ -257,7 +257,10 @@ def find_route_styles(*styles, path):
         word_count = pd.read_sql(query,
                                  con=conn,
                                  index_col='route_id').groupby(level=0)
-        word_count = word_count.apply(lambda x: np.sum(x))
+        # We will take the log of the word count later, so we cannot leave
+        # zeroes in the series
+        word_count = word_count.apply(lambda x: np.sum(x) + 0.01)
+        word_count.fillna(0.01, inplace=True)
         return word_count
 
     def cosine_similarity(route, archetypes):
@@ -350,6 +353,8 @@ def find_route_styles(*styles, path):
         # Reformats routes dataframe
         routes.index = routes.index.droplevel(1)
         routes = pd.concat([routes, word_count], axis=1, sort=False)
+        routes.fillna(0, inplace=True)
+
 
         return routes
 
@@ -445,8 +450,9 @@ def find_route_styles(*styles, path):
 
         # As the word count increases, the credibility increases as a
         # logarithmic function
-        table[count] = 1 + np.log(table['word_count'])
-        table[count] = table[count] / table[count].max()
+        table[count] = np.log(table['word_count'])
+        table[count] = ((table[count] - table[count].min())
+                        / (table[count].max() - table[count].min()))
 
         # Gets weighted scores for each style
         for style in styles:
@@ -473,7 +479,7 @@ def find_route_styles(*styles, path):
             # Normalize weighted average
             table[column_name] = table[style] / table[style].max()
         # Select route style columns from database
-        table = table[list(styles)]
+        #table = table[list(styles)]
 
         return table
 

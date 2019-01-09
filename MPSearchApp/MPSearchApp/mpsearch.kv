@@ -1,15 +1,14 @@
 <SearchLayout>: 
     id: metrics
     diff: diff
-    size: root.size
     BoxLayout:
 		id: type_table
 		orientation: 'vertical'
 		padding: 5
-		size_hint: (0.3, 1)
 		Label:
             id: type_label
 			text: 'Route Types'
+			
 		ToggleButton:
 			id: sport_button
 			text: 'Sport'
@@ -51,9 +50,9 @@
         id: diff
         orientation: 'vertical'
 		padding: 5
-		size_hint: (0.3, 1)
 		Label: 
 			text: 'Difficulty'
+            size_hint: 
 		RangeSlider:
             id: rope_slide
             disable: True
@@ -135,9 +134,9 @@
         orientation: 'vertical'
         id: specs
 		padding: 5
-		size_hint: (0.3, 1)
         Label:
             text: 'Pitches'
+            
         RangeSlider:
             id: pitch_num
             range: (0, 11)

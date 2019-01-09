@@ -1,6 +1,7 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.rangeslider import RangeSlider
+from kivy.core.window import Window
 import sqlite3
 
 path = 'C:\\Users\\Bob\\Documents\\Python\\Mountain Project\\'
@@ -186,7 +187,7 @@ class SearchLayout(BoxLayout):
 
     def danger_conv(self, max_danger):
         danger = ['G', 'PG13', 'R', 'X']
-        return danger[max_danger]
+        return danger[int(max_danger)] + ' and under'
         
         
     
@@ -196,4 +197,5 @@ class MPSearchApp(App):
 
 
 if __name__ == '__main__':
+
     MPSearchApp().run()

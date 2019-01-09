@@ -43,6 +43,7 @@ import pandas as pd
 import urllib.error
 import unidecode
 import sqlite3
+import time
 import ssl
 import re
 import os
@@ -349,7 +350,7 @@ def MPScraper(path='C:/Users/',
         if not routes_in_area and not is_empty:
             # Updates user on progress
             print()
-            print('Exploring: ', main_name)
+            print('Exploring climbing area: ', main_name)
 
             # Gets HTML data
             areas = areas_soup.find('div', class_='mp-sidebar')
@@ -396,7 +397,7 @@ def MPScraper(path='C:/Users/',
         elif routes_in_area and not is_empty:
             # Updates user
             print()
-            print('Exploring: ', main_name)
+            print('Exploring routes in: ', main_name)
 
             # grabs latitude and longitude
             cursor.execute('''SELECT latitude, longitude
@@ -539,7 +540,7 @@ def MPScraper(path='C:/Users/',
 
         route_name = route_soup.body.find('h1').get_text().strip()
         # Updates user
-        print('Gathering data on:', route_name)
+        print('    Gathering route data on:', route_name)
 
         # Average number of stars awarded out of 4
         stars = route_soup.find('a', class_='show-tooltip', title='View Stats')
@@ -1000,6 +1001,6 @@ def MPScraper(path='C:/Users/',
 
 if __name__ == '__main__':
     print(MPScraper())
-# FIXME: See what else needs to be included for a __main__ file
+# FIXME: See what else needs to be included for __main__
 
 

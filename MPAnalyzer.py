@@ -18,8 +18,8 @@ import unidecode
 from nltk.corpus import stopwords
 
 
-def MPAnalyzer(path='C:/Users/',
-               folder='/Mountain Project',
+def MPAnalyzer(path='C:\\Users\\',
+               folder='Mountain Project\\',
                DBname='MPRoutes'):
     # FIXME: Update which functions this handles
     '''Finishes cleaning routes using formulas that require information about
@@ -50,8 +50,8 @@ def MPAnalyzer(path='C:/Users/',
     # and the program to the correct folders.
 
     username = os.getlogin()
-    if path == 'C:/Users/':
-        path += username
+    if path == 'C:\\Users\\':
+        path += username + '\\'
     else:
         folder = ''
 
@@ -61,12 +61,12 @@ def MPAnalyzer(path='C:/Users/',
         return e
 
     try:
-        os.chdir(path + folder + '/Descriptions')
+        os.chdir(path + folder + 'Descriptions\\')
     except OSError as e:
         if e.winerror == 2:
             try:
-                os.mkdir(path + folder + 'Descriptions')
-                os.chdir(path + folder + 'Descriptions')
+                os.mkdir(path + folder + 'Descriptions\\')
+                os.chdir(path + folder + 'Descriptions\\')
             except OSError as e:
                 print(e)
                 return e.winerror
@@ -228,7 +228,7 @@ def MPAnalyzer(path='C:/Users/',
         '''
 
         word['idf'] = 1 + np.log(num_docs / len(word))
-        return word
+        return word.reset_index()
 
     def normalize(*columns, table, inplace=False):
         ''' Normalizes vector length.
@@ -248,15 +248,15 @@ def MPAnalyzer(path='C:/Users/',
         Returns:
             table(pandas dataframe): Updated dataframe with normalized values.
         '''
-
         for column in columns:
             if not inplace:
                 column_name = column + 'n'
             elif inplace:
                 column_name = column
+
             length = np.sqrt(np.sum(table[column] ** 2))
             table[column_name] = table[column] / length
-        return table
+        return table.reset_index()
 
 
     def weed_out(table, min_occur, max_occur):
@@ -298,20 +298,40 @@ def MPAnalyzer(path='C:/Users/',
                 routes dataframe
         '''
 
+        print('Getting number of routes...........', end=' ')
         cursor.execute('SELECT COUNT(route_id) FROM Routes')
         num_docs = cursor.fetchone()[0]
-
+        print(num_docs)
+        
         if min_occur is None:
             min_occur = 0.001 * num_docs
         if max_occur is None:
             max_occur = 0.9 * num_docs
 
+        print('Getting route text data............', end=' ')
         query = 'SELECT route_id, word, tf FROM Words'
-        routes = pd.read_sql(query, con=conn, index_col=['route_id', 'word'])
-        routes = routes.groupby('word').apply(idf, num_docs=num_docs)
+        routes = pd.read_sql(query, con=conn, index_col='route_id')
+        print('Done')
+        routes = routes.groupby('word', group_keys=False)
+        print('Removing non-essential words.......', end=' ')
+        routes = routes.apply(weed_out, min_occur, max_occur)\
+                       .set_index('route_id')
+        print('Done')
+        routes = routes.groupby('word', group_keys=False)
+        print('Getting IDF........................', end=' ')
+        routes = routes.apply(idf, num_docs=num_docs).set_index('route_id')
+        print('Done')        
+        print('Calculating TFIDF..................', end=' ')
         routes['tfidf'] = routes['tf'] * routes['idf']
-        routes = routes.groupby('route_id').apply(normalize, 'tfidf')
+        print('Done')
+        routes = routes.groupby(routes.index, group_keys=False)
+        print('Normalizing TFIDF values...........', end=' ')
+        routes = routes.apply(lambda x: normalize('tfidf', table=x))
+        print('Done')
+        routes = routes.set_index('route_id')
+        print('Writing to SQL.....................', end=' ')
         routes.to_sql('TFIDF', con=conn, if_exists='replace')
+        print('Done')
 
         return routes
 
@@ -523,7 +543,12 @@ def MPAnalyzer(path='C:/Users/',
             word_count = pd.read_sql(query,
                                      con=conn,
                                      index_col='route_id').groupby(level=0)
-            word_count = word_count.apply(lambda x: np.sum(x))
+
+            # We will take the log of the word count later, so we cannot leave
+            # zeroes in the series
+            word_count = word_count.apply(lambda x: np.sum(x) + 0.01)
+            word_count.fillna(0.01, inplace=True)
+            
             return word_count
     
         def cosine_similarity(route, archetypes):
@@ -569,7 +594,7 @@ def MPAnalyzer(path='C:/Users/',
             # Creates dataframe from the dictionary
             terrain = pd.DataFrame.from_dict(terrain)
             # Updates user
-            print(route.name)
+            print('    Scoring route''', route.name)
     
             return terrain
     
@@ -605,7 +630,11 @@ def MPAnalyzer(path='C:/Users/',
             # Multiplies TF by IDF values to get TFIDF score
             archetypes = archetypes.mul(idf['idf'], axis=0)
             # Normalizes TFIDF scores
-            archetypes = normalize(*styles, table=archetypes, inplace=True)
+            archetypes = normalize(table=archetypes,
+                                   inplace=True,
+                                   *styles)
+            archetypes = archetypes.rename(columns={'index': 'word'})\
+                                   .set_index('word')
             # Writes to CSV
             archetypes.to_csv(path + 'TFIDF.csv')
     
@@ -616,6 +645,7 @@ def MPAnalyzer(path='C:/Users/',
             # Reformats routes dataframe
             routes.index = routes.index.droplevel(1)
             routes = pd.concat([routes, word_count], axis=1, sort=False)
+            routes.fillna(0, inplace=True)
     
             return routes
     
@@ -711,8 +741,9 @@ def MPAnalyzer(path='C:/Users/',
     
             # As the word count increases, the credibility increases as a
             # logarithmic function
-            table[count] = 1 + np.log(table['word_count'])
-            table[count] = table[count] / table[count].max()
+            table[count] = np.log(table['word_count'])
+            table[count] = ((table[count] - table[count].min())
+                            / (table[count].max() - table[count].min()))
     
             # Gets weighted scores for each style
             for style in styles:
@@ -739,22 +770,27 @@ def MPAnalyzer(path='C:/Users/',
                 # Normalize weighted average
                 table[column_name] = table[style] / table[style].max()
             # Select route style columns from database
-            table = table[list(styles)]
+            #table = table[list(styles)]
     
             return table
     
-        path += '\\Descriptions\\'
+        path += folder + 'Descriptions\\'
     
         # Run functions
+        print('Getting word count.................', end=' ')
         word_count = get_word_count()
+        print('Done')
+        print('Getting route information..........', end=' ')
         routes = get_routes()
+        print('Done')
+        print('Scoring routes.....................')
         routes = score_routes(*styles,
                               word_count=word_count,
                               path=path,
                               routes=routes)
-        print(routes)
+        print('Getting weighted scores............', end=' ')
         routes = weighted_scores(*styles, table=routes, inplace=True)
-    
+        print('Done')
         # Write to Database
         routes.to_sql('Terrain', con=conn, if_exists='replace')
         return
@@ -763,20 +799,26 @@ def MPAnalyzer(path='C:/Users/',
     tfidf()
 
     # Gets cluster information for routes
+    print('Getting climbing area clusters.....', end=' ')
     cluster_text = '''SELECT route_id, latitude, longitude
                       FROM Routes'''
     clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
     clusters = route_clusters(clusters)
+    print('Done')
 
+    print('Getting Bayesian rating............', end=' ')
     # Gets Bayesian rating for routes
     query = '''SELECT route_id, stars, votes
                     FROM Routes'''
     bayes = pd.read_sql(query, con=conn, index_col='route_id')
     bayes = bayesian_rating(bayes)
+    print('Done')
+
 
     # Combines metrics
     add = pd.concat([bayes, clusters], axis=1)
 
+    print('Writing to SQL.....................', end=' ')
     # Writes to the database
     for route in add.index:
         rate = add.loc[route]['bayes']
@@ -787,10 +829,12 @@ def MPAnalyzer(path='C:/Users/',
                          SET bayes = ?, area_group = ?, area_counts = ?
                          WHERE route_id = ?''', (rate, group, cnt, route))
     conn.commit()
+    print('Done')
 
     # Gets route scores for climbing styles
     find_route_styles('arete', 'chimney', 'crack', 'slab', 'overhang',
                       path=path)
+    return 'Complete'
 
 
 if __name__ == '__main__':
