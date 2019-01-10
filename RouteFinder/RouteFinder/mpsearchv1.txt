@@ -8,7 +8,12 @@
 		Label:
             id: type_label
 			text: 'Route Types'
-			
+			canvas.after:
+                Color:
+                    rgba: 1, 0, 0, 0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 		ToggleButton:
 			id: sport_button
 			text: 'Sport'
@@ -52,13 +57,25 @@
 		padding: 5
 		Label: 
 			text: 'Difficulty'
-            size_hint: 
+            canvas.after:
+                Color:  
+                    rgba: 0, 1, 0, 0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 		RangeSlider:
             id: rope_slide
             disable: True
             opacity: 0
             range: (0, 76)
             step: 1
+            canvas.after:
+                Color:  
+                    rgba: 0, 0, 1, 0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
         Label:
             id: rope_diff
             text: root.conversion(rope_slide.value, style='rope')

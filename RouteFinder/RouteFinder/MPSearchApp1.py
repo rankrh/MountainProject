@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jan 10 15:38:20 2019
+
+@author: Bob
+"""
+
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.rangeslider import RangeSlider
