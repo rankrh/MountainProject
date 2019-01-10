@@ -1,0 +1,154 @@
+<SearchPage>:
+    orientation: 'vertical'
+    canvas.before:
+        Color:
+            rgba: 0,1,0,0.5
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    Label:
+        id: guide
+        text: 'Route Guide'
+        font_size: root.size[0] / 20
+        size_hint_y: None
+        size: self.texture_size
+
+        canvas.before:
+            Color:
+                rgba: 0,0,1,0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    
+    BoxLayout:
+        orientation: 'horizontal'
+        BoxLayout:
+            orientation: 'horizontal'
+            BoxLayout:
+                id: styles
+                orientation: 'vertical'
+                BoxLayout:
+                    size_hint_y: None
+                    height: styles.height / 3
+                    orientation: 'vertical'
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        BoxLayout:
+                            orientation: 'vertical'
+                            Label:
+                                id: sport
+                                text: 'Sport'
+                                canvas.before:
+                                    Color:
+                                        rgba: 1,0,1,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: trad
+                                text: 'Trad'
+                                canvas.before:
+                                    Color:
+                                        rgba: 1,0,0,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: tr
+                                text: 'Top Rope'
+                                canvas.before:
+                                    Color:
+                                        rgba: 1,0,1,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                        Label:
+                            id: rope_diff
+                            text: 'Rope Difficulty'
+                            canvas.before:
+                                Color:
+                                    rgba: 1,0,0,0.5
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size            
+                
+                BoxLayout:
+                    orientation: 'vertical'
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        BoxLayout:
+                            orientation:'vertical'
+                            Label:
+                                id: boulder
+                                text: 'Boulder'
+                                canvas.before:
+                                    Color:
+                                        rgba: 0,0,1,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: ice
+                                text: 'Ice'
+                                canvas.before:
+                                    Color:
+                                        rgba: 1,0,0,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: mixed
+                                text: 'Mixed'
+                                canvas.before:
+                                    Color:
+                                        rgba: 0,0,1,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: aid
+                                text: 'Aid'
+                                canvas.before:
+                                    Color:
+                                        rgba: 1,0,0,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: alpine
+                                text: 'Alpine'
+                                canvas.before:
+                                    Color:
+                                        rgba: 0,0,1,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                            Label:
+                                id: snow
+                                text: 'Snow'
+                                canvas.before:
+                                    Color:
+                                        rgba: 1,0,0,0.5
+                                    Rectangle:
+                                        pos: self.pos
+                                        size: self.size
+                        Label:
+                            id: other_diff
+                            text: 'Other'
+                            canvas.before:
+                                Color:
+                                    rgba: 1,1,0,0.5
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size
+
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_x: None
+            width: root.width / 3
+            Label:
+                id: preferences
+                text: 'Preferences'
+
+
