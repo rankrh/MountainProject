@@ -6,29 +6,100 @@ from kivy.uix.rangeslider import RangeSlider
 
 class SearchPage(BoxLayout):
 
-    styles = {'sport': {'search': False, 'id': 'sport_slide'},
-              'trad': {'search':False, 'id': 'trad_slide'},
-              'tr': {'search': False, 'id': 'tr_slide'},
-              'boulder': {'search': False, 'id': 'boulder_slide'},
-              'mixed': {'search': False, 'id': 'mixed_slide'},
-              'snow': {'search': False, 'id': 'snow_slide'},
-              'aid': {'search': False, 'id': 'aid_slide'},
-              'ice': {'search': False, 'id': 'ice_slide'},
-              'alpine': {'search': False, 'id': 'alpine_slide'}}
+    styles = {'sport': {'search': False,
+                        'slider_id': 'sport_slide',
+                        'label_id': 'sport_diff'},
+              'trad': {'search': False,
+                       'slider_id': 'trad_slide',
+                       'label_id': 'trad_diff'},
+              'tr': {'search': False,
+                     'slider_id': 'tr_slide',
+                     'label_id': 'tr_diff'},
+              'boulder': {'search': False,
+                          'slider_id': 'boulder_slide',
+                          'label_id': 'boulder_diff'},
+              'mixed': {'search': False,
+                        'slider_id': 'mixed_slide',
+                        'label_id': 'mixed_diff'},
+              'snow': {'search': False,
+                       'slider_id': 'snow_slide',
+                       'label_id': 'snow_diff'},
+              'aid': {'search': False,
+                      'slider_id': 'aid_slide',
+                      'label_id': 'aid_diff'},
+              'ice': {'search': False,
+                      'slider_id': 'ice_slide',
+                      'label_id': 'ice_diff'},
+              'alpine': {'search': False,
+                         'slider_id': 'alpine_slide',
+                         'label_id': 'alpine_diff'}}
+
+    rope_conv = ['3rd', '4th', 'Easy 5th', '5.0', '5.1', '5.2', '5.3',
+                    '5.4', '5.5', '5.6', '5.7', '5.7+', '5.8-', '5.8', '5.8+',
+                    '5.9-', '5.9', '5.9+', '5.10a', '5.10-', '5.10a/b',
+                    '5.10b', '5.10', '5.10b/c', '5.10c', '5.10+', '5.10c/d',
+                    '5.10d', '5.11a', '5.11-', '5.11a/b', '5.11b', '5.11',
+                    '5.11b/c', '5.11c', '5.11+', '5.11c/d', '5.11d', '5.12a',
+                    '5.12-', '5.12a/b', '5.12b', '5.12', '5.12b/c', '5.12c',
+                    '5.12+', '5.12c/d', '5.12d', '5.13a', '5.13-', '5.13a/b',
+                    '5.13b', '5.13', '5.13b/c', '5.13c', '5.13+', '5.13c/d',
+                    '5.13d', '5.14a', '5.14-', '5.14a/b', '5.14b', '5.14',
+                    '5.14b/c', '5.14c', '5.14+', '5.14c/d', '5.14d', '5.15a',
+                    '5.15-', '5.15a/b', '5.15b', '5.15', '5.15c', '5.15+',
+                    '5.15c/d', '5.15d']
+    boulder_conv  = ['V-easy', 'V0-', 'V0', 'V0+', 'V0-1', 'V1-', 'V1',
+                        'V1+', 'V1-2', 'V2-', 'V2', 'V2+', 'V2-3', 'V3-',
+                        'V3', 'V3+', 'V3-4', 'V4-', 'V4', 'V4+', 'V4-5',
+                        'V5-', 'V5', 'V5+', 'V5-6', 'V6-', 'V6', 'V6+',
+                        'V6-7', 'V7-', 'V7', 'V7+', 'V7-8', 'V8-', 'V8',
+                        'V8+', 'V8-9', 'V9-', 'V9', 'V9+', 'V9-10', 'V10-',
+                        'V10', 'V10+', 'V10-11', 'V11-', 'V11', 'V11+',
+                        'V11-12', 'V12-', 'V12', 'V12+', 'V12-13', 'V13-', 
+                        'V13', 'V13+', 'V13-14', 'V14-', 'V14', 'V14+',
+                        'V14-15', 'V15-', 'V15', 'V15+', 'V15-16', 'V16-',
+                        'V16', 'V16+', 'V16-17', 'V17-', 'V17']
+    mixed_conv = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9',
+                    'M10', 'M11', 'M12']
+    aid_conv = ['A0', 'A1', 'A2', 'A2+', 'A3',
+                'A3+', 'A4', 'A4+', 'A5','A6']
+    ice_conv = ['WI1', 'WI2', 'WI3', 'WI4', 'WI5', 'WI6', 'WI7', 'WI8']
+    snow_conv = ['Easy', 'Mod', 'Steep']
+    alp_conv =  ['I', 'II', 'III', 'IV', 'V', 'VI']
+
+    conversion = {'sport': rope_conv, 'trad': rope_conv, 'tr': rope_conv,
+                    'boulder': boulder_conv, 'mixed': mixed_conv,
+                    'aid': aid_conv, 'ice': ice_conv, 'snow': snow_conv,
+                    'alpine': alp_conv}
 
     def __init__(self):
         super(SearchPage, self).__init__()
 
     def set_style(self, style):
         self.styles[style]['search'] = not self.styles[style]['search']
-        style_id = self.styles[style]['id']
-        
+        slider = self.styles[style]['slider_id']
+        label = self.styles[style]['label_id']
+
         if self.styles[style]['search']:
-            self.ids[style_id].disable = False
-            self.ids[style_id].opacity = 1.0
+            self.ids[slider].disable = False
+            self.ids[slider].opacity = 1.0
+            self.ids[label].opacity = 1.0
         elif not self.styles[style]['search']:
-            self.ids[style_id].disable = True
-            self.ids[style_id].opacity = 0.0
+            self.ids[slider].disable = True
+            self.ids[slider].opacity = 0.0
+            self.ids[label].opacity = 0.0
+
+    def difficulty_conversion(self, style, difficulty_range):
+        low = int(difficulty_range[0])
+        high = int(difficulty_range[1])
+        
+        grades = self.conversion[style]
+        if high == 100:
+            high = len(grades) - 1
+        
+        text = str(grades[low]) + ' to ' + str(grades[high])
+        label = self.styles[style]['label_id']
+
+        self.ids[label].text = text
 
 
 class RouteFinder(App):

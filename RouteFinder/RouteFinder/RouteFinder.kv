@@ -25,11 +25,15 @@
                                 on_press: root.set_style('sport')
                             RangeSlider:
                                 id: sport_slide
-                                text: 'Sport Difficulty'
                                 disable: True
                                 opacity: 0
                                 range: (0, 76)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='sport', difficulty_range=self.value)
+                            Label:
+                                id: sport_diff
+                                opacity: 0
+                                text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -43,6 +47,11 @@
                                 opacity: 0
                                 range: (0, 76)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='trad', difficulty_range=self.value)
+                            Label:
+                                id: trad_diff
+                                opacity: 0
+                                text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -56,6 +65,11 @@
                                 opacity: 0
                                 range: (0, 76)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='tr', difficulty_range=self.value)
+                            Label:
+                                id: tr_diff
+                                opacity: 0
+                                text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -67,7 +81,12 @@
                                 disable: True
                                 opacity: 0
                                 range: (0, 70)
-                                step: 1   
+                                step: 1 
+                                on_touch_move: root.difficulty_conversion(style='boulder', difficulty_range=self.value)
+                            Label:
+                                id: boulder_diff
+                                opacity: 0
+                                text: root.boulder_conv[0] + ' to ' + root.boulder_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -80,6 +99,11 @@
                                 opacity: 0
                                 range: (0, 7)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
+                            Label:
+                                id: ice_diff
+                                opacity: 0
+                                text: root.ice_conv[0] + ' to ' + root.ice_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -91,7 +115,12 @@
                                 disable: True
                                 opacity: 0
                                 range: (0, 11)
-                                step: 1 
+                                step: 1
+                                on_touch_move: root.difficulty_conversion(style='mixed', difficulty_range=self.value)
+                            Label:
+                                id: mixed_diff
+                                opacity: 0
+                                text: root.mixed_conv[0] + ' to ' + root.mixed_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -104,6 +133,11 @@
                                 opacity: 0
                                 range: (0, 9)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='aid', difficulty_range=self.value)
+                            Label:
+                                id: aid_diff
+                                opacity: 0
+                                text: root.aid_conv[0] + ' to ' + root.aid_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -116,6 +150,11 @@
                                 opacity: 0
                                 range: (0, 5)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
+                            Label:
+                                id: alpine_diff
+                                opacity: 0
+                                text: root.alp_conv[0] + ' to ' + root.alp_conv[-1]
                         BoxLayout:
                             orientation: 'horizontal'
                             ToggleButton:
@@ -128,6 +167,12 @@
                                 opacity: 0
                                 range: (0, 2)
                                 step: 1
+                                on_touch_move: root.difficulty_conversion(style='snow', difficulty_range=self.value)
+                            Label:
+                                id: snow_diff
+                                opacity: 0
+                                text: root.snow_conv[0] + ' to ' + root.snow_conv[-1]
+
 
         BoxLayout:
             orientation: 'horizontal'
