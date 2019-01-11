@@ -1,26 +1,11 @@
 <SearchPage>:
     orientation: 'vertical'
-    canvas.before:
-        Color:
-            rgba: 0,1,0,0.5
-        Rectangle:
-            pos: self.pos
-            size: self.size
-
     Label:
         id: guide
         text: 'Route Guide'
         font_size: root.size[0] / 20
         size_hint_y: None
-        size: self.texture_size
-
-        canvas.before:
-            Color:
-                rgba: 0,0,1,0.5
-            Rectangle:
-                pos: self.pos
-                size: self.size
-    
+        size: self.texture_size    
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
@@ -29,119 +14,120 @@
                 id: styles
                 orientation: 'vertical'
                 BoxLayout:
-                    size_hint_y: None
-                    height: styles.height / 3
                     orientation: 'vertical'
                     BoxLayout:
-                        orientation: 'horizontal'
+                        orientation:'vertical'
                         BoxLayout:
-                            orientation: 'vertical'
-                            Label:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: sport
                                 text: 'Sport'
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,0,1,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('sport')
+                            RangeSlider:
+                                id: sport_slide
+                                text: 'Sport Difficulty'
+                                disable: True
+                                opacity: 0
+                                range: (0, 76)
+                                step: 1
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: trad
                                 text: 'Trad'
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,0,0,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('trad')
+                            RangeSlider:
+                                id: trad_slide
+                                text: 'Trad Difficulty'
+                                disable: True
+                                opacity: 0
+                                range: (0, 76)
+                                step: 1
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: tr
                                 text: 'Top Rope'
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,0,1,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                        Label:
-                            id: rope_diff
-                            text: 'Rope Difficulty'
-                            canvas.before:
-                                Color:
-                                    rgba: 1,0,0,0.5
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size            
-                
-                BoxLayout:
-                    orientation: 'vertical'
-                    BoxLayout:
-                        orientation: 'horizontal'
+                                on_press: root.set_style('tr')
+                            RangeSlider:
+                                id: tr_slide
+                                text: 'Top Rope Difficulty'
+                                disable: True
+                                opacity: 0
+                                range: (0, 76)
+                                step: 1
                         BoxLayout:
-                            orientation:'vertical'
-                            Label:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: boulder
                                 text: 'Boulder'
-                                canvas.before:
-                                    Color:
-                                        rgba: 0,0,1,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('boulder')
+                            RangeSlider:
+                                id: boulder_slide
+                                disable: True
+                                opacity: 0
+                                range: (0, 70)
+                                step: 1   
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: ice
                                 text: 'Ice'
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,0,0,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('ice')
+                            RangeSlider:
+                                id: ice_slide
+                                disable: True
+                                opacity: 0
+                                range: (0, 7)
+                                step: 1
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: mixed
                                 text: 'Mixed'
-                                canvas.before:
-                                    Color:
-                                        rgba: 0,0,1,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('mixed')
+                            RangeSlider:
+                                id: mixed_slide
+                                disable: True
+                                opacity: 0
+                                range: (0, 11)
+                                step: 1 
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: aid
                                 text: 'Aid'
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,0,0,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('aid')
+                            RangeSlider:
+                                id: aid_slide
+                                disable: True
+                                opacity: 0
+                                range: (0, 9)
+                                step: 1
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: alpine
                                 text: 'Alpine'
-                                canvas.before:
-                                    Color:
-                                        rgba: 0,0,1,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                            Label:
+                                on_press: root.set_style('alpine')
+                            RangeSlider:
+                                id: alpine_slide
+                                disable: True
+                                opacity: 0
+                                range: (0, 5)
+                                step: 1
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            ToggleButton:
                                 id: snow
                                 text: 'Snow'
-                                canvas.before:
-                                    Color:
-                                        rgba: 1,0,0,0.5
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-                        Label:
-                            id: other_diff
-                            text: 'Other'
-                            canvas.before:
-                                Color:
-                                    rgba: 1,1,0,0.5
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size
+                                on_press: root.set_style('snow')
+                            RangeSlider:
+                                id: snow_slide
+                                disable: True
+                                opacity: 0
+                                range: (0, 2)
+                                step: 1
 
         BoxLayout:
             orientation: 'horizontal'
