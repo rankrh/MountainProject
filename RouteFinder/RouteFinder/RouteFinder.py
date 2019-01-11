@@ -2,9 +2,10 @@ from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.rangeslider import RangeSlider
+from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.lang import Builder
 
-
-class SearchPage(BoxLayout):
+class StylesPage(Screen):
 
     styles = {'sport': {'search': False,
                         'slider_id': 'sport_slide',
@@ -71,9 +72,6 @@ class SearchPage(BoxLayout):
                     'aid': aid_conv, 'ice': ice_conv, 'snow': snow_conv,
                     'alpine': alp_conv}
 
-    def __init__(self):
-        super(SearchPage, self).__init__()
-
     def set_style(self, style):
         self.styles[style]['search'] = not self.styles[style]['search']
         slider = self.styles[style]['slider_id']
@@ -101,10 +99,15 @@ class SearchPage(BoxLayout):
 
         self.ids[label].text = text
 
+class PreferencesPage(Screen):
+    pass
 
+class RoutesScreenManager(ScreenManager):
+    pass
+    
 class RouteFinder(App):
     def build(self):
-        return SearchPage()
+        return RoutesScreenManager()
 
 if __name__ == '__main__':
     RouteFinder().run() 
