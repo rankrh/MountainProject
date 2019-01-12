@@ -4,6 +4,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.rangeslider import RangeSlider
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
+from kivy.uix.textinput import TextInput
 
 class StylesPage(Screen):
 
@@ -104,22 +105,28 @@ class StylesPage(Screen):
 
 class PreferencesPage(Screen):
     pitches = False
+    preferences = {'pitches': (),
+                   'danger': 3
+                   }
     def set_up(self, styles):
+        print(styles)
         multipitch_styles = ['sport', 'trad', 'aid', 'mixed',
                              'alpine', 'snow', 'ice']
         for style in multipitch_styles:
-            if styles[style]['search']:
-                self.pitches = True
-        if self.pitches:
+            if style in styles.keys():
+                if styles[style]['search']:
+                    self.pitches = True
+                    break
+
+        if self.preferences['pitches']:
             self.ids.pitches.opacity = 1
             self.ids.pitches.size = (0, 0)
             self.ids.pitch_num.opacity = 1
             self.ids.pitch_num.disable = False
-            self.ids.pitch_layout.size_hint = (None, None)
-            self.ids.pitch_layout.size = (0, 0)
 
     def danger_conv(self, max_danger):
         danger = ['G', 'PG13', 'R', 'All Danger Levels']
+        self.preferences['danger'] = max_danger
         if max_danger < 3:
             return danger[int(max_danger)] + ' and under'
         else:
@@ -128,6 +135,7 @@ class PreferencesPage(Screen):
     def pitch_text(self, values):
         low = int(values[0])
         high = int(values[1])
+        self.preferences['pitches'] = (low, high)
         
         text = '%s to %s pitches' % (low, high)
         
@@ -135,6 +143,15 @@ class PreferencesPage(Screen):
             text = '%s or more pitches' % low
             
         return text
+
+    def get_preferences(self):
+        return self.preferences
+
+class ResultsPage(Screen):
+    def get_routes(self, styles, preferences):
+        styles['preferences'] = preferences
+        self.ids.test.text = str(styles)
+    
 
 class RoutesScreenManager(ScreenManager):
     pass

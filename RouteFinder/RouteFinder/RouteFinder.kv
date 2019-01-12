@@ -1,6 +1,7 @@
 RoutesScreenManager:
     StylesPage:
     PreferencesPage:
+    ResultsPage:
 
 <StylesPage>:
     name: 'styles'
@@ -189,58 +190,105 @@ RoutesScreenManager:
                 pos_hint: {'center_y': 0.5}
                 on_release: app.root.current = 'preferences'
 
+
 <PreferencesPage>:
     name: 'preferences'
     styles: root.manager.get_screen('styles').get_styles()
-    on_pre_enter: root.set_up(root.styles)
+    on_pre_enter: root.set_up(root.styles)    
     BoxLayout:
-        orientation: 'vertical'
+        orientation: 'horizontal'
+        Button:
+            id: previous_page
+            text: 'Previous Page'
+            size_hint: None, None
+            height: 50
+            width: 200
+            pos_hint: {'center_y': 0.5}
+            on_release: app.root.current = 'styles'
+            direction: 'right'
+            canvas.before:
+                Color:
+                    rgba: 1, 0, 0, 0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
         BoxLayout:
             orientation: 'vertical'
-            Slider:
-                id: danger_slide
-                range: (0, 3)
-                step: 1
-                value: 3
-                canvas.after:
-                    Color:
-                        rgba: 1, 0, 0, 0.5
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-            Label:
-                text: root.danger_conv(danger_slide.value)
-                canvas.after:
-                    Color:
-                        rgba: 0, 1, 0, 0.5
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-        BoxLayout:
-            id: pitch_layout
-            orientation: 'vertical'
-            Label:
-                id: pitches
-                text: 'Pitches'
-                opacity: 0
-                canvas.after:
-                    Color:
-                        rgba: 0, 0, 1, 0.5
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-            RangeSlider:
-                id: pitch_num
-                range: (0, 11)
-                step: 1
-                disable: True
-                opacity: 0
-                step: 1
-                canvas.after:
-                    Color:
-                        rgba: 1, 1, 0, 0.5
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
+            BoxLayout:
+                id: danger
+                orientation: 'horizontal'
+                Slider:
+                    id: danger_slide
+                    range: (0, 3)
+                    step: 1
+                    value: 3
+                    on_slide: 
+                    canvas.before:
+                        Color:
+                            rgba: 0, 1, 0, 0.5
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+                Label:
+                    text: root.danger_conv(danger_slide.value)
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 1, 0.5
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+            BoxLayout:
+                id: pitch_layout
+                orientation: 'horizontal'
+                Label:
+                    id: pitches
+                    text: root.pitch_text(pitch_num.value)
+                    opacity: 0
+                    canvas.before:
+                        Color:
+                            rgba: 1, 0, 1, 0.5
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+                RangeSlider:
+                    id: pitch_num
+                    range: (0, 11)
+                    step: 1
+                    disable: True
+                    opacity: 0
+                    step: 1
+                    canvas.before:
+                        Color:
+                            rgba: 1, 1, 0, 0.5
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+            BoxLayout:
+                id: location
+                orientation: 'horizontal'
+                TextInput:
+                    text: 'Location'
         Button:
             id: next_page
+            text: 'Next Page'
+            size_hint: None, None
+            height: 50
+            width: 200
+            pos_hint: {'center_y': 0.5}
+            on_release: app.root.current = 'results'
+            canvas.before:
+                Color:
+                    rgba: 0, 1, 1, 0.5
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+<ResultsPage>:
+    name: 'results'
+    styles: root.manager.get_screen('preferences').styles
+    preferences: root.manager.get_screen('preferences').get_preferences()
+    on_pre_enter: root.get_routes(root.styles, root.preferences)
+    Label:
+        id: test
+        text: 'Test'
+        text_size: self.size
