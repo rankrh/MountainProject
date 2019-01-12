@@ -99,15 +99,48 @@ class StylesPage(Screen):
 
         self.ids[label].text = text
 
+    def get_styles(self):
+        return self.styles
+
 class PreferencesPage(Screen):
-    pass
+    pitches = False
+    def set_up(self, styles):
+        multipitch_styles = ['sport', 'trad', 'aid', 'mixed',
+                             'alpine', 'snow', 'ice']
+        for style in multipitch_styles:
+            if styles[style]['search']:
+                self.pitches = True
+        if self.pitches:
+            self.ids.pitches.opacity = 1
+            self.ids.pitch_num.opacity = 1
+            self.ids.pitch_num.disable = False
+
+    def danger_conv(self, max_danger):
+        danger = ['G', 'PG13', 'R', 'All Danger Levels']
+        if max_danger < 3:
+            return danger[int(max_danger)] + ' and under'
+        else:
+            return danger[int(max_danger)]
+
+    def pitch_text(self, values):
+        low = int(values[0])
+        high = int(values[1])
+        
+        text = '%s to %s pitches' % (low, high)
+        
+        if high == 11:
+            text = '%s or more pitches' % low
+            
+        return text
 
 class RoutesScreenManager(ScreenManager):
     pass
-    
+
+root_widget = Builder.load_file('RouteFinder.kv')
+
 class RouteFinder(App):
     def build(self):
-        return RoutesScreenManager()
+        return root_widget
 
 if __name__ == '__main__':
     RouteFinder().run() 

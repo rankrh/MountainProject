@@ -1,10 +1,9 @@
-<RoutesScreenManager>:
+RoutesScreenManager:
     StylesPage:
-        name: 'styles'
     PreferencesPage:
-        name: 'preferences'
 
 <StylesPage>:
+    name: 'styles'
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -181,23 +180,36 @@
                                     text: root.snow_conv[0] + ' to ' + root.snow_conv[-1]
 
 
-            BoxLayout:
-                id: preference_page
-                orientation: 'horizontal'
-                size_hint_x: None
-                width: root.width / 3
-                Button:
-                    id: next
-                    text: 'Next'
-                    size_hint: None, None
-                    height: 50
-                    width: 200
-                    pos_hint: {'center_y': 0.5}
+            Button:
+                id: next
+                text: 'Next'
+                size_hint: None, None
+                height: 50
+                width: 200
+                pos_hint: {'center_y': 0.5}
+                on_release: app.root.current = 'preferences'
 
 <PreferencesPage>:
-    Label:
-        id: pitches
-        text: 'Pitches'
-    Label:
-        id: danger
-        text: 'Danger'
+    name: 'preferences'
+    styles: root.manager.get_screen('styles').get_styles()
+    on_pre_enter: root.set_up(root.styles)
+    BoxLayout:
+        orientation: 'vertical'
+        Slider:
+            id: danger_slide
+            range: (0, 3)
+            step: 1
+            value: 3
+        Label:
+            text: root.danger_conv(danger_slide.value)
+        Label:
+            id: pitches
+            text: 'Pitches'
+            opacity: 0
+        RangeSlider:
+            id: pitch_num
+            range: (0, 11)
+            step: 1
+            disable: True
+            opacity: 0
+            step: 1
