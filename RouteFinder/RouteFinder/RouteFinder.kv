@@ -195,21 +195,52 @@ RoutesScreenManager:
     on_pre_enter: root.set_up(root.styles)
     BoxLayout:
         orientation: 'vertical'
-        Slider:
-            id: danger_slide
-            range: (0, 3)
-            step: 1
-            value: 3
-        Label:
-            text: root.danger_conv(danger_slide.value)
-        Label:
-            id: pitches
-            text: 'Pitches'
-            opacity: 0
-        RangeSlider:
-            id: pitch_num
-            range: (0, 11)
-            step: 1
-            disable: True
-            opacity: 0
-            step: 1
+        BoxLayout:
+            orientation: 'vertical'
+            Slider:
+                id: danger_slide
+                range: (0, 3)
+                step: 1
+                value: 3
+                canvas.after:
+                    Color:
+                        rgba: 1, 0, 0, 0.5
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+            Label:
+                text: root.danger_conv(danger_slide.value)
+                canvas.after:
+                    Color:
+                        rgba: 0, 1, 0, 0.5
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+        BoxLayout:
+            id: pitch_layout
+            orientation: 'vertical'
+            Label:
+                id: pitches
+                text: 'Pitches'
+                opacity: 0
+                canvas.after:
+                    Color:
+                        rgba: 0, 0, 1, 0.5
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+            RangeSlider:
+                id: pitch_num
+                range: (0, 11)
+                step: 1
+                disable: True
+                opacity: 0
+                step: 1
+                canvas.after:
+                    Color:
+                        rgba: 1, 1, 0, 0.5
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+        Button:
+            id: next_page

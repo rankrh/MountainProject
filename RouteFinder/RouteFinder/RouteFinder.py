@@ -112,8 +112,11 @@ class PreferencesPage(Screen):
                 self.pitches = True
         if self.pitches:
             self.ids.pitches.opacity = 1
+            self.ids.pitches.size = (0, 0)
             self.ids.pitch_num.opacity = 1
             self.ids.pitch_num.disable = False
+            self.ids.pitch_layout.size_hint = (None, None)
+            self.ids.pitch_layout.size = (0, 0)
 
     def danger_conv(self, max_danger):
         danger = ['G', 'PG13', 'R', 'All Danger Levels']
