@@ -5,6 +5,10 @@ from kivy.uix.rangeslider import RangeSlider
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivy.uix.textinput import TextInput
+import os
+import numpy as np
+
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 
 class StylesPage(Screen):
 
@@ -109,7 +113,6 @@ class PreferencesPage(Screen):
                    'danger': 3
                    }
     def set_up(self, styles):
-        print(styles)
         multipitch_styles = ['sport', 'trad', 'aid', 'mixed',
                              'alpine', 'snow', 'ice']
         for style in multipitch_styles:
@@ -148,7 +151,9 @@ class PreferencesPage(Screen):
         return self.preferences
 
 class ResultsPage(Screen):
-    def get_routes(self, styles, preferences):
+    def get_routes(self, styles, preferences,
+                   location, key=GOOGLE_API_KEY):
+        preferences['location'] = 
         styles['preferences'] = preferences
         self.ids.test.text = str(styles)
     

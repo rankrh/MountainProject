@@ -264,9 +264,9 @@ RoutesScreenManager:
                             pos: self.pos
                             size: self.size
             BoxLayout:
-                id: location
                 orientation: 'horizontal'
                 TextInput:
+                    id: location
                     text: 'Location'
         Button:
             id: next_page
@@ -287,7 +287,8 @@ RoutesScreenManager:
     name: 'results'
     styles: root.manager.get_screen('preferences').styles
     preferences: root.manager.get_screen('preferences').get_preferences()
-    on_pre_enter: root.get_routes(root.styles, root.preferences)
+    location: root.manager.get_screen('preferences').location.text
+    on_pre_enter: root.get_routes(root.styles, root.preferences, root.location)
     Label:
         id: test
         text: 'Test'
