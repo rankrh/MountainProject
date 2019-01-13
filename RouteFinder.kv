@@ -247,6 +247,7 @@ RoutesScreenManager:
         BoxLayout:
             orientation: 'horizontal'
             id: input_layout
+            spacing: 50
             Button:
                 id: previous_page
                 text: 'Previous Page'
@@ -259,7 +260,7 @@ RoutesScreenManager:
             BoxLayout:
                 id: preferences_layout
                 orientation: 'vertical'
-                spacing: 20
+                spacing: 50
                 BoxLayout:
                     id: location_layout
                     orientation: 'horizontal'
@@ -284,22 +285,24 @@ RoutesScreenManager:
                     orientation: 'vertical'
                     Label:
                         id: danger_prompt
-                        text: 'Acceptable Danger Levels'
+                        text: 'Danger Levels'
                         font_size: location_prompt.font_size
                     Slider:
                         id: danger_slide
                         range: (0, 3)
                         step: 1
                         value: 3
-                        on_slide: 
+                        on_touch_move:
+                            print(danger_prompt.pos, self.pos, danger_text.pos)
                     Label:
+                        id: danger_text
                         text: root.danger_conv(danger_slide.value)
                 BoxLayout:
                     id: pitch_layout
                     orientation: 'vertical'
                     Label:
                         id: pitch_prompt
-                        text: 'Number of pitches'
+                        text: 'Pitches'
                         font_size: location_prompt.font_size
                     RangeSlider:
                         id: pitch_num
