@@ -6,290 +6,357 @@ RoutesScreenManager:
 <StylesPage>:
     name: 'styles'
     BoxLayout:
+        id: screen_layout
         orientation: 'vertical'
         Label:
-            id: guide
+            id: title
             text: 'Route Guide'
             font_size: root.size[0] / 20
             size_hint_y: None
             size: self.texture_size    
         BoxLayout:
+            id: input_layout
             orientation: 'horizontal'
             BoxLayout:
-                orientation: 'horizontal'
+                id: style_layout
+                orientation:'vertical'
                 BoxLayout:
-                    id: styles
-                    orientation: 'vertical'
-                    BoxLayout:
-                        orientation: 'vertical'
-                        BoxLayout:
-                            orientation:'vertical'
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: sport
-                                    text: 'Sport'
-                                    on_press: root.set_style('sport')
-                                RangeSlider:
-                                    id: sport_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 76)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='sport', difficulty_range=self.value)
-                                Label:
-                                    id: sport_diff
-                                    opacity: 0
-                                    text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: trad
-                                    text: 'Trad'
-                                    on_press: root.set_style('trad')
-                                RangeSlider:
-                                    id: trad_slide
-                                    text: 'Trad Difficulty'
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 76)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='trad', difficulty_range=self.value)
-                                Label:
-                                    id: trad_diff
-                                    opacity: 0
-                                    text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: tr
-                                    text: 'Top Rope'
-                                    on_press: root.set_style('tr')
-                                RangeSlider:
-                                    id: tr_slide
-                                    text: 'Top Rope Difficulty'
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 76)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='tr', difficulty_range=self.value)
-                                Label:
-                                    id: tr_diff
-                                    opacity: 0
-                                    text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: boulder
-                                    text: 'Boulder'
-                                    on_press: root.set_style('boulder')
-                                RangeSlider:
-                                    id: boulder_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 70)
-                                    step: 1 
-                                    on_touch_move: root.difficulty_conversion(style='boulder', difficulty_range=self.value)
-                                Label:
-                                    id: boulder_diff
-                                    opacity: 0
-                                    text: root.boulder_conv[0] + ' to ' + root.boulder_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: ice
-                                    text: 'Ice'
-                                    on_press: root.set_style('ice')
-                                RangeSlider:
-                                    id: ice_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 7)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
-                                Label:
-                                    id: ice_diff
-                                    opacity: 0
-                                    text: root.ice_conv[0] + ' to ' + root.ice_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: mixed
-                                    text: 'Mixed'
-                                    on_press: root.set_style('mixed')
-                                RangeSlider:
-                                    id: mixed_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 11)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='mixed', difficulty_range=self.value)
-                                Label:
-                                    id: mixed_diff
-                                    opacity: 0
-                                    text: root.mixed_conv[0] + ' to ' + root.mixed_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: aid
-                                    text: 'Aid'
-                                    on_press: root.set_style('aid')
-                                RangeSlider:
-                                    id: aid_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 9)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='aid', difficulty_range=self.value)
-                                Label:
-                                    id: aid_diff
-                                    opacity: 0
-                                    text: root.aid_conv[0] + ' to ' + root.aid_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: alpine
-                                    text: 'Alpine'
-                                    on_press: root.set_style('alpine')
-                                RangeSlider:
-                                    id: alpine_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 5)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
-                                Label:
-                                    id: alpine_diff
-                                    opacity: 0
-                                    text: root.alp_conv[0] + ' to ' + root.alp_conv[-1]
-                            BoxLayout:
-                                orientation: 'horizontal'
-                                ToggleButton:
-                                    id: snow
-                                    text: 'Snow'
-                                    on_press: root.set_style('snow')
-                                RangeSlider:
-                                    id: snow_slide
-                                    disable: True
-                                    opacity: 0
-                                    range: (0, 2)
-                                    step: 1
-                                    on_touch_move: root.difficulty_conversion(style='snow', difficulty_range=self.value)
-                                Label:
-                                    id: snow_diff
-                                    opacity: 0
-                                    text: root.snow_conv[0] + ' to ' + root.snow_conv[-1]
+                    orientation: 'horizontal'
+                    id: sport_layout
+                    ToggleButton:
+                        id: sport
+                        text: 'Sport'
+                        on_press: root.set_style('sport')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: sport_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 76)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='sport', difficulty_range=self.value)
+                    Label:
+                        id: sport_diff
+                        opacity: 0
+                        text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    orientation: 'horizontal'
+                    id: trad_layout
+                    ToggleButton:
+                        id: trad
+                        text: 'Trad'
+                        on_press: root.set_style('trad')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
 
+                    RangeSlider:
+                        id: trad_slide
+                        text: 'Trad Difficulty'
+                        disable: True
+                        opacity: 0
+                        range: (0, 76)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='trad', difficulty_range=self.value)
+                    Label:
+                        id: trad_diff
+                        opacity: 0
+                        text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: tr_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: tr
+                        text: 'Top Rope'
+                        on_press: root.set_style('tr')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: tr_slide
+                        text: 'Top Rope Difficulty'
+                        disable: True
+                        opacity: 0
+                        range: (0, 76)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='tr', difficulty_range=self.value)
+                    Label:
+                        id: tr_diff
+                        opacity: 0
+                        text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: boulder_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: boulder
+                        text: 'Boulder'
+                        on_press: root.set_style('boulder')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
 
+                    RangeSlider:
+                        id: boulder_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 70)
+                        step: 1 
+                        on_touch_move: root.difficulty_conversion(style='boulder', difficulty_range=self.value)
+                    Label:
+                        id: boulder_diff
+                        opacity: 0
+                        text: root.boulder_conv[0] + ' to ' + root.boulder_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: ice_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: ice
+                        text: 'Ice'
+                        on_press: root.set_style('ice')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: ice_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 7)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
+                    Label:
+                        id: ice_diff
+                        opacity: 0
+                        text: root.ice_conv[0] + ' to ' + root.ice_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: mixed_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: mixed
+                        text: 'Mixed'
+                        on_press: root.set_style('mixed')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: mixed_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 11)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='mixed', difficulty_range=self.value)
+                    Label:
+                        id: mixed_diff
+                        opacity: 0
+                        text: root.mixed_conv[0] + ' to ' + root.mixed_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: aid_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: aid
+                        text: 'Aid'
+                        on_press: root.set_style('aid')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: aid_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 9)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='aid', difficulty_range=self.value)
+                    Label:
+                        id: aid_diff
+                        opacity: 0
+                        text: root.aid_conv[0] + ' to ' + root.aid_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: alpine_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: alpine
+                        text: 'Alpine'
+                        on_press: root.set_style('alpine')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: alpine_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 5)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
+                    Label:
+                        id: alpine_diff
+                        opacity: 0
+                        text: root.alp_conv[0] + ' to ' + root.alp_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                BoxLayout:
+                    id: snow_layout
+                    orientation: 'horizontal'
+                    ToggleButton:
+                        id: snow
+                        text: 'Snow'
+                        on_press: root.set_style('snow')
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
+                    RangeSlider:
+                        id: snow_slide
+                        disable: True
+                        opacity: 0
+                        range: (0, 2)
+                        step: 1
+                        on_touch_move: root.difficulty_conversion(style='snow', difficulty_range=self.value)
+                    Label:
+                        id: snow_diff
+                        opacity: 0
+                        text: root.snow_conv[0] + ' to ' + root.snow_conv[-1]
+                        size_hint_x: None
+                        width: style_layout.width / 4.0
             Button:
                 id: next
-                text: 'Next'
+                text: 'Next Page'
                 size_hint: None, None
-                height: 50
-                width: 200
+                size: (136, 36)
                 pos_hint: {'center_y': 0.5}
-                on_release: app.root.current = 'preferences'
-
-
+                on_release:
+                    app.root.current = 'preferences'
+                    app.root.transition.direction = 'left'
 <PreferencesPage>:
     name: 'preferences'
     styles: root.manager.get_screen('styles').get_styles()
-    on_pre_enter: root.set_up(root.styles)    
+    on_pre_enter: root.set_up(root.styles)  
     BoxLayout:
-        orientation: 'horizontal'
-        Button:
-            id: previous_page
-            text: 'Previous Page'
-            size_hint: None, None
-            height: 50
-            width: 200
-            pos_hint: {'center_y': 0.5}
-            on_release: app.root.current = 'styles'
-            direction: 'right'
-            canvas.before:
-                Color:
-                    rgba: 1, 0, 0, 0.5
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+        id: screen_layout
+        orientation: 'vertical'
+        Label:
+            id: title
+            text: 'Preferences'
+            font_size: root.size[0] / 20
+            size_hint_y: None
+            size: self.texture_size
         BoxLayout:
-            orientation: 'vertical'
+            orientation: 'horizontal'
+            id: input_layout
+            Button:
+                id: previous_page
+                text: 'Previous Page'
+                size_hint: None, None
+                size: (136, 36)
+                pos_hint: {'center_y': 0.5}
+                on_release:
+                    app.root.current = 'styles'
+                    app.root.transition.direction = 'right'
             BoxLayout:
-                id: danger
-                orientation: 'horizontal'
-                Slider:
-                    id: danger_slide
-                    range: (0, 3)
-                    step: 1
-                    value: 3
-                    on_slide: 
-                    canvas.before:
-                        Color:
-                            rgba: 0, 1, 0, 0.5
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-                Label:
-                    text: root.danger_conv(danger_slide.value)
-                    canvas.before:
-                        Color:
-                            rgba: 0, 0, 1, 0.5
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-            BoxLayout:
-                id: pitch_layout
-                orientation: 'horizontal'
-                Label:
-                    id: pitches
-                    text: root.pitch_text(pitch_num.value)
-                    opacity: 0
-                    canvas.before:
-                        Color:
-                            rgba: 1, 0, 1, 0.5
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-                RangeSlider:
-                    id: pitch_num
-                    range: (0, 11)
-                    step: 1
-                    disable: True
-                    opacity: 0
-                    step: 1
-                    canvas.before:
-                        Color:
-                            rgba: 1, 1, 0, 0.5
-                        Rectangle:
-                            pos: self.pos
-                            size: self.size
-            BoxLayout:
-                orientation: 'horizontal'
-                TextInput:
-                    id: location
-                    text: 'Location'
-        Button:
-            id: next_page
-            text: 'Next Page'
-            size_hint: None, None
-            height: 50
-            width: 200
-            pos_hint: {'center_y': 0.5}
-            on_release: app.root.current = 'results'
-            canvas.before:
-                Color:
-                    rgba: 0, 1, 1, 0.5
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
+                id: preferences_layout
+                orientation: 'vertical'
+                spacing: 20
+                BoxLayout:
+                    id: location_layout
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: location.height
+                    Label:
+                        id: location_prompt
+                        text: 'Your Location'
+                        font_size: 20
+                        text_size: self.width, None
+                        size_hint_y: None
+                        height: location.height
+                    TextInput:
+                        id: location
+                        on_text: root.get_location(self.text)
+                        font_size: location_prompt.font_size
+                        size_hint_y: None
+                        height: self.font_size * 1.75
+                        multiline: False
+                BoxLayout:
+                    id: danger_layout
+                    orientation: 'vertical'
+                    Label:
+                        id: danger_prompt
+                        text: 'Acceptable Danger Levels'
+                        font_size: location_prompt.font_size
+                    Slider:
+                        id: danger_slide
+                        range: (0, 3)
+                        step: 1
+                        value: 3
+                        on_slide: 
+                    Label:
+                        text: root.danger_conv(danger_slide.value)
+                BoxLayout:
+                    id: pitch_layout
+                    orientation: 'vertical'
+                    Label:
+                        id: pitch_prompt
+                        text: 'Number of pitches'
+                        font_size: location_prompt.font_size
+                    RangeSlider:
+                        id: pitch_num
+                        range: (0, 11)
+                        step: 1
+                        disable: True
+                        opacity: 0
+                        step: 1
+                    Label:
+                        id: pitches
+                        text: root.pitch_text(pitch_num.value)
+                        opacity: 0
+                GridLayout:
+                    id: features_layout
+                    cols: 2
+                    ToggleButton:
+                        text:'Crack'
+                        on_release: root.set_feature(self.text)
+                    ToggleButton:
+                        text:'Chimney'
+                        on_release: root.set_feature(self.text)
+                    ToggleButton:
+                        text:'Arete'
+                        on_release: root.set_feature(self.text)
+                    ToggleButton:
+                        text:'Overhang'
+                        on_release: root.set_feature(self.text)
+                    ToggleButton:
+                        text:'Slab'
+                        on_release: root.set_feature(self.text)
 
+            Button:
+                id: next_page
+                text: 'Next Page'
+                size_hint: None, None
+                size: (136, 36)
+                pos_hint: {'center_y': 0.5}
+                on_release:
+                    app.root.current = 'results'
+                    app.root.transition.direction = 'left'
 <ResultsPage>:
     name: 'results'
     styles: root.manager.get_screen('preferences').styles
     preferences: root.manager.get_screen('preferences').get_preferences()
-    location: root.manager.get_screen('preferences').location.text
-    on_pre_enter: root.get_routes(root.styles, root.preferences, root.location)
-    Label:
-        id: test
-        text: 'Test'
-        text_size: self.size
+    on_pre_enter: root.get_routes(root.styles, root.preferences)
+    BoxLayout:
+        orientation: 'vertical'
+        id: screen_layout
+        Label:
+            id: test
+            text: 'Test'
+            text_size: self.size
+        Button:
+            text: 'Previous Page'
+            size_hint: None, None
+            size: (136, 36)
+            pos_hint: {'center_y': 0.5}
+            on_release:
+                app.root.current = 'preferences'
+                app.root.transition.direction = 'right' 

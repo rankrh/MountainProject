@@ -1,14 +1,15 @@
-from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.rangeslider import RangeSlider
-from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.lang import Builder
-from kivy.uix.textinput import TextInput
-import os
-import numpy as np
+from googlemaps.haversine import Haversine
+from googlemaps.geocode import GeoCode
 
-GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
+
+from kivy.uix.screenmanager import ScreenManager
+from kivy.uix.screenmanager import Screen
+from kivy.uix.rangeslider import RangeSlider
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.textinput import TextInput
+from kivy.uix.label import Label
+from kivy.lang import Builder
+from kivy.app import App
 
 class StylesPage(Screen):
 
@@ -109,9 +110,16 @@ class StylesPage(Screen):
 
 class PreferencesPage(Screen):
     pitches = False
-    preferences = {'pitches': (),
-                   'danger': 3
-                   }
+    preferences = {'pitches': None,
+                   'danger': 3,
+                   'location': {'name': None,
+                                'coordinates': None},
+                   'features': {'Arete': False,
+                                'Chimney': False,
+                                'Crack': False,
+                                'Slab': False,
+                                'Overhang': False}}
+    
     def set_up(self, styles):
         multipitch_styles = ['sport', 'trad', 'aid', 'mixed',
                              'alpine', 'snow', 'ice']
@@ -144,16 +152,29 @@ class PreferencesPage(Screen):
         
         if high == 11:
             text = '%s or more pitches' % low
-            
+
         return text
+
+    def get_location(self, location):    
+        self.preferences['location']['name'] = location
+    
+    def set_feature(self, feature):
+        features = self.preferences['features']
+        features[feature] = not features[feature]
 
     def get_preferences(self):
         return self.preferences
 
+
 class ResultsPage(Screen):
-    def get_routes(self, styles, preferences,
-                   location, key=GOOGLE_API_KEY):
-        preferences['location'] = 
+    def get_routes(self, styles, preferences):
+        location = preferences['location']
+        location_name = location['name']
+        if location_name is not '':
+                location['coordinates'] = GeoCode(location_name)
+        else:
+            location['name'] = None
+
         styles['preferences'] = preferences
         self.ids.test.text = str(styles)
     
