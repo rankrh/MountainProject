@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import sqlite3
 
+import kivy
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
 from kivy.uix.rangeslider import RangeSlider
@@ -15,6 +16,15 @@ from kivy.app import App
 
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 cursor = conn.cursor()
+
+pd.options.display.max_rows = 100
+pd.options.display.max_columns = 60
+
+
+def get_counts(area_group):
+    area_group['area_counts'] = len(area_group)
+    return area_group
+
 
 class StylesPage(Screen):
 
@@ -117,10 +127,14 @@ class StylesPage(Screen):
             self.ids[slider].disable = False
             self.ids[slider].opacity = 1.0
             self.ids[label].opacity = 1.0
+
+            self.difficulty_conversion(style, self.ids[slider].value)
+
         elif not self.styles[style]['search']:
             self.ids[slider].disable = True
             self.ids[slider].opacity = 0.0
             self.ids[label].opacity = 0.0
+
 
     def difficulty_conversion(self, style, difficulty_range):
         low = int(difficulty_range[0])
@@ -140,7 +154,6 @@ class StylesPage(Screen):
         return self.styles
 
 class PreferencesPage(Screen):
-    pitches = False
     preferences = {
         'pitches': None, 
         'danger': 3, 
@@ -153,22 +166,30 @@ class PreferencesPage(Screen):
             'Crack': False,
             'Slab': False,
             'Overhang': False}}
-    
+            
     def set_up(self, styles):
+        pitches = False
         multipitch_styles = [
             'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
         
         for style in multipitch_styles:
             if style in styles.keys():
                 if styles[style]['search']:
-                    self.pitches = True
+                    pitches = True
                     break
 
-        if self.preferences['pitches']:
+        if pitches:
             self.ids.pitches.opacity = 1
-            self.ids.pitches.size = (0, 0)
             self.ids.pitch_num.opacity = 1
             self.ids.pitch_num.disable = False
+            self.ids.pitch_prompt.opacity = 1
+        
+        elif not pitches:
+            self.ids.pitches.opacity = 0
+            self.ids.pitch_num.opacity = 0
+            self.ids.pitch_num.disable = True
+            self.ids.pitch_prompt.opacity = 0
+
 
     def danger_conv(self, max_danger):
         danger = ['G', 'PG13', 'R', 'All Danger Levels']
@@ -190,8 +211,9 @@ class PreferencesPage(Screen):
 
         return text
 
-    def get_location(self, location):    
-        self.preferences['location']['name'] = location
+    def get_location(self, location): 
+        if location is not '':  
+            self.preferences['location']['name'] = location
     
     def set_feature(self, feature):
         features = self.preferences['features']
@@ -205,7 +227,7 @@ class ResultsPage(Screen):
     def get_routes(self, styles, preferences):
         location = preferences['location']
         location_name = location['name']
-        if location_name is not '':
+        if location_name is not None:
                 location['coordinates'] = GeoCode(location_name)
         else:
             location['name'] = None
@@ -220,7 +242,11 @@ class ResultsPage(Screen):
             'aid': 'aid_conv',
             'ice': 'ice_conv',
             'alpine': 'nccs_conv'}
-        
+
+        pitches = preferences['pitches']
+        multipitch_styles = [
+            'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
+
         query = 'SELECT * FROM Routes WHERE '
         unwanted = ''
 
@@ -231,28 +257,61 @@ class ResultsPage(Screen):
                 high_grade = data['grades'][1]
 
                 keys = (style, conversion, low_grade, high_grade)
-                text = '(%s = 1 AND %s BETWEEN %s AND %s) OR ' % keys
+                text = '%s = 1 AND %s BETWEEN %s AND %s ' % keys
 
+                if style in multipitch_styles:
+                    if pitches[1] < 11:
+                        text = text + 'AND pitches BETWEEN %d AND %d' % pitches
+                    elif pitches[1] == 11:
+                        text = text + 'AND pitches > %d' % (pitches[0])
+                        
+
+                text = '( %s ) OR ' % text
                 query += text
-            elif not data['search'] and style is not 'tr':
+            elif not data['search'] and style not in ['tr', 'alpine']:
                 unwanted += 'AND ' + style + ' = 0 '
                 
         query = query[:-3]
         query += unwanted
-        routes = pd.read_sql(query, con=conn)
 
+        routes = pd.read_sql(query, con=conn, index_col='route_id')
 
         coordinates = preferences['location']['coordinates']
         if coordinates is not None:
             routes['distance'] = Haversine(
                 (routes['latitude'], routes['longitude']), coordinates)
             routes = routes.sort_values(by='distance')
+        else:
+            routes['distance'] = 1
         
+        if len(routes) == 0:
+            self.ids.test.text = 'No Routes Available'
+            return
+            
+        routes = routes.groupby('area_group').apply(get_counts)
+
         routes['value'] = ((100 * routes['bayes'] * np.log(routes['area_counts'])) /
-                        (routes['distance'] ** 2))
+                            (routes['distance'] ** 2))
+        routes = routes.sort_values(by='value', ascending=False)
+        routes = routes[['name', 'value', 'distance']]
 
+        # preferences = {
+        # 'pitches': None, 
+        # 'danger': 3, 
+        # 'location': {
+        #     'name': None,
+        #     'coordinates': None},
+        # 'features': {
+        #     'Arete': False,
+        #     'Chimney': False,
+        #     'Crack': False,
+        #     'Slab': False,
+        #     'Overhang': False}}
 
-        self.ids.test.text = query
+        #for feature, value in preferences['features']:
+        #    if value:
+
+        self.ids.test.text = str(routes.head())
 
         
     

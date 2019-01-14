@@ -1,3 +1,4 @@
+
 RoutesScreenManager:
     StylesPage:
     PreferencesPage:
@@ -111,28 +112,28 @@ RoutesScreenManager:
                         opacity: 0
                         size_hint_x: None
                         width: style_layout.width / 4.0
-                BoxLayout:
-                    id: ice_layout
-                    orientation: 'horizontal'
-                    ToggleButton:
-                        id: ice
-                        text: 'Ice'
-                        on_press: root.set_style('ice')
-                        size_hint_x: None
-                        width: style_layout.width / 4.0
-                    RangeSlider:
-                        id: ice_slide
-                        disable: True
-                        opacity: 0
-                        range: (0, 7)
-                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
-                        step: 1
-                        on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
-                    Label:
-                        id: ice_diff
-                        opacity: 0
-                        size_hint_x: None
-                        width: style_layout.width / 4.0
+            #    BoxLayout:
+            #        id: ice_layout
+            #        orientation: 'horizontal'
+            #        ToggleButton:
+            #            id: ice
+            #            text: 'Ice'
+            #            on_press: root.set_style('ice')
+            #             size_hint_x: None
+            #             width: style_layout.width / 4.0
+            #         RangeSlider:
+            #             id: ice_slide
+            #             disable: True
+            #             opacity: 0
+            #             range: (0, 7)
+            #             value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
+            #             step: 1
+            #             on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
+            #         Label:
+            #             id: ice_diff
+            #             opacity: 0
+            #             size_hint_x: None
+            #             width: style_layout.width / 4.0
                 BoxLayout:
                     id: mixed_layout
                     orientation: 'horizontal'
@@ -177,28 +178,28 @@ RoutesScreenManager:
                         opacity: 0
                         size_hint_x: None
                         width: style_layout.width / 4.0
-                BoxLayout:
-                    id: alpine_layout
-                    orientation: 'horizontal'
-                    ToggleButton:
-                        id: alpine
-                        text: 'Alpine'
-                        on_press: root.set_style('alpine')
-                        size_hint_x: None
-                        width: style_layout.width / 4.0
-                    RangeSlider:
-                        id: alpine_slide
-                        disable: True
-                        opacity: 0
-                        range: (0, 5)
-                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
-                        step: 1
-                        on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
-                    Label:
-                        id: alpine_diff
-                        opacity: 0
-                        size_hint_x: None
-                        width: style_layout.width / 4.0
+                # BoxLayout:
+                #     id: alpine_layout
+                #     orientation: 'horizontal'
+                #     ToggleButton:
+                #         id: alpine
+                #         text: 'Alpine'
+                #         on_press: root.set_style('alpine')
+                #         size_hint_x: None
+                #         width: style_layout.width / 4.0
+                #     RangeSlider:
+                #         id: alpine_slide
+                #         disable: True
+                #         opacity: 0
+                #         range: (0, 5)
+                #         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
+                #         step: 1
+                #         on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
+                #     Label:
+                #         id: alpine_diff
+                #         opacity: 0
+                #         size_hint_x: None
+                #         width: style_layout.width / 4.0
                 BoxLayout:
                     id: snow_layout
                     orientation: 'horizontal'
@@ -233,7 +234,7 @@ RoutesScreenManager:
 <PreferencesPage>:
     name: 'preferences'
     styles: root.manager.get_screen('styles').get_styles()
-    on_pre_enter: root.set_up(root.styles)  
+    on_pre_enter: root.set_up(root.styles)
     BoxLayout:
         id: screen_layout
         orientation: 'vertical'
@@ -291,8 +292,6 @@ RoutesScreenManager:
                         range: (0, 3)
                         step: 1
                         value: 3
-                        on_touch_move:
-                            print(danger_prompt.pos, self.pos, danger_text.pos)
                     Label:
                         id: danger_text
                         text: root.danger_conv(danger_slide.value)
@@ -303,6 +302,7 @@ RoutesScreenManager:
                         id: pitch_prompt
                         text: 'Pitches'
                         font_size: location_prompt.font_size
+                        opacity: 0
                     RangeSlider:
                         id: pitch_num
                         range: (0, 11)
