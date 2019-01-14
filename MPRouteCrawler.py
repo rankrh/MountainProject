@@ -631,7 +631,7 @@ def MPScraper(path='C:/Users/',
             pitches = pitches[0]
         # If the list is empty, returns None
         else:
-            pitches = None
+            pitches = 0
 
         # Creates a dictionary of route types and initializes them to None,
         # also including route length, number of pitches, and NCCS rating
@@ -652,6 +652,9 @@ def MPScraper(path='C:/Users/',
 
         # Matches a string starting with 'Grade', then any combination of
         # 'V', 'I' of any length, then returns the 'V', 'I' characters
+        
+        # FIXME: This doesn't actually work.  Alpine should be in the same
+        # category as 'danger', and isn't related to the alpine style.
         nccs = re.findall('Grade ([VI]+)', route_info)
         nccs_conv = ['I', 'II', 'III', 'IV', 'V', 'VI']
         # Returns a list
@@ -795,8 +798,39 @@ def MPScraper(path='C:/Users/',
 
         aid_conv = [
             'A0', 'A1', 'A2', 'A2+', 'A3', 'A3+', 'A4', 'A4+', 'A5', 'A6']
+        
+        # FIXME: Update to include alpine ice grades.  Will need to fix how the
+        # grades are put in the DB, too
+        
+        
+        '''Water Ice and Alpine Ice Grades:
 
-        ice_conv = ['WI1', 'WI2', 'WI3', 'WI4', 'WI5', 'WI6', 'WI7', 'WI8']
+            Ice climbing ratings are highly variable by region and are still
+            evolving. The following descriptions approximate the average
+            systems. The WI acronym implies seasonal ice; AI is often
+            substituted for year-around Alpine Ice and may be easier than a
+            WI grade with the same number. Canadians often drop the WI symbol
+            and hyphenate the technical grade after the Canadian commitment
+            grade’s Roman numeral (example: II-5).
+
+                WI1: Low angle ice; no tools required.
+                WI2: Consistent 60º ice with possible bulges; good protection.
+                WI3: Sustained 70º with possible long bulges of 80º-90º;
+                    reasonable rests and good stances for placing screws.
+                WI4: Continuous 80º ice fairly long sections of 90º ice broken
+                    up by occasional rests.
+                WI5: Long and strenuous, with a ropelength of 85º-90º ice
+                    offering few good rests; or a shorter pitch of thin or bad ice with protection that’s difficult to place.
+                WI6: A full ropelength of near-90º ice with no rests, or a
+                    shorter pitch even more tenuous than WI 5.Highly technical.
+                WI7: As above, but on thin poorly bonded ice or long,
+                    overhanging poorly adhered columns. Protection is
+                    impossible or very difficult to place and of dubious
+                    quality.
+                WI8: Under discussion.'''
+    
+
+        ice_conv = ['WI1+', 'WI2+', 'WI3+', 'WI4+', 'WI5+', 'WI6', 'WI7', 'WI8']
         danger_conv = ['PG13', 'R', 'X']
         snow_conv = ['Easy', 'Mod', 'Steep']
 
@@ -827,6 +861,7 @@ def MPScraper(path='C:/Users/',
                         conversion['boulder_conv'] = boulder
                     except:
                         conversion['boulder_conv'] = -1
+                # FIXME: Update how database deals with alpine vs water ice.
                 elif item is 'ice_rating':
                     try:
                         ice = ice_conv.index(difficulty[item])

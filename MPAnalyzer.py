@@ -17,7 +17,6 @@ from nltk.stem import PorterStemmer
 import unidecode
 from nltk.corpus import stopwords
 
-
 def MPAnalyzer(path='C:\\Users\\',
                folder='Mountain Project\\',
                DBname='MPRoutes'):
@@ -792,7 +791,13 @@ def MPAnalyzer(path='C:\\Users\\',
         routes = weighted_scores(*styles, table=routes, inplace=True)
         print('Done')
         # Write to Database
-        routes.to_sql('Terrain', con=conn, if_exists='replace')
+        
+        query = 'SELECT * FROM Routes'
+        all_routes = pd.read_sql(query, conn, index_col='route_id')
+
+        routes = pd.concat([all_routes, routes], axis=1)
+        routes.to_sql('Routes', con=conn, if_exists='replace')
+
         return
 
     # Gets TFIDF values for routes
