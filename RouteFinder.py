@@ -1,6 +1,7 @@
 from googlemaps.haversine import Haversine
 from googlemaps.geocode import GeoCode
 import pandas as pd
+import numpy as np
 import sqlite3
 
 from kivy.uix.screenmanager import ScreenManager
@@ -200,43 +201,7 @@ class PreferencesPage(Screen):
         return self.preferences
 
 class ResultsPage(Screen):
-    route_data = {'route_types':{'sport': {'search': False,
-                                           'slider_id': 'sport_slide',
-                                           'label_id': 'sport_diff'},
-                                 'trad': {'search': False,
-                                          'slider_id': 'trad_slide',
-                                          'label_id': 'trad_diff'},
-                                 'tr': {'search': False,
-                                        'slider_id': 'tr_slide',
-                                        'label_id': 'tr_diff'},
-                                 'boulder': {'search': False,
-                                             'slider_id': 'boulder_slide',
-                                             'label_id': 'boulder_diff'},
-                                 'mixed': {'search': False,
-                                           'slider_id': 'mixed_slide',
-                                           'label_id': 'mixed_diff'},
-                                 'snow': {'search': False,
-                                          'slider_id': 'snow_slide',
-                                          'label_id': 'snow_diff'},
-                                 'aid': {'search': False,
-                                         'slider_id': 'aid_slide',
-                                         'label_id': 'aid_diff'},
-                                 'ice': {'search': False,
-                                         'slider_id': 'ice_slide',
-                                         'label_id': 'ice_diff'},
-                                 'alpine': {'search': False,
-                                            'slider_id': 'alpine_slide',
-                                            'label_id': 'alpine_diff'}},
-                 'preferences': {'pitches': (0, 11),
-                                 'danger': 3,
-                                 'location': {'name': None,
-                                              'coordinates': None},
-                                 'features': {'Arete': False,
-                                              'Chimney': False,
-                                              'Crack': False,
-                                              'Slab': False,
-                                              'Overhang': False}}}
-        
+
     def get_routes(self, styles, preferences):
         location = preferences['location']
         location_name = location['name']
@@ -274,9 +239,18 @@ class ResultsPage(Screen):
                 
         query = query[:-3]
         query += unwanted
-
         routes = pd.read_sql(query, con=conn)
-        print(routes)
+
+
+        coordinates = preferences['location']['coordinates']
+        if coordinates is not None:
+            routes['distance'] = Haversine(
+                (routes['latitude'], routes['longitude']), coordinates)
+            routes = routes.sort_values(by='distance')
+        
+        routes['value'] = ((100 * routes['bayes'] * np.log(routes['area_counts'])) /
+                        (routes['distance'] ** 2))
+
 
         self.ids.test.text = query
 
