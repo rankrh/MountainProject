@@ -35,11 +35,11 @@ RoutesScreenManager:
                         opacity: 0
                         range: (0, 76)
                         step: 1
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         on_touch_move: root.difficulty_conversion(style='sport', difficulty_range=self.value)
                     Label:
                         id: sport_diff
                         opacity: 0
-                        text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -58,12 +58,12 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         range: (0, 76)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='trad', difficulty_range=self.value)
                     Label:
                         id: trad_diff
                         opacity: 0
-                        text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -81,12 +81,12 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         range: (0, 76)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='tr', difficulty_range=self.value)
                     Label:
                         id: tr_diff
                         opacity: 0
-                        text: root.rope_conv[0] + ' to ' + root.rope_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -98,18 +98,17 @@ RoutesScreenManager:
                         on_press: root.set_style('boulder')
                         size_hint_x: None
                         width: style_layout.width / 4.0
-
                     RangeSlider:
                         id: boulder_slide
                         disable: True
                         opacity: 0
                         range: (0, 70)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1 
                         on_touch_move: root.difficulty_conversion(style='boulder', difficulty_range=self.value)
                     Label:
                         id: boulder_diff
                         opacity: 0
-                        text: root.boulder_conv[0] + ' to ' + root.boulder_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -126,12 +125,12 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         range: (0, 7)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
                     Label:
                         id: ice_diff
                         opacity: 0
-                        text: root.ice_conv[0] + ' to ' + root.ice_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -148,12 +147,12 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         range: (0, 11)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='mixed', difficulty_range=self.value)
                     Label:
                         id: mixed_diff
                         opacity: 0
-                        text: root.mixed_conv[0] + ' to ' + root.mixed_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -170,12 +169,12 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         range: (0, 9)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='aid', difficulty_range=self.value)
                     Label:
                         id: aid_diff
                         opacity: 0
-                        text: root.aid_conv[0] + ' to ' + root.aid_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
@@ -192,12 +191,12 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         range: (0, 5)
+                        value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
                     Label:
                         id: alpine_diff
                         opacity: 0
-                        text: root.alp_conv[0] + ' to ' + root.alp_conv[-1]
                         size_hint_x: None
                         width: style_layout.width / 4.0
                 BoxLayout:
