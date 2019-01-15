@@ -790,13 +790,22 @@ def MPAnalyzer(path='C:\\Users\\',
         print('Getting weighted scores............', end=' ')
         routes = weighted_scores(*styles, table=routes, inplace=True)
         print('Done')
-        # Write to Database
         
+        # Collects the full database
         query = 'SELECT * FROM Routes'
         all_routes = pd.read_sql(query, conn, index_col='route_id')
-
-        routes = pd.concat([all_routes, routes], axis=1)
-        routes.to_sql('Routes', con=conn, if_exists='replace')
+        
+        # Combines columns in the routes dataframe with the full database if
+        # they don't already exist in the full database
+        all_routes = pd.concat(
+                [all_routes[~all_routes.index.isin(routes.index)], 
+                            routes], axis=1)
+        # Updates values in the full database with those of the routes
+        # dataframe
+        all_routes.update(routes)
+        
+        # Write to Database        
+        all_routes.to_sql('Routes', con=conn, if_exists='replace')
 
         return
 
