@@ -789,6 +789,7 @@ def MPAnalyzer(path='C:\\Users\\',
                               routes=routes)
         print('Getting weighted scores............', end=' ')
         routes = weighted_scores(*styles, table=routes, inplace=True)
+        routes = routes.round(4)
         print('Done')
         
         # Collects the full database
@@ -797,15 +798,60 @@ def MPAnalyzer(path='C:\\Users\\',
         
         # Combines columns in the routes dataframe with the full database if
         # they don't already exist in the full database
-        all_routes = pd.concat(
-                [all_routes[~all_routes.index.isin(routes.index)], 
-                            routes], axis=1)
-        # Updates values in the full database with those of the routes
-        # dataframe
-        all_routes.update(routes)
+        updated = pd.concat([routes[~routes.index.isin(all_routes.index)],
+                                    all_routes], sort=False)
+        updated.update(routes)
+
+        # Datatypes for columns
+        dtype = {
+            'name' : 'TEXT',
+            'route_id' : 'INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE',
+            'url' : 'TEXT UNIQUE',
+            'stars' : 'FLOAT',
+            'votes' : 'INTEGER',
+            'bayes' : 'FLOAT',
+            'latitude' : 'FLOAT',
+            'longitude' : 'FLOAT',
+            'trad' : 'BOOLEAN DEFAULT 0',
+            'tr' : 'BOOLEAN DEFAULT 0',
+            'sport' : 'BOOLEAN DEFAULT 0',
+            'aid' : 'BOOLEAN DEFAULT 0',
+            'snow' : 'BOOLEAN DEFAULT 0',
+            'ice' : 'BOOLEAN DEFAULT 0',
+            'mixed' : 'BOOLEAN DEFAULT 0',
+            'boulder' : 'BOOLEAN DEFAULT 0',
+            'alpine' : 'BOOLEAN DEFAULT 0',
+            'pitches' : 'INTEGER',
+            'length' : 'INTEGER',
+            'nccs_rating' : 'TINYTEXT',
+            'nccs_conv' : 'INTEGER',
+            'hueco_rating' : 'TINYTEXT',
+            'font_rating' : 'TINYTEXT',
+            'boulder_conv' : 'INTERGER',
+            'yds_rating' : 'TINYTEXT',
+            'french_rating' : 'TINYTEXT',
+            'ewbanks_rating' : 'TINYTEXT',
+            'uiaa_rating' : 'TINYTEXT',
+            'za_rating' : 'TINYTEXT',
+            'british_rating' : 'TINYTEXT',
+            'rope_conv' : 'INTEGER',
+            'ice_rating' : 'TINYTEXT',
+            'ice_conv' : 'INTEGER',
+            'snow_rating' : 'TINYTEXT',
+            'snow_conv' : 'INTEGER',
+            'aid_rating' : 'TINYTEXT',
+            'aid_conv' : 'INTEGER',
+            'mixed_rating' : 'TINYTEXT',
+            'mixed_conv' : 'INTEGER',
+            'danger_rating' : 'TINYTEXT',
+            'danger_conv' : 'INTEGER',
+            'area_id' : 'INTEGER',
+            'area_group' : 'INTEGER',
+            'area_counts' : 'INTEGER',
+            'error' : 'INTEGER'}
         
         # Write to Database        
-        all_routes.to_sql('Routes', con=conn, if_exists='replace')
+        updated.to_sql('Routes', con=conn, if_exists='replace', dtype = dtype)
 
         return
 

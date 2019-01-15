@@ -154,7 +154,7 @@ def MPScraper(path='C:/Users/',
     cursor.execute('''
        CREATE TABLE IF NOT EXISTS Routes(
             name TEXT,
-            route_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+            route_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
             url TEXT UNIQUE,
             stars FLOAT,
             votes INTEGER,
@@ -196,8 +196,8 @@ def MPScraper(path='C:/Users/',
             danger_conv INTEGER,
             area_id INTEGER,
             area_group INTEGER,
-            area_counts INTEGER
-            error INTETER)''')
+            area_counts INTEGER,
+            error INTEgER)''')
     
     cursor.execute('''
        CREATE TABLE IF NOT EXISTS Words(
@@ -651,12 +651,7 @@ def MPScraper(path='C:/Users/',
 
         # Matches a string starting with 'Grade', then any combination of
         # 'V', 'I' of any length, then returns the 'V', 'I' characters
-        
-        # FIXME: This doesn't actually work.  Alpine should be in the same
-        # category as 'danger', and isn't related to the alpine style.  Alpine
-        # should be moved to the 'preferences' section, and the nccs should be
-        # listed as the commitment level.
-        
+                
         nccs = re.findall('Grade ([VI]+)', route_info)
         nccs_conv = ['I', 'II', 'III', 'IV', 'V', 'VI']
         # Returns a list
@@ -798,9 +793,6 @@ def MPScraper(path='C:/Users/',
         aid_conv = [
             'A0', 'A1', 'A2', 'A2+', 'A3', 'A3+', 'A4', 'A4+', 'A5', 'A6']
         
-        # FIXME: Update to include alpine ice grades.  Will need to fix how the
-        # grades are put in the DB, too
-
         ice_conv = [
             '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+',
             '4-5', '5', '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
@@ -834,7 +826,6 @@ def MPScraper(path='C:/Users/',
                         conversion['boulder_conv'] = boulder
                     except:
                         conversion['boulder_conv'] = -1
-                # FIXME: Update how database deals with alpine vs water ice.
                 elif item is 'ice_rating':
                     try:
                         ice = ice_conv.index(difficulty[item])
