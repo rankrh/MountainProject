@@ -178,28 +178,6 @@ RoutesScreenManager:
                         opacity: 0
                         size_hint_x: None
                         width: style_layout.width / 4.0
-                # BoxLayout:
-                #     id: alpine_layout
-                #     orientation: 'horizontal'
-                #     ToggleButton:
-                #         id: alpine
-                #         text: 'Alpine'
-                #         on_press: root.set_style('alpine')
-                #         size_hint_x: None
-                #         width: style_layout.width / 4.0
-                #     RangeSlider:
-                #         id: alpine_slide
-                #         disable: True
-                #         opacity: 0
-                #         range: (0, 5)
-                #         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
-                #         step: 1
-                #         on_touch_move: root.difficulty_conversion(style='alpine', difficulty_range=self.value)
-                #     Label:
-                #         id: alpine_diff
-                #         opacity: 0
-                #         size_hint_x: None
-                #         width: style_layout.width / 4.0
                 BoxLayout:
                     id: snow_layout
                     orientation: 'horizontal'
@@ -296,6 +274,21 @@ RoutesScreenManager:
                         id: danger_text
                         text: root.danger_conv(danger_slide.value)
                 BoxLayout:
+                    id: commitment_layout
+                    orientation: 'vertical'
+                    Label:
+                        id: 'commitment_prompt'
+                        text: 'Commitment Level (Alpine Routes)'
+                        font_size: location_prompt.font_size
+                    Slider:
+                        id: commitment_slide
+                        range: (0, 5)
+                        step: 1
+                        value: 3
+                    Label:
+                        id: commitment_text
+                        text: root.commitment_conv(commitment_slide.value)
+                BoxLayout:
                     id: pitch_layout
                     orientation: 'vertical'
                     Label:
@@ -319,19 +312,19 @@ RoutesScreenManager:
                     cols: 2
                     ToggleButton:
                         text:'Crack'
-                        on_release: root.set_feature(self.text)
+                        on_release: root.set_feature(self.text.lower())
                     ToggleButton:
                         text:'Chimney'
-                        on_release: root.set_feature(self.text)
+                        on_release: root.set_feature(self.text.lower())
                     ToggleButton:
                         text:'Arete'
-                        on_release: root.set_feature(self.text)
+                        on_release: root.set_feature(self.text.lower())
                     ToggleButton:
                         text:'Overhang'
-                        on_release: root.set_feature(self.text)
+                        on_release: root.set_feature(self.text.lower())
                     ToggleButton:
                         text:'Slab'
-                        on_release: root.set_feature(self.text)
+                        on_release: root.set_feature(self.text.lower())
 
             Button:
                 id: next_page

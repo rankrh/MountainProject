@@ -68,11 +68,6 @@ class StylesPage(Screen):
             'search': False,
             'slider_id': 'ice_slide',
             'label_id': 'ice_diff',
-            'grades': (None, None)},
-        'alpine': {
-            'search': False,
-            'slider_id': 'alpine_slide',
-            'label_id': 'alpine_diff',
             'grades': (None, None)}}
 
     rope_conv = [
@@ -107,7 +102,6 @@ class StylesPage(Screen):
         '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+', '4-5', '5',
         '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
     snow_conv = ['Easy', 'Mod', 'Steep']
-    alp_conv =  ['I', 'II', 'III', 'IV', 'V', 'VI']
 
     conversion = {
         'sport': rope_conv,
@@ -117,8 +111,7 @@ class StylesPage(Screen):
         'mixed': mixed_conv,
         'aid': aid_conv,
         'ice': ice_conv,
-        'snow': snow_conv,
-        'alpine': alp_conv}
+        'snow': snow_conv}
 
     def set_style(self, style):
         self.styles[style]['search'] = not self.styles[style]['search']
@@ -159,15 +152,16 @@ class PreferencesPage(Screen):
     preferences = {
         'pitches': None, 
         'danger': 3, 
+        'commitement': 3,
         'location': {
             'name': None,
             'coordinates': None},
         'features': {
-            'Arete': False,
-            'Chimney': False,
-            'Crack': False,
-            'Slab': False,
-            'Overhang': False}}
+            'arete': False,
+            'chimney': False,
+            'crack': False,
+            'slab': False,
+            'overhang': False}}
             
     def set_up(self, styles):
         pitches = False
@@ -200,6 +194,14 @@ class PreferencesPage(Screen):
             return danger[int(max_danger)] + ' and under'
         else:
             return danger[int(max_danger)]
+        
+    def commitment_conv(self, max_commitment):
+        commitment =  ['I', 'II', 'III', 'IV', 'V', 'VI']
+        self.preferences['commitment'] = max_commitment
+        if max_commitment < 5:
+            return commitment[int(max_commitment)] + ' and under'
+        else:
+            return commitment[int(max_commitment)]
 
     def pitch_text(self, values):
         low = int(values[0])
@@ -294,24 +296,13 @@ class ResultsPage(Screen):
 
         routes['value'] = ((100 * routes['bayes'] * np.log(routes['area_counts'])) /
                             (routes['distance'] ** 2))
+
+        for feature, wanted in preferences['features'].items():
+            if wanted:
+                routes['value'] = routes['value'] * routes[feature] ** 10
+
         routes = routes.sort_values(by='value', ascending=False)
-        routes = routes[['name', 'value', 'distance']]
-
-        # preferences = {
-        # 'pitches': None, 
-        # 'danger': 3, 
-        # 'location': {
-        #     'name': None,
-        #     'coordinates': None},
-        # 'features': {
-        #     'Arete': False,
-        #     'Chimney': False,
-        #     'Crack': False,
-        #     'Slab': False,
-        #     'Overhang': False}}
-
-        #for feature, value in preferences['features']:
-        #    if value:
+        routes = routes[['name', 'value', 'slab', 'chimney', 'arete', 'overhang', 'crack']]
 
         self.ids.test.text = str(routes.head())
 

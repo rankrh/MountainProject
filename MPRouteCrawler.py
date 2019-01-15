@@ -254,7 +254,7 @@ def MPScraper(path='C:/Users/',
                 INSERT OR IGNORE INTO Areas(url, name)
                 VALUES (?, ?)''', (url, region_name))
             # Commits to DB
-            conn.commit()
+        conn.commit()
 
     def get_areas(region_id=None):
         ''' Gets sub-areas for given area or group of areas in SQL database.
@@ -398,7 +398,6 @@ def MPScraper(path='C:/Users/',
                    Areas(name, url, from_id,latitude, longitude)
                    VALUES(?, ?, ?, ?, ?)''',
                    (area_name, area_url, from_id, lat, long))
-                conn.commit()
 
         # If the area only contains routes, passes information to route
         # functions
@@ -749,7 +748,7 @@ def MPScraper(path='C:/Users/',
         snow_rate = re.findall('([A-Za-z]+)\s+Snow', grades)
 
         # Returns 'WI' or 'AI' followed by any number
-        ice_rate = re.findall('[AI|WI](\d[\d+-]+)', grades)
+        ice_rate = re.findall('[AI|WI]([\d][\d+-]{,2})', grades)
 
         # Holds route difficulty information
         difficulty = {
