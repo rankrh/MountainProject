@@ -141,7 +141,7 @@ def MPScraper(path='C:/Users/',
     # The 'complete' column tracks whether the area has been scraped before
     cursor.execute('''
        CREATE TABLE IF NOT EXISTS Areas(
-            id INTEGER PRIMARY KEY,
+            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             name TINYTEXT,
             url TEXT UNIQUE,
             from_id INTEGER,
@@ -154,7 +154,7 @@ def MPScraper(path='C:/Users/',
     cursor.execute('''
        CREATE TABLE IF NOT EXISTS Routes(
             name TEXT,
-            route_id INTEGER PRIMARY KEY,
+            route_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             url TEXT UNIQUE,
             stars FLOAT,
             votes INTEGER,
@@ -194,7 +194,6 @@ def MPScraper(path='C:/Users/',
             mixed_conv INTEGER,
             danger_rating TINYTEXT,
             danger_conv INTEGER,
-            text TEXT,
             area_id INTEGER,
             area_group INTEGER,
             area_counts INTEGER
@@ -654,7 +653,10 @@ def MPScraper(path='C:/Users/',
         # 'V', 'I' of any length, then returns the 'V', 'I' characters
         
         # FIXME: This doesn't actually work.  Alpine should be in the same
-        # category as 'danger', and isn't related to the alpine style.
+        # category as 'danger', and isn't related to the alpine style.  Alpine
+        # should be moved to the 'preferences' section, and the nccs should be
+        # listed as the commitment level.
+        
         nccs = re.findall('Grade ([VI]+)', route_info)
         nccs_conv = ['I', 'II', 'III', 'IV', 'V', 'VI']
         # Returns a list
@@ -664,10 +666,7 @@ def MPScraper(path='C:/Users/',
                 climb_type['nccs_conv'] = nccs_conv.index(nccs)
             except:
                 climb_type['nccs_conv'] = -1
-        # If the list is empty, returns None
-        else:
-            nccs = None
-
+            climb_type['nccs_rating'] = nccs
         # All allowed MP route types
         all_types = [
             'Trad', 'TR', 'Sport', 'Aid', 'Snow', 'Ice', 'Mixed', 'Boulder',
@@ -743,7 +742,7 @@ def MPScraper(path='C:/Users/',
         brit = re.findall('([MDVSHE\d]+ [\dabc]+)\s+British', grades)
 
         # Returns 'A' OR 'C' and any number or '-'
-        aid_rate = re.findall('(A[\d\+]+|C[\d\+]+)', grades)
+        aid_rate = re.findall('[^\d](A[\d\+]+|C[\d\+]+)', grades)
 
         # Returns 'M' followed by any number
         mixed_rate = re.findall('(M[0-4]+)', grades)
@@ -754,8 +753,8 @@ def MPScraper(path='C:/Users/',
         # Returns any word if it is followed by 'Snow'
         snow_rate = re.findall('([A-Za-z]+)\s+Snow', grades)
 
-        # Returns 'WI' followed by any number
-        ice_rate = re.findall('(WI\d\+)', grades)
+        # Returns 'WI' or 'AI' followed by any number
+        ice_rate = re.findall('[AI|WI](\d[\d+-]+)', grades)
 
         # Holds route difficulty information
         difficulty = {
@@ -801,36 +800,10 @@ def MPScraper(path='C:/Users/',
         
         # FIXME: Update to include alpine ice grades.  Will need to fix how the
         # grades are put in the DB, too
-        
-        
-        '''Water Ice and Alpine Ice Grades:
 
-            Ice climbing ratings are highly variable by region and are still
-            evolving. The following descriptions approximate the average
-            systems. The WI acronym implies seasonal ice; AI is often
-            substituted for year-around Alpine Ice and may be easier than a
-            WI grade with the same number. Canadians often drop the WI symbol
-            and hyphenate the technical grade after the Canadian commitment
-            grade’s Roman numeral (example: II-5).
-
-                WI1: Low angle ice; no tools required.
-                WI2: Consistent 60º ice with possible bulges; good protection.
-                WI3: Sustained 70º with possible long bulges of 80º-90º;
-                    reasonable rests and good stances for placing screws.
-                WI4: Continuous 80º ice fairly long sections of 90º ice broken
-                    up by occasional rests.
-                WI5: Long and strenuous, with a ropelength of 85º-90º ice
-                    offering few good rests; or a shorter pitch of thin or bad ice with protection that’s difficult to place.
-                WI6: A full ropelength of near-90º ice with no rests, or a
-                    shorter pitch even more tenuous than WI 5.Highly technical.
-                WI7: As above, but on thin poorly bonded ice or long,
-                    overhanging poorly adhered columns. Protection is
-                    impossible or very difficult to place and of dubious
-                    quality.
-                WI8: Under discussion.'''
-    
-
-        ice_conv = ['WI1+', 'WI2+', 'WI3+', 'WI4+', 'WI5+', 'WI6', 'WI7', 'WI8']
+        ice_conv = [
+            '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+',
+            '4-5', '5', '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
         danger_conv = ['PG13', 'R', 'X']
         snow_conv = ['Easy', 'Mod', 'Steep']
 
@@ -958,7 +931,7 @@ def MPScraper(path='C:/Users/',
 
         # Finds description of the route of BS data
         description = route_soup.find('div', class_="fr-view").get_text()
-        text = route_name + description
+        text = route_name + ' ' + description
 
         # Finds comment section of the BS data
         cmt = 'comment-body max-height max-height-md-300 max-height-xs-150'
@@ -975,10 +948,13 @@ def MPScraper(path='C:/Users/',
         # Converts to dataframe
         text = pd.DataFrame({'route_id': route_id, 'word': text})
         # Re-formats and counts words
-        text = (text.groupby('route_id').word
-                    .value_counts()
-                    .to_frame()
-                    .rename(columns={'word': 'word_count'}))
+        try:
+            text = (text.groupby('route_id').word
+                        .value_counts()
+                        .to_frame()
+                        .rename(columns={'word': 'word_count'}))
+        except:
+            print(text)
         text['tf'] = text['word_count'] / doc_length
         text.to_sql('Words', con=conn, if_exists='append')
 
