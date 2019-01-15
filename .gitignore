@@ -271,3 +271,5 @@ __pycache__/
 #Test Python Files
 Test.py
 MPRouteFinder.py
+*.exe
+

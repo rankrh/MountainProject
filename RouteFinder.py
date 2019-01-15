@@ -3,6 +3,7 @@ from googlemaps.geocode import GeoCode
 import pandas as pd
 import numpy as np
 import sqlite3
+import re
 
 import kivy
 from kivy.uix.screenmanager import ScreenManager
@@ -22,9 +23,22 @@ pd.options.display.max_columns = 60
 
 
 def get_counts(area_group):
-    area_group['area_counts'] = len(area_group)
+    if area_group.name != -1:
+        area_group['area_counts'] = len(area_group)
+    else:
+        area_group['area_counts'] = 1        
     return area_group
 
+class FloatInput(TextInput):
+    pat = re.compile('[^0-9]')
+
+    def insert_text(self, substring, from_undo=False):
+        pat = self.pat
+        if '.' in self.text:
+            s = re.sub(pat, '', substring)
+        else:
+            s = '.'.join([re.sub(pat, '', s) for s in substring.split('.', 1)])
+        return super(FloatInput, self).insert_text(s, from_undo=from_undo)
 
 class StylesPage(Screen):
 
@@ -150,12 +164,13 @@ class StylesPage(Screen):
 
 class PreferencesPage(Screen):
     preferences = {
-        'pitches': None, 
+        'pitches': (None, None), 
         'danger': 3, 
-        'commitement': 3,
+        'commitment': 3,
         'location': {
             'name': None,
             'coordinates': None},
+        'distance': None,
         'features': {
             'arete': False,
             'chimney': False,
@@ -218,6 +233,9 @@ class PreferencesPage(Screen):
     def get_location(self, location): 
         if location is not '':  
             self.preferences['location']['name'] = location
+
+    def get_distance(self, distance):
+            self.preferences['distance'] = distance
     
     def set_feature(self, feature):
         features = self.preferences['features']
@@ -229,12 +247,6 @@ class PreferencesPage(Screen):
 class ResultsPage(Screen):
 
     def get_routes(self, styles, preferences):
-        location = preferences['location']
-        location_name = location['name']
-        if location_name is not None:
-                location['coordinates'] = GeoCode(location_name)
-        else:
-            location['name'] = None
 
         grades = {
             'sport': 'rope_conv', 
@@ -247,62 +259,74 @@ class ResultsPage(Screen):
             'ice': 'ice_conv',
             'alpine': 'nccs_conv'}
 
-        pitches = preferences['pitches']
         multipitch_styles = [
             'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
 
-        query = 'SELECT * FROM Routes WHERE '
-        unwanted = ''
+        pitch_range = preferences['pitches']
 
+        query = 'SELECT * FROM Routes'
+        
+        at_least_1 = False
+        
         for style, data in styles.items():
             if data['search']:
-                conversion = grades[style]
+                if not at_least_1:
+                    joiner = 'WHERE'
+                else:
+                    joiner = 'AND'
+
+                if style in multipitch_styles and all(pitch_range):  
+                    if pitch_range[1] < 11:
+                        pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
+                    elif pitch_range[1] == 11:
+                        pitches = ' AND pitches > %s' % pitch_range[0]
+                        
+                else:
+                    pitches = ''    
+                    
                 low_grade = data['grades'][0]
                 high_grade = data['grades'][1]
-
-                keys = (style, conversion, low_grade, high_grade)
-                text = '%s = 1 AND %s BETWEEN %s AND %s ' % keys
-
-                if style in multipitch_styles:
-                    if pitches[1] < 11:
-                        text = text + 'AND pitches BETWEEN %d AND %d' % pitches
-                    elif pitches[1] == 11:
-                        text = text + 'AND pitches > %d' % (pitches[0])
-                        
-
-                text = '( %s ) OR ' % text
-                query += text
-            elif not data['search'] and style not in ['tr', 'alpine']:
-                unwanted += 'AND ' + style + ' = 0 '
+                conv = grades[style]
                 
-        query = query[:-3]
-        query += unwanted
+                keys = (joiner, style, conv, low_grade, high_grade, pitches)
+                query += ' %s (%s = 1 AND %s BETWEEN %s AND %s%s)' % keys
+                at_least_1 = True
+            elif not data['search'] and style != 'tr':
+                query += ' AND %s = 0' % style
+   
+        if not at_least_1:
+            query = 'SELECT * FROM Routes'
 
         routes = pd.read_sql(query, con=conn, index_col='route_id')
 
-        coordinates = preferences['location']['coordinates']
-        if coordinates is not None:
-            routes['distance'] = Haversine(
-                (routes['latitude'], routes['longitude']), coordinates)
-            routes = routes.sort_values(by='distance')
-        else:
-            routes['distance'] = 1
-        
         if len(routes) == 0:
             self.ids.test.text = 'No Routes Available'
             return
+
+        location = preferences['location']
+        location_name = location['name']
+        if location_name is not None:
+            location['coordinates'] = GeoCode(location_name)
+            coordinates = location['coordinates']
+        else:
+            location['name'] = None
+
+        if all(coordinates):
+            routes['distance'] = Haversine(
+                coordinates,
+                (routes['latitude'], routes['longitude']))
+        else:
+            routes['distance'] = 1
+
+        distance = preferences['distance']
+        if distance:
+            routes = routes[routes.distance < distance]
             
         routes = routes.groupby('area_group').apply(get_counts)
 
-        routes['value'] = ((100 * routes['bayes'] * np.log(routes['area_counts'])) /
-                            (routes['distance'] ** 2))
-
-        for feature, wanted in preferences['features'].items():
-            if wanted:
-                routes['value'] = routes['value'] * routes[feature] ** 10
-
-        routes = routes.sort_values(by='value', ascending=False)
-        routes = routes[['name', 'value', 'slab', 'chimney', 'arete', 'overhang', 'crack']]
+        routes['value'] = (
+            (100 * routes['bayes'] * np.log(routes['area_counts'] + 1))
+            / (routes['distance'] ** 2))
 
         self.ids.test.text = str(routes.head())
 

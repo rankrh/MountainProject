@@ -259,6 +259,26 @@ RoutesScreenManager:
                         height: self.font_size * 1.75
                         multiline: False
                 BoxLayout:
+                    id: distance_layout
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: location.height
+                    Label:
+                        id: distance_prompt
+                        text: 'Maximum distance (Miles)'
+                        font_size: location_prompt.font_size
+                        text_size: location_prompt.text_size
+                        size_hint_y: None
+                        height: location.height
+                    FloatInput:
+                        id: distance
+                        input_type: 'number'
+                        on_text: root.get_distance(self.text)
+                        font_size: location_prompt.font_size
+                        size_hint_y: None
+                        height: self.font_size * 1.75
+                        multiline: False
+                BoxLayout:
                     id: danger_layout
                     orientation: 'vertical'
                     Label:
