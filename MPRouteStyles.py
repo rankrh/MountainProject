@@ -1,5 +1,3 @@
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import DBSCAN
 import pandas as pd
 import numpy as np
 import sqlite3
@@ -462,10 +460,6 @@ def find_route_styles(*styles, path):
             else:
                 column_name = style + '_weighted'
 
-            # Normalizes cosine score
-            max_val = table[style].max()
-            table[column_name] = table[style] / max_val
-
             # Find average cosine similarity across routes
             style_avg = table[style].mean()
             # Calculate weighted rating
@@ -475,12 +469,14 @@ def find_route_styles(*styles, path):
                                   + ((1 - table[count].values)
                                   * (1 - table[style].values)
                                   * style_avg))
-
-            # Normalize weighted average
-            table[column_name] = table[style] / table[style].max()
-        # Select route style columns from database
-        #table = table[list(styles)]
-
+            
+            #FIXME: Explain what the sigmoid function is
+            # plot 1/(1 + e^(-10(x-0.5))) from -1 to 1
+            table[column_name] = (
+                1 / (1 + np.e ** (-100 *
+                                  (table[column_name]
+                                  - table[column_name].mean()))))
+            
         return table
 
     path += '\\Descriptions\\'
@@ -500,7 +496,69 @@ def find_route_styles(*styles, path):
     routes = weighted_scores(*styles, table=routes, inplace=True)
 
     # Write to Database
-    routes.to_sql('Terrain', con=conn, if_exists='replace')
+        
+    # Collects the full database
+    query = 'SELECT * FROM Routes'
+    all_routes = pd.read_sql(query, conn, index_col='route_id')
+    
+    # Combines columns in the routes dataframe with the full database if
+    # they don't already exist in the full database
+    updated = pd.concat([routes[~routes.index.isin(all_routes.index)],
+                                all_routes], sort=False)
+    updated.update(routes)
+
+    # Datatypes for columns
+    dtype = {
+        'name' : 'TEXT',
+        'route_id' : 'INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE',
+        'url' : 'TEXT UNIQUE',
+        'stars' : 'FLOAT',
+        'votes' : 'INTEGER',
+        'bayes' : 'FLOAT',
+        'latitude' : 'FLOAT',
+        'longitude' : 'FLOAT',
+        'trad' : 'BOOLEAN DEFAULT 0',
+        'tr' : 'BOOLEAN DEFAULT 0',
+        'sport' : 'BOOLEAN DEFAULT 0',
+        'aid' : 'BOOLEAN DEFAULT 0',
+        'snow' : 'BOOLEAN DEFAULT 0',
+        'ice' : 'BOOLEAN DEFAULT 0',
+        'mixed' : 'BOOLEAN DEFAULT 0',
+        'boulder' : 'BOOLEAN DEFAULT 0',
+        'alpine' : 'BOOLEAN DEFAULT 0',
+        'pitches' : 'INTEGER',
+        'length' : 'INTEGER',
+        'nccs_rating' : 'TINYTEXT',
+        'nccs_conv' : 'INTEGER',
+        'hueco_rating' : 'TINYTEXT',
+        'font_rating' : 'TINYTEXT',
+        'boulder_conv' : 'INTERGER',
+        'yds_rating' : 'TINYTEXT',
+        'french_rating' : 'TINYTEXT',
+        'ewbanks_rating' : 'TINYTEXT',
+        'uiaa_rating' : 'TINYTEXT',
+        'za_rating' : 'TINYTEXT',
+        'british_rating' : 'TINYTEXT',
+        'rope_conv' : 'INTEGER',
+        'ice_rating' : 'TINYTEXT',
+        'ice_conv' : 'INTEGER',
+        'snow_rating' : 'TINYTEXT',
+        'snow_conv' : 'INTEGER',
+        'aid_rating' : 'TINYTEXT',
+        'aid_conv' : 'INTEGER',
+        'mixed_rating' : 'TINYTEXT',
+        'mixed_conv' : 'INTEGER',
+        'danger_rating' : 'TINYTEXT',
+        'danger_conv' : 'INTEGER',
+        'area_id' : 'INTEGER',
+        'area_group' : 'INTEGER',
+        'area_counts' : 'INTEGER',
+        'error' : 'INTEGER'}
+    
+    # Write to Database        
+    updated.to_sql('Routes', con=conn, if_exists='replace', dtype = dtype)
+    print('Done')
+
     return
 
 

@@ -109,7 +109,7 @@ preferences = {
             'arete': False,
             'chimney': False,
             'crack': False,
-            'slab': False,
+            'slab': True,
             'overhang': False}}
         
 def get_counts(area_group):
@@ -157,7 +157,10 @@ def route_finder(styles, preferences):
         query = 'SELECT * FROM Routes'
         
     routes = pd.read_sql(query, con=conn, index_col='route_id')
-    
+
+    if len(routes) == 0:
+        return 'No Routes'
+
     location = preferences['location']
     location_name = location['name']
     if location_name is not None:
@@ -174,22 +177,34 @@ def route_finder(styles, preferences):
     distance = preferences['distance']
     if distance:
         routes = routes[routes.distance < distance]
-    
+
+    if len(routes) == 0:
+        return 'No Routes'
+
+    features = preferences['features']            
+    for feature, value in features.items():
+        if value:
+            routes = routes[routes[feature] > 0.75]
+            print(feature)
+
+    if len(routes) == 0:
+        return 'No Routes'
+
     routes = routes.groupby('area_group').apply(get_counts)
+    
         
+    routes['raw'] = (
+        (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
+        / (routes['distance'] ** 2))
     
-    routes['raw'] = ((100 * routes['bayes'] * np.log(routes['area_counts'] + 1))
-                    / (routes['distance'] ** 2))
-    
-    
-    
-    
-    
-    routes = routes[['name', 'raw', 'bayes', 'distance', 'area_counts']]
+
+
+    routes = routes[['name', 'raw', 'bayes', 'distance', 'area_counts', 'slab']]
 
     pd.options.display.max_rows = len(routes)
     pd.options.display.max_columns = (len(routes.columns))
     routes = routes.sort_values(by='raw', ascending=False)
+    
     return routes
 
 

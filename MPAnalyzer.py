@@ -704,10 +704,10 @@ def MPAnalyzer(path='C:\\Users\\',
     
             Since tan(45 degrees) is 1, this simplifies to:
     
-                    Credibility = sqrt(W ** 2 + C ** 2)
-    
-                    W = Word count
-                    C = Cosine similarity
+                            Credibility = sqrt(W ** 2 + C ** 2)
+
+                               W = Word count
+                               C = Cosine similarity
     
             The credibility of a route's score can be fed back into the score
             to find a weighted route score.  As the word count and cosine score
@@ -717,12 +717,33 @@ def MPAnalyzer(path='C:\\Users\\',
     
                 Score = C * sqrt(W ** 2 + C ** 2) + (1 - C)(1 - W) * Cm
     
-                    W = word count
-                    C = cosine Similarity
-                    Cm = Average cosine similarity across routes
+                                W = word count
+                                C = cosine Similarity
+                                Cm = Average cosine similarity across routes
     
-            This final score is then normalized, and represents the percent
-            chance that a given route has a given feature.
+            Finally, the scores are processed with a Sigmoid function,
+            specifically the logistic function.
+            
+                            f(x) = L / 1 + e^(-k(x-x'))
+                            
+                                L = upper bound
+                                e = Euler's constant
+                                k = logistic growth rate
+                                x' = Sigmoid midpoint
+            
+            By manipulating the constants in this function, we can find a
+            continuous threshold-like set of values that are bounded by 0 and
+            1.  The midpoint of the threshold is the mean value of the scores,
+            meaning that if a route has a higher-than-average cosine score, its
+            final value will be above 0.5, while routes that have cosine values
+            near 1 will still have a final score near 1.  Therefore, the
+            function used here is:
+                
+                            f(x) = 1 / (1 + e^(-100(x - x'))
+                        
+                                x' = mean score
+                                e = Euler's constant
+
     
             Args:
                 *styles(str): Names of the style archetypes
@@ -730,7 +751,10 @@ def MPAnalyzer(path='C:\\Users\\',
                     each route
                 inplace(Boolean, default = False):
                     If inplace=False, adds new columns with weighted values.
-                    If inplace=True, replaces the columns.'''
+                    If inplace=True, replaces the columns.
+                    
+            Returns:
+                Updated SQL Database'''
     
             # Gets name for the columns to write data
             if inplace:
@@ -752,10 +776,8 @@ def MPAnalyzer(path='C:\\Users\\',
                 else:
                     column_name = style + '_weighted'
     
-                # Normalizes cosine score
-                max_val = table[style].max()
-                table[column_name] = table[style] / max_val
     
+                # FIXME: Is there a way to simplify these equations?
                 # Find average cosine similarity across routes
                 style_avg = table[style].mean()
                 # Calculate weighted rating
@@ -765,11 +787,12 @@ def MPAnalyzer(path='C:\\Users\\',
                                       + ((1 - table[count].values)
                                       * (1 - table[style].values)
                                       * style_avg))
-    
-                # Normalize weighted average
-                table[column_name] = table[style] / table[style].max()
-            # Select route style columns from database
-            #table = table[list(styles)]
+
+                # Calculates final score using Sigmoid function
+                table[column_name] = (
+                    1 / (1 + np.e ** (-100 *
+                                      (table[column_name]
+                                  - table[column_name].mean()))))
     
             return table
     

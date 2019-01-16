@@ -235,7 +235,8 @@ class PreferencesPage(Screen):
             self.preferences['location']['name'] = location
 
     def get_distance(self, distance):
-            self.preferences['distance'] = distance
+        if distance is not '':
+                self.preferences['distance'] = int(distance)
     
     def set_feature(self, feature):
         features = self.preferences['features']
@@ -321,12 +322,22 @@ class ResultsPage(Screen):
         distance = preferences['distance']
         if distance:
             routes = routes[routes.distance < distance]
+
+        if len(routes) == 0:
+            self.ids.test.text = 'No Routes Available'
+            return
             
         routes = routes.groupby('area_group').apply(get_counts)
 
-        routes['value'] = (
-            (100 * routes['bayes'] * np.log(routes['area_counts'] + 1))
-            / (routes['distance'] ** 2))
+        routes['raw'] = ((100 * routes['bayes'] * np.log(routes['area_counts'] + 1))
+                        / (routes['distance'] ** 2))
+
+        routes = routes[['name', 'raw', 'bayes', 'distance', 'area_counts']]
+
+
+        pd.options.display.max_rows = len(routes)
+        pd.options.display.max_columns = (len(routes.columns))
+        routes = routes.sort_values(by='raw', ascending=False)
 
         self.ids.test.text = str(routes.head())
 
