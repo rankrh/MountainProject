@@ -247,7 +247,7 @@ def MPAnalyzer(path='C:\\Users\\',
             return table.reset_index()
 
 
-    def tfidf(min_occur=None, max_occur=None):
+    def tfidf(min_occur=0.001, max_occur=0.9):
         ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
         documents.
 
@@ -286,10 +286,8 @@ def MPAnalyzer(path='C:\\Users\\',
         num_docs = cursor.fetchone()[0]
         print(num_docs)
         
-        if min_occur is None:
-            min_occur = 0.001 * num_docs
-        if max_occur is None:
-            max_occur = 0.9 * num_docs
+        min_occur *= num_docs
+        max_occur *= num_docs
 
         print('Getting route text data............', end=' ')
         query = 'SELECT route_id, word, tf FROM Words'
