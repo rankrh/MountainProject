@@ -13,6 +13,7 @@ from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
 from kivy.uix.rangeslider import RangeSlider
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
@@ -29,12 +30,29 @@ from kivy.core.window import Window
 
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 
+decode_systems = {
+    'sport': 'yds_rating',
+    'trad': 'yds_rating',
+    'tr': 'yds_rating',
+    'boulder': 'hueco_rating',
+    'ice': 'ice_rating',
+    'snow': 'snow_rating',
+    'aid': 'aid_rating',
+    'mixed': 'mixed_rating'}
+
 def get_counts(area_group):
     if area_group.name != -1:
         area_group['area_counts'] = len(area_group)
     else:
         area_group['area_counts'] = 1        
     return area_group
+
+def global_background():
+    path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
+    pics = os.listdir(path)
+    pic = random.choice(pics)
+    path += pic
+    return path
 
 class ScrollableLabel(ScrollView):
     text = StringProperty('')
@@ -53,11 +71,7 @@ class FloatInput(TextInput):
 class StylesPage(Screen):
 
     def get_background(self):
-        path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
-        pics = os.listdir(path)
-        pic = random.choice(pics)
-        path += pic
-        return path
+        return global_background()
 
     styles = {
         'sport': {
@@ -204,12 +218,7 @@ class PreferencesPage(Screen):
             'overhang': False}}
 
     def get_background(self):
-        path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
-        pics = os.listdir(path)
-        pic = random.choice(pics)
-        path += pic
-        return path
-
+        return global_background()
             
     def set_up(self, styles):
         pitches = False
@@ -256,10 +265,18 @@ class PreferencesPage(Screen):
         high = int(values[1])
         self.preferences['pitches'] = (low, high)
         
-        text = '%s to %s pitches' % (low, high)
-        
-        if high == 11:
-            text = '%s or more pitches' % low
+        if low == high:
+            if high == 11:
+                return '%s or more pitches' % low
+            else:
+                return '%s pitches' % high
+        elif high == 11:
+            return '%s or more pitches' % low
+        elif low == 0:
+            return 'Up to %s pitches' % high
+        else:
+            text = '%s to %s pitches' % (low, high)
+
 
         return text
 
@@ -279,6 +296,8 @@ class PreferencesPage(Screen):
         return self.preferences
 
 class ResultsPage(Screen):
+    def get_background(self):
+        return global_background()
 
     def get_routes(self, styles, preferences, width):
 
@@ -299,42 +318,42 @@ class ResultsPage(Screen):
         pitch_range = preferences['pitches']
 
         query = 'SELECT * FROM Routes'
+    
+        search = []
+        first = True
+        ignore = []
         
-        at_least_1 = False
+        systems = []
 
-        columns = ['bayes', 'area_counts']
-        
         for style, data in styles.items():
             if data['search']:
-                grade = data['system']
-                if grade not in columns:
-                    columns.append(grade)
-                if not at_least_1:
-                    joiner = 'WHERE'
-                else:
-                    joiner = 'OR'
-
-                if style in multipitch_styles and all(pitch_range):  
-                    if pitch_range[1] < 11:
-                        pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
-                    elif pitch_range[1] == 11:
-                        pitches = ' AND pitches > %s' % pitch_range[0]
-                        
-                else:
-                    pitches = ''    
-                    
-                low_grade = data['grades'][0]
-                high_grade = data['grades'][1]
-                conv = grades[style]
+                search.append(style)
+                decoded = decode_systems[style]
+                if decoded not in systems:
+                    systems.append(decoded)
+            else:
+                ignore.append(style)
                 
-                keys = (joiner, style, conv, low_grade, high_grade, pitches)
-                query += ' %s (%s = 1 AND %s BETWEEN %s AND %s%s)' % keys
-                at_least_1 = True
-            elif not data['search'] and style != 'tr':
+        for style in search:
+            if first:
+                joiner = ' WHERE'
+            else:
+                joiner = ' OR'
+            first = False
+
+            pitches = ''
+            
+            if style in multipitch_styles:  
+                if pitch_range[1] < 11:
+                    pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
+                elif pitch_range[1] == 11:
+                    pitches = ' AND pitches > %s' % pitch_range[0]
+            keys = (joiner, style, pitches)
+            query += '%s (%s is 1%s)' % (keys)
+        
+        if len(search) >= 1:
+            for style in ignore:
                 query += ' AND %s = 0' % style
-   
-        if not at_least_1:
-            query = 'SELECT * FROM Routes'
 
         routes = pd.read_sql(query, con=conn, index_col='route_id')
 
@@ -377,17 +396,33 @@ class ResultsPage(Screen):
             (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
             / (routes['distance'] ** 2))
 
-        routes = routes.sort_values(by='value', ascending=False).set_index('name')
+        routes = routes.head(10).sort_values(by='value', ascending=False)
+        routes.rename(columns={'name': 'Name'}, inplace=True)
+        routes = routes.set_index('Name')
+        routes['Rating'] = routes['bayes'].round(1)
 
-        columns.append('distance')
+        routes['Grade'] = routes[systems].apply(
+            lambda x: ','.join(x.dropna().astype(str)), axis=1)
 
+        terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
+        routes['Style'] = routes[terrain].idxmax(axis=1)
+        routes['val'] = routes[terrain].max(axis=1)
+        routes.loc[routes['val'] < 0.75, 'Style'] = ''
 
-        pd.options.display.max_columns = len(columns) + 1
-        pd.options.display.width = width
-        pd.options.display.max_colwidth = 200 * 2
+        display_columns = ['Rating', 'Grade', 'Style']
+        routes = routes[display_columns]
+        routes = routes.to_dict('index')
 
-        self.ids.routes.text = str(routes[columns].head(20))
-    
+        self.ids.routes.cols = 4
+        self.ids.routes.add_widget(Label(text='Name'))
+
+        for column in display_columns:
+            self.ids.routes.add_widget(Label(text=column))
+
+        for route, data in routes.items():
+            self.ids.routes.add_widget(Label(text=route))
+            for value in data.values():
+                self.ids.routes.add_widget(Label(text=str(value)))
 
 class RoutesScreenManager(ScreenManager):
     pass

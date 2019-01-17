@@ -56,16 +56,16 @@ multipitch_styles = [
 
 styles = {
         'sport': {
-            'search': True,
+            'search': False,
             'slider_id': 'sport_slide',
             'label_id': 'sport_diff',
             'grades': (0, 15),
             'system': 'yds_rating'}, 
         'trad': {
-            'search': False,
+            'search': True,
             'slider_id': 'trad_slide',
             'label_id': 'trad_diff',
-            'grades': (None, None),
+            'grades': (1, 12),
             'system': 'yds_rating'},
         'tr': {
             'search': False,
@@ -80,10 +80,10 @@ styles = {
             'grades': (0, 17),
             'system': 'hueco_rating'},
         'mixed': {
-            'search': False,
+            'search': True,
             'slider_id': 'mixed_slide',
             'label_id': 'mixed_diff',
-            'grades': (None, None),
+            'grades': (1, 8),
             'system': 'mixed_rating'},
         'snow': {
             'search': False,
@@ -103,10 +103,20 @@ styles = {
             'label_id': 'ice_diff',
             'grades': (None, None),
             'system': 'aid_rating'}}
+        
+decode_systems = {
+    'sport': 'yds_rating',
+    'trad': 'yds_rating',
+    'tr': 'yds_rating',
+    'boulder': 'hueco_rating',
+    'ice': 'ice_rating',
+    'snow': 'snow_rating',
+    'aid': 'aid_rating',
+    'mixed': 'mixed_rating'}
 
 
 preferences = {
-        'pitches': (0, 1), 
+        'pitches': (0, 4), 
         'danger': 0, 
         'commitment': 3,
         'location': {
@@ -118,7 +128,7 @@ preferences = {
             'chimney': False,
             'crack': False,
             'slab': False,
-            'overhang': True}}
+            'overhang': False}}
         
 def get_counts(area_group):
     if area_group.name != -1:
@@ -126,51 +136,50 @@ def get_counts(area_group):
     else:
         area_group['area_counts'] = 1        
     return area_group
+
+def get_max(table):
+    return table
         
         
 def route_finder(styles, preferences):
     pitch_range = preferences['pitches']
-
     query = 'SELECT * FROM Routes'
     
-    at_least_1 = False
-    columns = ['name', 'url', 'bayes', 'area_counts']
+    search = []
+    first = True
+    ignore = []
 
-    
+    systems = []
+
     for style, data in styles.items():
         if data['search']:
-            grade = data['system']
-            if grade not in columns:
-                columns.append(grade)
-
-            if not at_least_1:
-                joiner = 'WHERE'
-            else:
-                joiner = 'OR'
-
-            if style in multipitch_styles and all(pitch_range):  
-                if pitch_range[1] < 11:
-                    pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
-                elif pitch_range[1] == 11:
-                    pitches = ' AND pitches > %s' % pitch_range[0]
-                    
-            else:
-                pitches = ''    
-                
-            low_grade = data['grades'][0]
-            high_grade = data['grades'][1]
-            conv = grades[style]
+            search.append(style)
+            decoded = decode_systems[style]
+            if decoded not in systems:
+                systems.append(decoded)
+        else:
+            ignore.append(style)
             
-            keys = (joiner, style, conv, low_grade, high_grade, pitches)
-            query += ' %s (%s = 1 AND %s BETWEEN %s AND %s%s)' % keys
-            at_least_1 = True
-        elif not data['search'] and style != 'tr':
-            query += ' AND %s = 0' % style
-            
-    print(columns)
+    for style in search:
+        if first:
+            joiner = ' WHERE'
+        else:
+            joiner = ' OR'
+        first = False
+
+        pitches = ''
+        
+        if style in multipitch_styles:  
+            if pitch_range[1] < 11:
+                pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
+            elif pitch_range[1] == 11:
+                pitches = ' AND pitches > %s' % pitch_range[0]
+        keys = (joiner, style, pitches)
+        query += '%s (%s is 1%s)' % (keys)
     
-    if not at_least_1:
-        query = 'SELECT * FROM Routes'
+    if len(search) >= 1:
+        for style in ignore:
+            query += ' AND %s = 0' % style
         
     routes = pd.read_sql(query, con=conn, index_col='route_id')
 
@@ -204,7 +213,6 @@ def route_finder(styles, preferences):
     for feature, value in features.items():
         if value:
             routes = routes[routes[feature] > 0.95]
-            print(feature)
 
     if len(routes) == 0:
         return 'No Routes'
@@ -215,14 +223,26 @@ def route_finder(styles, preferences):
     routes['value'] = (
         (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
         / (routes['distance'] ** 2))
-        
-    pd.options.display.max_columns = len(columns) + 1
-    routes = routes.sort_values(by='value', ascending=False)
-    
-    routes = routes[columns]
 
+    routes = routes.head(10).sort_values(by='value', ascending=False)
+    routes.rename(columns={'name': 'Name'}, inplace=True)
+    routes = routes.set_index('Name')
+    routes['Rating'] = routes['bayes'].round(1)
+
+    routes['Grade'] = routes[systems].apply(
+            lambda x: ','.join(x.dropna().astype(str)), axis=1)
     
-    return routes.head()
+    terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
+    
+    
+    routes['Style'] = routes[terrain].idxmax(axis=1)
+    routes['val'] = routes[terrain].max(axis=1)
+    routes.loc[routes['val'] < 0.75, 'Style'] = ''
+
+
+    display_columns = ['Rating', 'Grade', 'Style']
+
+    return routes[display_columns]
 
 
 
