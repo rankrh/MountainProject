@@ -161,7 +161,6 @@ def MPAnalyzer(path='C:\\Users\\',
             routes(pandas df): Updated with clustered area group number:
                 - route_id (int, unique): Unique route identifies
                 - area_group (int): Cluster id
-                - area_counts (int): Number of routes in cluster
         '''
 
         # Route location
@@ -183,24 +182,9 @@ def MPAnalyzer(path='C:\\Users\\',
         core_samples_mask[db.core_sample_indices_] = True
         # Cluster names
         labels = db.labels_
-        unique, counts = np.unique(labels, return_counts=True)
-        counts = dict(zip(unique, counts))
-        # Number of routes in the same cluster as a given route
-        area_counts = []
-        # Find area clusters
-        for label in labels:
-            if label >= 0:
-                # Counts number of routes
-                area_counts.append(counts[label])
-            # Areas are given a cluster id of -1 if the are not part of a
-            # cluster
-            elif label == -1:
-                # If so, there is only 1 route in their 'cluster'
-                area_counts.append(1)
 
         routes['area_group'] = labels
-        routes['area_counts'] = area_counts
-        routes = routes[['area_group', 'area_counts']]
+        routes = routes['area_group']
         return routes
 
     def idf(word, num_docs):
@@ -870,7 +854,6 @@ def MPAnalyzer(path='C:\\Users\\',
             'danger_conv' : 'INTEGER',
             'area_id' : 'INTEGER',
             'area_group' : 'INTEGER',
-            'area_counts' : 'INTEGER',
             'error' : 'INTEGER'}
         
         # Write to Database        
@@ -906,11 +889,10 @@ def MPAnalyzer(path='C:\\Users\\',
     for route in add.index:
         rate = add.loc[route]['bayes']
         group = add.loc[route]['area_group']
-        cnt = add.loc[route]['area_counts']
 
         cursor.execute('''UPDATE Routes
-                         SET bayes = ?, area_group = ?, area_counts = ?
-                         WHERE route_id = ?''', (rate, group, cnt, route))
+                         SET bayes = ?, area_group = ?
+                         WHERE route_id = ?''', (rate, group, route))
     conn.commit()
     print('Done')
 

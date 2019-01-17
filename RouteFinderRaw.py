@@ -59,58 +59,66 @@ styles = {
             'search': True,
             'slider_id': 'sport_slide',
             'label_id': 'sport_diff',
-            'grades': (1, 32)}, 
+            'grades': (0, 15),
+            'system': 'yds_rating'}, 
         'trad': {
             'search': False,
             'slider_id': 'trad_slide',
             'label_id': 'trad_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'yds_rating'},
         'tr': {
             'search': False,
             'slider_id': 'tr_slide',
             'label_id': 'tr_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'yds_rating'},
         'boulder': {
-            'search': False,
+            'search': True,
             'slider_id': 'boulder_slide',
             'label_id': 'boulder_diff',
-            'grades': (4, 7)},
+            'grades': (0, 17),
+            'system': 'hueco_rating'},
         'mixed': {
             'search': False,
             'slider_id': 'mixed_slide',
             'label_id': 'mixed_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'mixed_rating'},
         'snow': {
             'search': False,
             'slider_id': 'snow_slide',
             'label_id': 'snow_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'snow_rating'},
         'aid': {
             'search': False,
             'slider_id': 'aid_slide',
             'label_id': 'aid_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'aid_rating'},
         'ice': {
             'search': False,
             'slider_id': 'ice_slide',
             'label_id': 'ice_diff',
-            'grades': (None, None)}}
+            'grades': (None, None),
+            'system': 'aid_rating'}}
 
 
 preferences = {
-        'pitches': (4, 10), 
-        'danger': 3, 
+        'pitches': (0, 1), 
+        'danger': 0, 
         'commitment': 3,
         'location': {
-            'name': 'Missoula, MT',
+            'name': 'Falls Church, VA',
             'coordinates': (None, None)},
-        'distance': 300,
+        'distance': 250,
         'features': {
             'arete': False,
             'chimney': False,
             'crack': False,
-            'slab': True,
-            'overhang': False}}
+            'slab': False,
+            'overhang': True}}
         
 def get_counts(area_group):
     if area_group.name != -1:
@@ -126,9 +134,15 @@ def route_finder(styles, preferences):
     query = 'SELECT * FROM Routes'
     
     at_least_1 = False
+    columns = ['name', 'url', 'bayes', 'area_counts']
+
     
     for style, data in styles.items():
         if data['search']:
+            grade = data['system']
+            if grade not in columns:
+                columns.append(grade)
+
             if not at_least_1:
                 joiner = 'WHERE'
             else:
@@ -152,6 +166,8 @@ def route_finder(styles, preferences):
             at_least_1 = True
         elif not data['search'] and style != 'tr':
             query += ' AND %s = 0' % style
+            
+    print(columns)
     
     if not at_least_1:
         query = 'SELECT * FROM Routes'
@@ -160,6 +176,9 @@ def route_finder(styles, preferences):
 
     if len(routes) == 0:
         return 'No Routes'
+    
+    danger = preferences['danger']
+    routes = routes[routes['danger_conv'].values <= danger]
 
     location = preferences['location']
     location_name = location['name']
@@ -184,7 +203,7 @@ def route_finder(styles, preferences):
     features = preferences['features']            
     for feature, value in features.items():
         if value:
-            routes = routes[routes[feature] > 0.75]
+            routes = routes[routes[feature] > 0.95]
             print(feature)
 
     if len(routes) == 0:
@@ -193,19 +212,17 @@ def route_finder(styles, preferences):
     routes = routes.groupby('area_group').apply(get_counts)
     
         
-    routes['raw'] = (
+    routes['value'] = (
         (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
         / (routes['distance'] ** 2))
+        
+    pd.options.display.max_columns = len(columns) + 1
+    routes = routes.sort_values(by='value', ascending=False)
     
+    routes = routes[columns]
 
-
-    routes = routes[['name', 'raw', 'bayes', 'distance', 'area_counts', 'slab']]
-
-    pd.options.display.max_rows = len(routes)
-    pd.options.display.max_columns = (len(routes.columns))
-    routes = routes.sort_values(by='raw', ascending=False)
     
-    return routes
+    return routes.head()
 
 
 

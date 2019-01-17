@@ -743,6 +743,8 @@ def MPScraper(path='C:/Users/',
 
         # Returns X OR R OR PG13
         danger = re.findall('(X|R|PG13)', grades)
+        if not danger:
+            danger = 0
 
         # Returns any word if it is followed by 'Snow'
         snow_rate = re.findall('([A-Za-z]+)\s+Snow', grades)
@@ -795,7 +797,7 @@ def MPScraper(path='C:/Users/',
         ice_conv = [
             '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+',
             '4-5', '5', '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
-        danger_conv = ['PG13', 'R', 'X']
+        danger_conv = ['G', 'PG13', 'R', 'X']
         snow_conv = ['Easy', 'Mod', 'Steep']
 
         conversion = {
@@ -805,7 +807,7 @@ def MPScraper(path='C:/Users/',
             'snow_conv': None,
             'aid_conv': None,
             'mixed_conv': None,
-            'danger_conv': None}
+            'danger_conv': 0}
 
         # Converts [] to None and ['x'] to 'x'
         for item in difficulty:

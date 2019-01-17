@@ -1,4 +1,4 @@
-
+#: import random random
 RoutesScreenManager:
     StylesPage:
     PreferencesPage:
@@ -6,6 +6,12 @@ RoutesScreenManager:
 
 <StylesPage>:
     name: 'styles'
+    canvas.before:
+        Rectangle:
+            id: styles_background
+            pos: self.pos
+            size: self.size
+            source: root.get_background()
     BoxLayout:
         id: screen_layout
         orientation: 'vertical'
@@ -14,7 +20,10 @@ RoutesScreenManager:
             text: 'Route Guide'
             font_size: root.size[0] / 20
             size_hint_y: None
-            size: self.texture_size    
+            size: self.texture_size
+            outline_color: 0, 0, 0, 1
+            color: 1, 1, 1, 1
+            outline_width: 2
         BoxLayout:
             id: input_layout
             orientation: 'horizontal'
@@ -28,21 +37,31 @@ RoutesScreenManager:
                         id: sport
                         text: 'Sport'
                         on_press: root.set_style('sport')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: sport_slide
                         disable: True
                         opacity: 0
                         range: (0, 76)
-                        step: 1
                         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
+                        step: 1
                         on_touch_move: root.difficulty_conversion(style='sport', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: sport_diff
                         opacity: 0
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     orientation: 'horizontal'
                     id: trad_layout
@@ -50,23 +69,31 @@ RoutesScreenManager:
                         id: trad
                         text: 'Trad'
                         on_press: root.set_style('trad')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
-
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: trad_slide
-                        text: 'Trad Difficulty'
                         disable: True
                         opacity: 0
                         range: (0, 76)
                         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='trad', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: trad_diff
                         opacity: 0
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     id: tr_layout
                     orientation: 'horizontal'
@@ -74,8 +101,9 @@ RoutesScreenManager:
                         id: tr
                         text: 'Top Rope'
                         on_press: root.set_style('tr')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: tr_slide
                         text: 'Top Rope Difficulty'
@@ -85,11 +113,20 @@ RoutesScreenManager:
                         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='tr', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: tr_diff
                         opacity: 0
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     id: boulder_layout
                     orientation: 'horizontal'
@@ -97,8 +134,9 @@ RoutesScreenManager:
                         id: boulder
                         text: 'Boulder'
                         on_press: root.set_style('boulder')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: boulder_slide
                         disable: True
@@ -107,11 +145,20 @@ RoutesScreenManager:
                         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1 
                         on_touch_move: root.difficulty_conversion(style='boulder', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: boulder_diff
                         opacity: 0
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
             #    BoxLayout:
             #        id: ice_layout
             #        orientation: 'horizontal'
@@ -119,8 +166,9 @@ RoutesScreenManager:
             #            id: ice
             #            text: 'Ice'
             #            on_press: root.set_style('ice')
-            #             size_hint_x: None
-            #             width: style_layout.width / 4.0
+            #            size_hint: (None, None)
+            #            width: style_layout.width / 4.0
+            #            height: self.texture_size[1] * 2
             #         RangeSlider:
             #             id: ice_slide
             #             disable: True
@@ -129,6 +177,10 @@ RoutesScreenManager:
             #             value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
             #             step: 1
             #             on_touch_move: root.difficulty_conversion(style='ice', difficulty_range=self.value)
+            #             cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+            #            size_hint: (None, None)
+            #            size: (style_layout.width / 2, sport.height)
+            #            pos: (sport.pos[0] + sport.width, sport.pos[1])
             #         Label:
             #             id: ice_diff
             #             opacity: 0
@@ -141,8 +193,9 @@ RoutesScreenManager:
                         id: mixed
                         text: 'Mixed'
                         on_press: root.set_style('mixed')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: mixed_slide
                         disable: True
@@ -151,11 +204,20 @@ RoutesScreenManager:
                         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='mixed', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: mixed_diff
                         opacity: 0
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     id: aid_layout
                     orientation: 'horizontal'
@@ -163,8 +225,9 @@ RoutesScreenManager:
                         id: aid
                         text: 'Aid'
                         on_press: root.set_style('aid')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: aid_slide
                         disable: True
@@ -173,11 +236,20 @@ RoutesScreenManager:
                         value: (int(self.range[1] / 3), int(2 * self.range[1]/ 3))
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='aid', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: aid_diff
                         opacity: 0
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     id: snow_layout
                     orientation: 'horizontal'
@@ -185,8 +257,9 @@ RoutesScreenManager:
                         id: snow
                         text: 'Snow'
                         on_press: root.set_style('snow')
-                        size_hint_x: None
+                        size_hint: (None, None)
                         width: style_layout.width / 4.0
+                        height: self.texture_size[1] * 2
                     RangeSlider:
                         id: snow_slide
                         disable: True
@@ -194,12 +267,20 @@ RoutesScreenManager:
                         range: (0, 2)
                         step: 1
                         on_touch_move: root.difficulty_conversion(style='snow', difficulty_range=self.value)
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
+                        size_hint: (None, None)
+                        size: (style_layout.width / 2, sport.height)
+                        pos: (sport.pos[0] + sport.width, sport.pos[1])
                     Label:
                         id: snow_diff
                         opacity: 0
-                        text: root.snow_conv[0] + ' to ' + root.snow_conv[-1]
-                        size_hint_x: None
+                        size_hint: (None, None)
+                        height: sport.height
                         width: style_layout.width / 4.0
+                        pos: (sport_slide.pos[0] + sport_slide.width, sport_slide.pos[1])
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
             Button:
                 id: next
                 text: 'Next Page'
@@ -213,6 +294,13 @@ RoutesScreenManager:
     name: 'preferences'
     styles: root.manager.get_screen('styles').get_styles()
     on_pre_enter: root.set_up(root.styles)
+    canvas.before:
+        Rectangle:
+            id: styles_background
+            pos: self.pos
+            size: self.size
+            source: root.get_background()
+
     BoxLayout:
         id: screen_layout
         orientation: 'vertical'
@@ -222,6 +310,9 @@ RoutesScreenManager:
             font_size: root.size[0] / 20
             size_hint_y: None
             size: self.texture_size
+            outline_color: 0, 0, 0, 1
+            color: 1, 1, 1, 1
+            outline_width: 2
         BoxLayout:
             orientation: 'horizontal'
             id: input_layout
@@ -251,6 +342,9 @@ RoutesScreenManager:
                         text_size: self.width, None
                         size_hint_y: None
                         height: location.height
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                     TextInput:
                         id: location
                         on_text: root.get_location(self.text)
@@ -270,6 +364,9 @@ RoutesScreenManager:
                         text_size: location_prompt.text_size
                         size_hint_y: None
                         height: location.height
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                     FloatInput:
                         id: distance
                         input_type: 'number'
@@ -285,14 +382,21 @@ RoutesScreenManager:
                         id: danger_prompt
                         text: 'Danger Levels'
                         font_size: location_prompt.font_size
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                     Slider:
                         id: danger_slide
                         range: (0, 3)
                         step: 1
                         value: 3
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
                     Label:
                         id: danger_text
                         text: root.danger_conv(danger_slide.value)
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     id: commitment_layout
                     orientation: 'vertical'
@@ -300,14 +404,21 @@ RoutesScreenManager:
                         id: 'commitment_prompt'
                         text: 'Commitment Level (Alpine Routes)'
                         font_size: location_prompt.font_size
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                     Slider:
                         id: commitment_slide
                         range: (0, 5)
                         step: 1
-                        value: 3
+                        value: 5
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
                     Label:
                         id: commitment_text
                         text: root.commitment_conv(commitment_slide.value)
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 BoxLayout:
                     id: pitch_layout
                     orientation: 'vertical'
@@ -316,6 +427,9 @@ RoutesScreenManager:
                         text: 'Pitches'
                         font_size: location_prompt.font_size
                         opacity: 0
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                     RangeSlider:
                         id: pitch_num
                         range: (0, 11)
@@ -323,10 +437,14 @@ RoutesScreenManager:
                         disable: True
                         opacity: 0
                         step: 1
+                        cursor_image: 'C:/Users/Bob/Documents/Python/Mountain Project/images/pebble.png'
                     Label:
                         id: pitches
                         text: root.pitch_text(pitch_num.value)
                         opacity: 0
+                        outline_color: 0, 0, 0, 1
+                        color: 1, 1, 1, 1
+                        outline_width: 2
                 GridLayout:
                     id: features_layout
                     cols: 2
@@ -359,14 +477,19 @@ RoutesScreenManager:
     name: 'results'
     styles: root.manager.get_screen('preferences').styles
     preferences: root.manager.get_screen('preferences').get_preferences()
-    on_pre_enter: root.get_routes(root.styles, root.preferences)
+    on_pre_enter: root.get_routes(root.styles, root.preferences, root.width)
     BoxLayout:
         orientation: 'vertical'
         id: screen_layout
-        Label:
-            id: test
-            text: 'Test'
-            text_size: self.size
+        ScrollableLabel:
+            id: routes
+            text: ''
+            Label:
+                id: routes_label
+                text: routes.text
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1]
         Button:
             text: 'Previous Page'
             size_hint: None, None
@@ -375,3 +498,4 @@ RoutesScreenManager:
             on_release:
                 app.root.current = 'preferences'
                 app.root.transition.direction = 'right' 
+            

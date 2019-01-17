@@ -4,23 +4,30 @@ import pandas as pd
 import numpy as np
 import sqlite3
 import re
+import os
+import random
 
 import kivy
+
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
 from kivy.uix.rangeslider import RangeSlider
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics import Rectangle
+
 from kivy.lang import Builder
+
 from kivy.app import App
 
+from kivy.properties import StringProperty
+
+from kivy.core.window import Window
+
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
-cursor = conn.cursor()
-
-pd.options.display.max_rows = 100
-pd.options.display.max_columns = 60
-
 
 def get_counts(area_group):
     if area_group.name != -1:
@@ -28,6 +35,9 @@ def get_counts(area_group):
     else:
         area_group['area_counts'] = 1        
     return area_group
+
+class ScrollableLabel(ScrollView):
+    text = StringProperty('')
 
 class FloatInput(TextInput):
     pat = re.compile('[^0-9]')
@@ -42,47 +52,62 @@ class FloatInput(TextInput):
 
 class StylesPage(Screen):
 
+    def get_background(self):
+        path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
+        pics = os.listdir(path)
+        pic = random.choice(pics)
+        path += pic
+        return path
+
     styles = {
         'sport': {
             'search': False,
             'slider_id': 'sport_slide',
             'label_id': 'sport_diff',
-            'grades': (None, None)}, 
+            'grades': (None, None),
+            'system': 'yds_rating'}, 
         'trad': {
             'search': False,
             'slider_id': 'trad_slide',
             'label_id': 'trad_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'yds_rating'},
         'tr': {
             'search': False,
             'slider_id': 'tr_slide',
             'label_id': 'tr_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'yds_rating'},
         'boulder': {
             'search': False,
             'slider_id': 'boulder_slide',
             'label_id': 'boulder_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'hueco_rating'},
         'mixed': {
             'search': False,
             'slider_id': 'mixed_slide',
             'label_id': 'mixed_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'mixed_rating'},
         'snow': {
             'search': False,
             'slider_id': 'snow_slide',
             'label_id': 'snow_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'snow_rating'},
         'aid': {
             'search': False,
             'slider_id': 'aid_slide',
             'label_id': 'aid_diff',
-            'grades': (None, None)},
+            'grades': (None, None),
+            'system': 'aid_rating'},
         'ice': {
             'search': False,
             'slider_id': 'ice_slide',
             'label_id': 'ice_diff',
-            'grades': (None, None)}}
+            'grades': (None, None),
+            'system': 'aid_rating'}}
 
     rope_conv = [
         '3rd', '4th', 'Easy 5th', '5.0', '5.1', '5.2', '5.3', '5.4', '5.5',
@@ -169,7 +194,7 @@ class PreferencesPage(Screen):
         'commitment': 3,
         'location': {
             'name': None,
-            'coordinates': None},
+            'coordinates': (None, None)},
         'distance': None,
         'features': {
             'arete': False,
@@ -177,6 +202,14 @@ class PreferencesPage(Screen):
             'crack': False,
             'slab': False,
             'overhang': False}}
+
+    def get_background(self):
+        path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
+        pics = os.listdir(path)
+        pic = random.choice(pics)
+        path += pic
+        return path
+
             
     def set_up(self, styles):
         pitches = False
@@ -247,7 +280,7 @@ class PreferencesPage(Screen):
 
 class ResultsPage(Screen):
 
-    def get_routes(self, styles, preferences):
+    def get_routes(self, styles, preferences, width):
 
         grades = {
             'sport': 'rope_conv', 
@@ -268,13 +301,18 @@ class ResultsPage(Screen):
         query = 'SELECT * FROM Routes'
         
         at_least_1 = False
+
+        columns = ['name', 'bayes', 'area_counts']
         
         for style, data in styles.items():
             if data['search']:
+                grade = data['system']
+                if grade not in columns:
+                    columns.append(grade)
                 if not at_least_1:
                     joiner = 'WHERE'
                 else:
-                    joiner = 'AND'
+                    joiner = 'OR'
 
                 if style in multipitch_styles and all(pitch_range):  
                     if pitch_range[1] < 11:
@@ -301,16 +339,22 @@ class ResultsPage(Screen):
         routes = pd.read_sql(query, con=conn, index_col='route_id')
 
         if len(routes) == 0:
-            self.ids.test.text = 'No Routes Available'
+            self.ids.test.text = query
             return
+
+        danger = preferences['danger']
+        routes = routes[routes['danger_conv'].values <= danger]
+        if len(routes) == 0:
+            self.ids.test.text = 'No routes available that safe.  Try expanding your danger levels'
+            return
+
 
         location = preferences['location']
         location_name = location['name']
+        coordinates = location['coordinates']
+
         if location_name is not None:
             location['coordinates'] = GeoCode(location_name)
-            coordinates = location['coordinates']
-        else:
-            location['name'] = None
 
         if all(coordinates):
             routes['distance'] = Haversine(
@@ -324,22 +368,22 @@ class ResultsPage(Screen):
             routes = routes[routes.distance < distance]
 
         if len(routes) == 0:
-            self.ids.test.text = 'No Routes Available'
+            self.ids.test.text = 'No routes available that close to you.  Try expanding your distance search.'
             return
             
         routes = routes.groupby('area_group').apply(get_counts)
 
-        routes['raw'] = ((100 * routes['bayes'] * np.log(routes['area_counts'] + 1))
-                        / (routes['distance'] ** 2))
+        routes['value'] = (
+            (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
+            / (routes['distance'] ** 2))
 
-        routes = routes[['name', 'raw', 'bayes', 'distance', 'area_counts']]
+        pd.options.display.max_columns = len(columns)
+        pd.options.display.width = width
+        pd.options.display.max_colwidth = 200 * 2
 
+        routes = routes.sort_values(by='value', ascending=False)
 
-        pd.options.display.max_rows = len(routes)
-        pd.options.display.max_columns = (len(routes.columns))
-        routes = routes.sort_values(by='raw', ascending=False)
-
-        self.ids.test.text = str(routes.head())
+        self.ids.routes.text = str(routes[columns].head(20))
 
         
     
