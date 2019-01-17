@@ -302,7 +302,7 @@ class ResultsPage(Screen):
         
         at_least_1 = False
 
-        columns = ['name', 'bayes', 'area_counts']
+        columns = ['bayes', 'area_counts']
         
         for style, data in styles.items():
             if data['search']:
@@ -377,15 +377,16 @@ class ResultsPage(Screen):
             (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
             / (routes['distance'] ** 2))
 
-        pd.options.display.max_columns = len(columns)
+        routes = routes.sort_values(by='value', ascending=False).set_index('name')
+
+        columns.append('distance')
+
+
+        pd.options.display.max_columns = len(columns) + 1
         pd.options.display.width = width
         pd.options.display.max_colwidth = 200 * 2
 
-        routes = routes.sort_values(by='value', ascending=False)
-
         self.ids.routes.text = str(routes[columns].head(20))
-
-        
     
 
 class RoutesScreenManager(ScreenManager):

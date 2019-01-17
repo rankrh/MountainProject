@@ -352,6 +352,7 @@ RoutesScreenManager:
                         size_hint_y: None
                         height: self.font_size * 1.75
                         multiline: False
+                        on_text_validate: distance.focus=True
                 BoxLayout:
                     id: distance_layout
                     orientation: 'horizontal'
