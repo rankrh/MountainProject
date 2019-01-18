@@ -17,8 +17,6 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics import Rectangle
 
 from kivy.lang import Builder
 
@@ -26,10 +24,10 @@ from kivy.app import App
 
 from kivy.properties import StringProperty
 
-from kivy.core.window import Window
-
+# Connects to DB
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 
+# Used to grab human-readable grading system
 decode_systems = {
     'sport': 'yds_rating',
     'trad': 'yds_rating',
@@ -40,6 +38,7 @@ decode_systems = {
     'aid': 'aid_rating',
     'mixed': 'mixed_rating'}
 
+# Counts routes in a given area group
 def get_counts(area_group):
     if area_group.name != -1:
         area_group['area_counts'] = len(area_group)
@@ -47,6 +46,7 @@ def get_counts(area_group):
         area_group['area_counts'] = 1        
     return area_group
 
+# Grabs random picture from file to use as background
 def global_background():
     path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
     pics = os.listdir(path)
@@ -57,6 +57,7 @@ def global_background():
 class ScrollableLabel(ScrollView):
     text = StringProperty('')
 
+# Only allows user to input digits and a single period
 class FloatInput(TextInput):
     pat = re.compile('[^0-9]')
 
@@ -68,8 +69,11 @@ class FloatInput(TextInput):
             s = '.'.join([re.sub(pat, '', s) for s in substring.split('.', 1)])
         return super(FloatInput, self).insert_text(s, from_undo=from_undo)
 
+
+# First page
 class StylesPage(Screen):
 
+     
     def get_background(self):
         return global_background()
 
@@ -374,6 +378,7 @@ class ResultsPage(Screen):
 
         if location_name is not None:
             location['coordinates'] = GeoCode(location_name)
+            print(location_name)
 
         if all(coordinates):
             routes['distance'] = Haversine(
