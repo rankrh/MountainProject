@@ -290,7 +290,7 @@ RoutesScreenManager:
                     app.root.transition.direction = 'left'
 <PreferencesPage>:
     name: 'preferences'
-    styles: root.manager.get_screen('styles').get_styles()
+    styles: root.manager.get_screen('styles').styles
     on_pre_enter: root.set_up(root.styles)
     canvas.before:
         Rectangle:
@@ -345,7 +345,7 @@ RoutesScreenManager:
                         outline_width: 2
                     TextInput:
                         id: location
-                        on_text: root.get_location(self.text)
+                        on_text: root.set_location(self.text)
                         font_size: location_prompt.font_size
                         size_hint_y: None
                         height: self.font_size * 1.75
@@ -368,7 +368,7 @@ RoutesScreenManager:
                         outline_width: 2
                     FloatInput:
                         id: distance
-                        on_text: root.get_distance(self.text)
+                        on_text: root.set_distance(self.text)
                         font_size: location_prompt.font_size
                         size_hint_y: None
                         height: self.font_size * 1.75
@@ -389,7 +389,8 @@ RoutesScreenManager:
                         value: 3
                     Label:
                         id: danger_text
-                        text: root.danger_conv(danger_slide.value)
+                        text:
+                            root.preference_conv('danger', danger_slide.value, danger_slide.range[1])
                         outline_color: 0, 0, 0, 1
                         color: 1, 1, 1, 1
                         outline_width: 2
@@ -450,7 +451,7 @@ RoutesScreenManager:
                         opacity: 0
                     Label:
                         id: pitches
-                        text: root.pitch_text(pitch_num.value)
+                        text: root.pitch_conversion(pitch_num.value)
                         opacity: 0
                         outline_color: 0, 0, 0, 1
                         color: 1, 1, 1, 1
@@ -467,8 +468,8 @@ RoutesScreenManager:
                     app.root.transition.direction = 'left'
 <ResultsPage>:
     name: 'results'
-    styles: root.manager.get_screen('preferences').styles
-    preferences: root.manager.get_screen('preferences').get_preferences()
+    styles: root.manager.get_screen('styles').styles
+    preferences: root.manager.get_screen('preferences').preferences
     on_pre_enter: root.get_routes(root.styles, root.preferences)
     canvas.before:
         Rectangle:

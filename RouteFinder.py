@@ -119,7 +119,7 @@ class StylesPage(Screen):
     """Screen that shows users the available styles and grades.
 
     Attributes:
-        styles (dict): Holds information on the user's style choices, and how
+        styles(dict): Holds information on the user's style choices, and how
             to reference different parts of the kv file.  Contains a dictionary
             for each style:
                 'search' - (Boolean defaults to False) Whether user has
@@ -132,28 +132,27 @@ class StylesPage(Screen):
                     human-readable grading system.  Applies to climbing styles
                     with multiple systems.  At this point, each style only
                     supports one system.
-        rope_conv (list): Ordered list of route difficulties in human readable
+        rope_conv(list): Ordered list of route difficulties in human readable
             format. Used for sport, trad, and tr routes.  Only Yosemite Decimal
             System (YDS) is supported right now.
-        boulder_conv (list): Ordered list of route difficulties in human
+        boulder_conv(list): Ordered list of route difficulties in human
             readable format. Used for bouldering routes.  Only Hueco rating
             system is supported
-        mixed_conv (list): Ordered list of route difficulties in human readable
+        mixed_conv(list): Ordered list of route difficulties in human readable
             format.  Used for mixed routes.
-        aid_conv (list): Ordered list of route difficulties in human readable
+        aid_conv(list): Ordered list of route difficulties in human readable
             format. Used for Aid routes
-        snow_conv (list): Ordered list of route difficulties in human readable
+        snow_conv(list): Ordered list of route difficulties in human readable
             format. Used for snow routes.
         ice_conv(list): Ordered list of route difficulties in human readable
             format. Used for ice routes.
-        conversion (dict): Links the type of route with the conversion list.
-        photo (str): Runs background function to get background picture and
+        conversion(dict): Links the type of route with the conversion list.
+        photo(str): Runs background function to get background picture and
             returns path
 
     Methods:
         set_style: Updates style attribute to reflect the user's style choices
             and difficulty levels and updates widgets in kv file.
-        get_style: Returns style attribute.
         difficulty_conversion: Updates styles to reflect user choices for
             difficulty range, then converts number to corresponding difficulty
             in human readable format and updates kv. 
@@ -258,41 +257,112 @@ class StylesPage(Screen):
         'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
 
     def set_style(self, style):
+        """Updates style dictionary and kv file to reflect user choices. Runs
+        when the user presses any of the style buttons.
+        
+        Args:
+            style(str): Name of the style being modified
+        """
+        
+        # Flips between True and False
         self.styles[style]['search'] = not self.styles[style]['search']
+
+        # Gets name of kv IDs needed to change
         slider = self.styles[style]['slider_id']
         label = self.styles[style]['label_id']
 
+        # If True, user has selected this style
         if self.styles[style]['search']:
+            # Enable functionality for the difficulty slider
             self.ids[slider].disable = False
+            # Make difficulty slider and label visible
             self.ids[slider].opacity = 1.0
             self.ids[label].opacity = 1.0
 
+            # Update styles difficulty with slider positions.  On initial
+            # selection, shows default values.  Further toggling displays
+            # last chosen values.
             self.difficulty_conversion(style, self.ids[slider].value)
 
+        # If False, user has unselected style
         elif not self.styles[style]['search']:
+            # Disable difficulty slider
             self.ids[slider].disable = True
+            # Make difficulty slider and label invisible
             self.ids[slider].opacity = 0.0
             self.ids[label].opacity = 0.0
 
-    def get_styles(self):
-        return self.styles
-
     def difficulty_conversion(self, style, difficulty_range):
+        """Updates styles with user's difficulty range and converts integers
+        to human readable grading scale.
+        
+        Args:
+            style(str): Name of the style being modified
+            difficulty_range(tuple): Integer values for difficulty slider
+                that correspond to difficulty min and max
+        """
+        # Low and high choices for difficulty
         low = int(difficulty_range[0])
         high = int(difficulty_range[1])
-        self.styles[style]['grades'] = (low, high)
-        
+        # Gets correct system to convert into
         grades = self.conversion[style]
+
+        # Sliders default to (0, 100) and must be lowered to the range of
+        # the relevent conversion chart
         if high == 100:
             high = len(grades) - 1
+
+        # Updates style dictionary for corresponding style
+        self.styles[style]['grades'] = (low, high)
         
-        text = str(grades[low]) + ' to ' + str(grades[high])
+        # Gets label ID
         label = self.styles[style]['label_id']
 
+        # If user selects only one value, returns the corresponding grade
+        if low == high:
+            text = str(grades[high])
+        # Else gives a range
+        else:
+            text = str(grades[low]) + ' to ' + str(grades[high])
+
+        # Updates label
         self.ids[label].text = text
 
 
 class PreferencesPage(Screen):
+    """Screen for additional user preferences.
+    
+    Gathers user input on current location, maximum distance away, number of
+    pitches, and desired route features.
+
+    Attributes:
+        preferences(dict): All preferences
+            'pitches'(tuple): Range of desired pitches
+            'danger'(int): Maximum danger level
+            'commitment'(int): Maximum commitment grade ***NOT SUPPORTED YET
+            'location'(dict):
+                'name'(str): Human readable name of current user location
+                'coordinates'(tuple): Latitude and longitude
+            'distance'(num): Maximum distance to route
+            'features'(dict):
+                features(Boolean): User's selection for route features, default
+                    to False
+        photo(str): Runs background function to get background picture and
+            returns path
+        multipitch_styles(list):  Styles for which the pitch bar will be
+            shown
+        pref_conversion(dict): Different preferences and their
+            conversions to human readable form
+
+    Methods:
+        set_up: Gets inital conditions needed to create page
+        preference_conv: Converts danger and commitment levels to human readable
+            grade ***COMMITMENT NOT SUPPORTED YET
+        pitch_conv: Generates text from integer range
+        set_location: Updates preferences with user's location
+        set_distance: Updates preferences with user's max distance
+        set_feature: Updateas preferences with user's chosen features
+    """
     preferences = {
         'pitches': (None, None), 
         'danger': 3, 
@@ -310,52 +380,80 @@ class PreferencesPage(Screen):
 
     photo = background(
             'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
+    multipitch_styles = [
+        'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
+    pref_conversion = {
+        'danger': ['G', 'PG13', 'R', 'All Danger Levels'],
+        'commitment':[
+            'I', 'II', 'III', 'IV', 'All Commitment Levels']}
+
             
     def set_up(self, styles):
-        pitches = False
-        multipitch_styles = [
-            'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
+        """ Gets initial conditions for kv file.
+
+        Args:
+            styles(dict): Style data from styles screen
+        """
         
-        for style in multipitch_styles:
+        # If any of the styles can have multiple pitches, shows pitch
+        # labels and slider
+        for style in self.multipitch_styles:
             if style in styles.keys():
-                if styles[style]['search']:
-                    pitches = True
-                    break
+                # Makes labels and slider visible
+                self.ids.pitches.opacity = 1
+                self.ids.pitch_num.opacity = 1
+                self.ids.pitch_prompt.opacity = 1
+                # Enable slider
+                self.ids.pitch_num.disable = False
+                break
+            # If no chosen styles can be multipitch, hides pitch labels
+            # and slider
+            else:
+                # Makes labels and slider invisible
+                self.ids.pitches.opacity = 0
+                self.ids.pitch_num.opacity = 0
+                self.ids.pitch_prompt.opacity = 0
+                # Disable slider
+                self.ids.pitch_num.disable = True
 
-        if pitches:
-            self.ids.pitches.opacity = 1
-            self.ids.pitch_num.opacity = 1
-            self.ids.pitch_num.disable = False
-            self.ids.pitch_prompt.opacity = 1
+    def preference_conv(self, pref, user_value, max_value):
+        """Converts integer values to human readable form.
         
-        elif not pitches:
-            self.ids.pitches.opacity = 0
-            self.ids.pitch_num.opacity = 0
-            self.ids.pitch_num.disable = True
-            self.ids.pitch_prompt.opacity = 0
-
-
-    def danger_conv(self, max_danger):
-        danger = ['G', 'PG13', 'R', 'All Danger Levels']
-        self.preferences['danger'] = max_danger
-        if max_danger < 3:
-            return danger[int(max_danger)] + ' and under'
+        Args:
+            pref(str): Type of preference to be converted
+            user_value(int): User's choice for that preference
+            max_value(int): Maximum value for that preference
+            
+        Returns:
+            text(str): String to be displayed on the screen
+        """
+        # Updates preferences
+        self.preferences[pref] = user_value
+        # If the user's choice is less than the maximum, we will search for
+        # only values up to their choice
+        if user_value < max_value:
+            text = self.pref_conversion[pref][int(user_value)]
+            text += ' and under'
+            return text
+        # Otherwise, we'll search for all values
         else:
-            return danger[int(max_danger)]
+            text = self.pref_conversion[pref][int(user_value)]
+            return text
         
-    def commitment_conv(self, max_commitment):
-        commitment =  ['I', 'II', 'III', 'IV', 'V', 'VI']
-        self.preferences['commitment'] = max_commitment
-        if max_commitment < 5:
-            return commitment[int(max_commitment)] + ' and under'
-        else:
-            return commitment[int(max_commitment)]
+    def pitch_conversion(self, values):
+        """Generates text for pitch information based on user's choices.
+        
+        Args:
+            values(tuple): User's chosen range of pitches   
 
-    def pitch_text(self, values):
+        Returns:
+            text(str): Text information on pitches to be displayed
+        """
+        # Updates 
+        self.preferences['pitches'] = values
+
         low = int(values[0])
         high = int(values[1])
-        self.preferences['pitches'] = (low, high)
-        
         if low == high:
             if high == 11:
                 return '%s or more pitches' % low
@@ -367,24 +465,19 @@ class PreferencesPage(Screen):
             return 'Up to %s pitches' % high
         else:
             text = '%s to %s pitches' % (low, high)
-
-
         return text
 
-    def get_location(self, location): 
+    def set_location(self, location): 
         if location is not '':  
             self.preferences['location']['name'] = location
 
-    def get_distance(self, distance):
+    def set_distance(self, distance):
         if distance is not '':
-                self.preferences['distance'] = int(distance)
+            self.preferences['distance'] = int(distance)
     
     def set_feature(self, feature):
         features = self.preferences['features']
         features[feature] = not features[feature]
-
-    def get_preferences(self):
-        return self.preferences
 
 class ResultsPage(Screen):
     photo = background(
@@ -502,11 +595,10 @@ class ResultsPage(Screen):
             lambda x: ', '.join(x.dropna().astype(str)), axis=1)
 
         terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
-        routes['Style'] = routes[terrain].idxmax(axis=1)
-        routes['val'] = routes[terrain].max(axis=1)
-        routes.loc[routes['val'] < 0.75, 'Style'] = ''
+        routes['Features'] = routes[terrain].idxmax(axis=1)
+        routes.loc[routes[terrain].max(axis=1) < 0.75, 'Features'] = ''
 
-        display_columns = ['Rating', 'Grade', 'Style']
+        display_columns = ['Rating', 'Grade', 'Features']
         routes = routes[display_columns]
         routes = routes.to_dict('index')
 

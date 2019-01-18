@@ -241,8 +241,7 @@ def route_finder(styles, preferences):
     
     
     routes['Style'] = routes[terrain].idxmax(axis=1)
-    routes['val'] = routes[terrain].max(axis=1)
-    routes.loc[routes['val'] < 0.75, 'Style'] = ''
+    routes.loc[routes[terrain].max(axis=1) < 0.75, 'Style'] = ''
 
 
     display_columns = ['Rating', 'Grade', 'Style']
