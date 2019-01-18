@@ -5,7 +5,7 @@ Created on Wed Nov 28 11:35:59 2018
 @author: Bob
 
 Summary:
-This program crawls Mountain Project to find route data on rock climbs.
+Crawls Mountain Project to find route data on rock climbs.
 
 Details:
 The ultimate purpose of the program is to help users optimize their time by
@@ -51,8 +51,6 @@ import os
 
 def MPScraper(path='C:/Users/',
               folder='/Mountain Project'):
-    
-    
     ''' Sets up SQL database for climbing areas and routes.
     
     Creates a database with two tables.  The first, 'Areas', holds climbing

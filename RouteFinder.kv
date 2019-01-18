@@ -28,7 +28,7 @@ RoutesScreenManager:
             id: styles_background
             pos: self.pos
             size: self.size
-            source: root.get_background()
+            source: root.photo
     BoxLayout:
         id: screen_layout
         orientation: 'vertical'
@@ -297,7 +297,7 @@ RoutesScreenManager:
             id: styles_background
             pos: self.pos
             size: self.size
-            source: root.get_background()
+            source: root.photo
 
     BoxLayout:
         id: screen_layout
@@ -368,7 +368,6 @@ RoutesScreenManager:
                         outline_width: 2
                     FloatInput:
                         id: distance
-                        input_type: 'number'
                         on_text: root.get_distance(self.text)
                         font_size: location_prompt.font_size
                         size_hint_y: None
@@ -470,13 +469,13 @@ RoutesScreenManager:
     name: 'results'
     styles: root.manager.get_screen('preferences').styles
     preferences: root.manager.get_screen('preferences').get_preferences()
-    on_pre_enter: root.get_routes(root.styles, root.preferences, root.width)
+    on_pre_enter: root.get_routes(root.styles, root.preferences)
     canvas.before:
         Rectangle:
             id: styles_background
             pos: self.pos
             size: self.size
-            source: root.get_background()
+            source: root.photo
     BoxLayout:
         orientation: 'vertical'
         Label:

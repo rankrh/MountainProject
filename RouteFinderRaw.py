@@ -6,7 +6,7 @@ import numpy as np
 
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 
-grades = {
+grade_conv = {
     'sport': 'rope_conv', 
     'trad': 'rope_conv',
     'tr': 'rope_conv',
@@ -56,7 +56,7 @@ multipitch_styles = [
 
 styles = {
         'sport': {
-            'search': False,
+            'search': True,
             'slider_id': 'sport_slide',
             'label_id': 'sport_diff',
             'grades': (0, 15),
@@ -66,7 +66,7 @@ styles = {
             'slider_id': 'trad_slide',
             'label_id': 'trad_diff',
             'grades': (1, 12),
-            'system': 'yds_rating'},
+            'system': 'font_rating'},
         'tr': {
             'search': False,
             'slider_id': 'tr_slide',
@@ -74,13 +74,13 @@ styles = {
             'grades': (None, None),
             'system': 'yds_rating'},
         'boulder': {
-            'search': True,
+            'search': False,
             'slider_id': 'boulder_slide',
             'label_id': 'boulder_diff',
-            'grades': (0, 17),
+            'grades': (23, 46),
             'system': 'hueco_rating'},
         'mixed': {
-            'search': True,
+            'search': False,
             'slider_id': 'mixed_slide',
             'label_id': 'mixed_diff',
             'grades': (1, 8),
@@ -105,8 +105,8 @@ styles = {
             'system': 'aid_rating'}}
         
 decode_systems = {
-    'sport': 'yds_rating',
-    'trad': 'yds_rating',
+    'sport': 'uiaa_rating',
+    'trad': 'za_rating',
     'tr': 'yds_rating',
     'boulder': 'hueco_rating',
     'ice': 'ice_rating',
@@ -116,13 +116,13 @@ decode_systems = {
 
 
 preferences = {
-        'pitches': (0, 4), 
+        'pitches': (0,11), 
         'danger': 0, 
         'commitment': 3,
         'location': {
-            'name': 'Falls Church, VA',
+            'name': 'Missoula',
             'coordinates': (None, None)},
-        'distance': 250,
+        'distance': 500,
         'features': {
             'arete': False,
             'chimney': False,
@@ -142,7 +142,6 @@ def get_max(table):
         
         
 def route_finder(styles, preferences):
-    pitch_range = preferences['pitches']
     query = 'SELECT * FROM Routes'
     
     search = []
@@ -154,7 +153,7 @@ def route_finder(styles, preferences):
     for style, data in styles.items():
         if data['search']:
             search.append(style)
-            decoded = decode_systems[style]
+            decoded = data['system']
             if decoded not in systems:
                 systems.append(decoded)
         else:
@@ -167,15 +166,21 @@ def route_finder(styles, preferences):
             joiner = ' OR'
         first = False
 
-        pitches = ''
         
-        if style in multipitch_styles:  
+        grade_range = styles[style]['grades']
+        conversion = grade_conv[style]
+        keys = (conversion,) + grade_range
+        grades = '%s BETWEEN %s AND %s' % keys
+
+        pitches = ''        
+        if style in multipitch_styles:
+            pitch_range = preferences['pitches']
             if pitch_range[1] < 11:
                 pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
             elif pitch_range[1] == 11:
                 pitches = ' AND pitches > %s' % pitch_range[0]
-        keys = (joiner, style, pitches)
-        query += '%s (%s is 1%s)' % (keys)
+        keys = (joiner, style, grades, pitches)
+        query += '%s (%s is 1 AND %s%s)' % (keys)
     
     if len(search) >= 1:
         for style in ignore:
@@ -203,8 +208,8 @@ def route_finder(styles, preferences):
         routes['distance'] = 1
         
     distance = preferences['distance']
-    if distance:
-        routes = routes[routes.distance < distance]
+    routes = routes[routes.distance < distance]
+
 
     if len(routes) == 0:
         return 'No Routes'
@@ -230,7 +235,7 @@ def route_finder(styles, preferences):
     routes['Rating'] = routes['bayes'].round(1)
 
     routes['Grade'] = routes[systems].apply(
-            lambda x: ','.join(x.dropna().astype(str)), axis=1)
+            lambda x: ', '.join(x.dropna().astype(str)), axis=1)
     
     terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
     

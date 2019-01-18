@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jam 10 3:42 2019
+
+@author: Bob
+
+Summary:
+Allows users to search for data and displays it in a useful way.
+
+Details:  
+After gathering, cleaning, and analyzing data, this program is run to create
+the UI.  It firsts prompts the user for preferences on a variety of metrics,
+including type of route, difficulty, location, maximum distance, danger levels,
+and number of pitches.  It then sifts through the database to find routes that
+fit these parameters, then organizes them based on their quality, distance,
+and the number of other similar routes nearby.    
+"""
+
 from googlemaps.haversine import Haversine
 from googlemaps.geocode import GeoCode
 import pandas as pd
@@ -27,41 +45,68 @@ from kivy.properties import StringProperty
 # Connects to DB
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 
-# Used to grab human-readable grading system
-decode_systems = {
-    'sport': 'yds_rating',
-    'trad': 'yds_rating',
-    'tr': 'yds_rating',
-    'boulder': 'hueco_rating',
-    'ice': 'ice_rating',
-    'snow': 'snow_rating',
-    'aid': 'aid_rating',
-    'mixed': 'mixed_rating'}
-
-# Counts routes in a given area group
 def get_counts(area_group):
-    if area_group.name != -1:
-        area_group['area_counts'] = len(area_group)
-    else:
+    """Counts the number of similar routes in an area.
+    
+    Area groups were calculated after the data was gathered, and are used here
+    to group similar routes.  Route difficulty, type, and style are all taken
+    into account, so the counts cannot be calculated until the user defines
+    their preferences.
+
+    Args:
+        area_group(Pandas Dataframe): Grouped by area group ID given by the
+            MPAnalyzer script
+
+    Returns:
+        area_group(Pandas Dataframe): Dataframe with new column 'area_counts'
+            that holds the number of routes in the area group
+    """
+    # An area_group ID of -1 means there are no other routes in the area
+    if area_group.name == -1:
         area_group['area_counts'] = 1        
+    else:
+        area_group['area_counts'] = len(area_group)
+
     return area_group
 
-# Grabs random picture from file to use as background
-def global_background():
-    path = 'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/'
+def background(path):
+    """Returns image to use as background.
+    
+    Images are public domain, found at: https://www.pexels.com/
+    
+    Args:
+        path(str): Location of folder to choose picture from
+    Returns:
+        path(str): Location of randomly chosen picture in a given file"""
     pics = os.listdir(path)
     pic = random.choice(pics)
     path += pic
     return path
 
-class ScrollableLabel(ScrollView):
-    text = StringProperty('')
-
-# Only allows user to input digits and a single period
 class FloatInput(TextInput):
+    """A form of text input that limits characters to digits and a single
+    period. Used to prevent users from entering data that should only be
+    numeric.
+
+    Attributes:
+        pat:Allowable characters
+
+    Methods:
+        insert_text     Allows user to input numeric data
+    """
+
     pat = re.compile('[^0-9]')
 
     def insert_text(self, substring, from_undo=False):
+        """Allows users to input numeric data as any number of digits and 1
+        period
+        
+        Overwrites the default Kivy behavior, which allows all characters.
+
+        Args:
+            substring(str): String to display in the text box
+            from_undo(Bool): Defaults to False.  True if use presses ctrl+z
+        """
         pat = self.pat
         if '.' in self.text:
             s = re.sub(pat, '', substring)
@@ -70,13 +115,51 @@ class FloatInput(TextInput):
         return super(FloatInput, self).insert_text(s, from_undo=from_undo)
 
 
-# First page
 class StylesPage(Screen):
+    """Screen that shows users the available styles and grades.
 
+    Attributes:
+        styles (dict): Holds information on the user's style choices, and how
+            to reference different parts of the kv file.  Contains a dictionary
+            for each style:
+                'search' - (Boolean defaults to False) Whether user has
+                    selected that style
+                'slider_id' - (string) kv ID for the difficulty slider
+                'label_id' - (string) kv ID for the difficulty label
+                'Grades' - (tuple, defaults to None, None) Upper and lower
+                    bounds for the user difficulty range.
+                'system' - (string) Name of the database column that holds the
+                    human-readable grading system.  Applies to climbing styles
+                    with multiple systems.  At this point, each style only
+                    supports one system.
+        rope_conv (list): Ordered list of route difficulties in human readable
+            format. Used for sport, trad, and tr routes.  Only Yosemite Decimal
+            System (YDS) is supported right now.
+        boulder_conv (list): Ordered list of route difficulties in human
+            readable format. Used for bouldering routes.  Only Hueco rating
+            system is supported
+        mixed_conv (list): Ordered list of route difficulties in human readable
+            format.  Used for mixed routes.
+        aid_conv (list): Ordered list of route difficulties in human readable
+            format. Used for Aid routes
+        snow_conv (list): Ordered list of route difficulties in human readable
+            format. Used for snow routes.
+        ice_conv(list): Ordered list of route difficulties in human readable
+            format. Used for ice routes.
+        conversion (dict): Links the type of route with the conversion list.
+        photo (str): Runs background function to get background picture and
+            returns path
+
+    Methods:
+        set_style: Updates style attribute to reflect the user's style choices
+            and difficulty levels and updates widgets in kv file.
+        get_style: Returns style attribute.
+        difficulty_conversion: Updates styles to reflect user choices for
+            difficulty range, then converts number to corresponding difficulty
+            in human readable format and updates kv. 
+
+    """
      
-    def get_background(self):
-        return global_background()
-
     styles = {
         'sport': {
             'search': False,
@@ -159,6 +242,7 @@ class StylesPage(Screen):
         '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+', '4-5', '5',
         '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
     snow_conv = ['Easy', 'Mod', 'Steep']
+    ice_conv = []
 
     conversion = {
         'sport': rope_conv,
@@ -169,6 +253,9 @@ class StylesPage(Screen):
         'aid': aid_conv,
         'ice': ice_conv,
         'snow': snow_conv}
+
+    photo = background(
+        'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
 
     def set_style(self, style):
         self.styles[style]['search'] = not self.styles[style]['search']
@@ -187,6 +274,8 @@ class StylesPage(Screen):
             self.ids[slider].opacity = 0.0
             self.ids[label].opacity = 0.0
 
+    def get_styles(self):
+        return self.styles
 
     def difficulty_conversion(self, style, difficulty_range):
         low = int(difficulty_range[0])
@@ -202,8 +291,6 @@ class StylesPage(Screen):
 
         self.ids[label].text = text
 
-    def get_styles(self):
-        return self.styles
 
 class PreferencesPage(Screen):
     preferences = {
@@ -213,7 +300,7 @@ class PreferencesPage(Screen):
         'location': {
             'name': None,
             'coordinates': (None, None)},
-        'distance': None,
+        'distance': 500,
         'features': {
             'arete': False,
             'chimney': False,
@@ -221,8 +308,8 @@ class PreferencesPage(Screen):
             'slab': False,
             'overhang': False}}
 
-    def get_background(self):
-        return global_background()
+    photo = background(
+            'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
             
     def set_up(self, styles):
         pitches = False
@@ -300,12 +387,14 @@ class PreferencesPage(Screen):
         return self.preferences
 
 class ResultsPage(Screen):
-    def get_background(self):
-        return global_background()
+    photo = background(
+            'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
 
-    def get_routes(self, styles, preferences, width):
+    def get_routes(self, styles, preferences):
 
-        grades = {
+        print(styles, preferences)
+
+        grade_conv = {
             'sport': 'rope_conv', 
             'trad': 'rope_conv',
             'tr': 'rope_conv',
@@ -315,11 +404,9 @@ class ResultsPage(Screen):
             'aid': 'aid_conv',
             'ice': 'ice_conv',
             'alpine': 'nccs_conv'}
-
+        
         multipitch_styles = [
             'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
-
-        pitch_range = preferences['pitches']
 
         query = 'SELECT * FROM Routes'
     
@@ -332,7 +419,7 @@ class ResultsPage(Screen):
         for style, data in styles.items():
             if data['search']:
                 search.append(style)
-                decoded = decode_systems[style]
+                decoded = data['system']
                 if decoded not in systems:
                     systems.append(decoded)
             else:
@@ -345,15 +432,21 @@ class ResultsPage(Screen):
                 joiner = ' OR'
             first = False
 
+
+            grade_range = styles[style]['grades']
+            conversion = grade_conv[style]
+            keys = (conversion,) + grade_range
+            grades = '%s BETWEEN %s AND %s' % keys
+    
             pitches = ''
-            
+            pitch_range = preferences['pitches']
             if style in multipitch_styles:  
                 if pitch_range[1] < 11:
                     pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
                 elif pitch_range[1] == 11:
                     pitches = ' AND pitches > %s' % pitch_range[0]
-            keys = (joiner, style, pitches)
-            query += '%s (%s is 1%s)' % (keys)
+            keys = (joiner, style, grades, pitches)
+            query += '%s (%s is 1 AND %s%s)' % (keys)
         
         if len(search) >= 1:
             for style in ignore:
@@ -374,12 +467,12 @@ class ResultsPage(Screen):
 
         location = preferences['location']
         location_name = location['name']
-        coordinates = location['coordinates']
 
         if location_name is not None:
             location['coordinates'] = GeoCode(location_name)
             print(location_name)
 
+        coordinates = location['coordinates']   
         if all(coordinates):
             routes['distance'] = Haversine(
                 coordinates,
@@ -388,8 +481,7 @@ class ResultsPage(Screen):
             routes['distance'] = 1
 
         distance = preferences['distance']
-        if distance:
-            routes = routes[routes.distance < distance]
+        routes = routes[routes.distance < distance]
 
         if len(routes) == 0:
             self.ids.test.text = 'No routes available that close to you.  Try expanding your distance search.'
@@ -407,7 +499,7 @@ class ResultsPage(Screen):
         routes['Rating'] = routes['bayes'].round(1)
 
         routes['Grade'] = routes[systems].apply(
-            lambda x: ','.join(x.dropna().astype(str)), axis=1)
+            lambda x: ', '.join(x.dropna().astype(str)), axis=1)
 
         terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
         routes['Style'] = routes[terrain].idxmax(axis=1)
