@@ -675,11 +675,12 @@ class ResultsPage(Screen):
         routes['Grade'] = routes[systems].apply(
             lambda x: ', '.join(x.dropna().astype(str)), axis=1)
 
-        # For each route, show the highest score of the features as long as it
-        # is above 0.75
+        # For each route, show feature scores above 0.75
         terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
-        routes['Features'] = routes[terrain].idxmax(axis=1)
-        routes.loc[routes[terrain].max(axis=1) < 0.75, 'Features'] = ''
+        feats = np.where(routes[terrain].gt(0.75, 0), terrain, None)
+        feats = pd.DataFrame(feats, index=routes.index)
+        feats = feats.apply(
+                lambda x: ', '.join(x.dropna()), axis=1)
 
         # Columns to display to user
         display_columns = ['Rating', 'Grade', 'Features']

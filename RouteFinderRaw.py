@@ -120,7 +120,7 @@ preferences = {
         'danger': 3, 
         'commitment': 3,
         'location': {
-            'name': None,
+            'name': 'Missoula',
             'coordinates': (None, None)},
         'distance': None,
         'features': {
@@ -186,10 +186,8 @@ def route_finder(styles, preferences):
     if len(search) >= 1:
         for style in ignore:
             query += ' AND %s = 0' % style
-    print(query)
         
     routes = pd.read_sql(query, con=conn, index_col='route_id')
-    print(routes)
 
     if len(routes) == 0:
         return 'No Routes'
@@ -242,11 +240,17 @@ def route_finder(styles, preferences):
     routes['Grade'] = routes[systems]
     
     terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
-    routes[terrain] = routes[terrain].mask(routes[terrain] < 0.75)
+    feats =  np.where(routes[terrain].gt(0.75, 0), terrain, '')
+    routes['Features'] = pd.Series([' '.join(x).strip() for x in feats], index=routes.index)
+
+#    routes[terrain] = routes[terrain].mask(routes[terrain] < 0.75)
     
-    return np.where(routes[terrain].isna())
-    routes['Features'] = routes[terrain].apply(
-            lambda x: ', '.join(x.dropna().astype(str)), axis=1)
+    #feats = np.where(routes[terrain].gt(0.75, 0), terrain, None)
+    #feats = pd.DataFrame(feats, index=routes.index)
+    #feats = feats.apply(
+    #        lambda x: ', '.join(x.dropna()), axis=1)
+    
+    routes['Features'] = feats
 
     display_columns = ['Rating', 'Grade', 'Features']
 
