@@ -239,17 +239,16 @@ def route_finder(styles, preferences):
     routes = routes.set_index('Name')
     routes['Rating'] = routes['bayes'].round(1)
 
-    routes['Grade'] = routes[systems].apply(
-            lambda x: ', '.join(x.dropna().astype(str)), axis=1)
+    routes['Grade'] = routes[systems]
     
     terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
+    routes[terrain] = routes[terrain].mask(routes[terrain] < 0.75)
     
-    
-    routes['Style'] = routes[terrain].idxmax(axis=1)
-    routes.loc[routes[terrain].max(axis=1) < 0.75, 'Style'] = ''
+    return np.where(routes[terrain].isna())
+    routes['Features'] = routes[terrain].apply(
+            lambda x: ', '.join(x.dropna().astype(str)), axis=1)
 
-
-    display_columns = ['Rating', 'Grade', 'Style']
+    display_columns = ['Rating', 'Grade', 'Features']
 
     return routes[display_columns]
 
