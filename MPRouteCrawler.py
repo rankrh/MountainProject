@@ -218,7 +218,7 @@ def MPScraper(path='C:/Users/',
         Mountain Project is not well established outside of North America, so
         the number of routes in other countries is often minimal.  This
         function first finds all of the broad regions, then splits them into
-        their areas. By choosing a random area that has not yet been visited
+        their areas. By choosing an area that has not yet been visited
         as indicated by the 'complete' column on the areas table, the function
         can quickly determine where it has been, and is restartable. This
         requires internet connection, so any server error or issue with
@@ -280,7 +280,6 @@ def MPScraper(path='C:/Users/',
                SELECT url, name, id FROM Areas
                WHERE complete IS 0
                AND error is Null
-               ORDER BY RANDOM()
                LIMIT 1''')
             area_data = cursor.fetchone()
         else:
@@ -454,7 +453,6 @@ def MPScraper(path='C:/Users/',
         # Gets route url and sends to get_route_features(route_url)
         for route in routes:
             route_url = route.find('a')['href']
-            print('         - ', route_url)
             get_route_features(route_url, area_id, lat, long)
 
     def get_route_features(route_url, area_id, lat, long):
@@ -499,6 +497,10 @@ def MPScraper(path='C:/Users/',
             # Includes route difficulty according to different grading systems
             route_diff = get_route_diff(route_soup)
             name = data['name']
+
+            # Updates user
+            print('    Gathering route data on:', name)
+            print('         - ', route_url)
 
             # Combines all dictionaries
             data.update(route_type)
@@ -547,8 +549,6 @@ def MPScraper(path='C:/Users/',
         # URL, Name, and Location are in raw DB
 
         route_name = route_soup.body.find('h1').get_text().strip()
-        # Updates user
-        print('    Gathering route data on:', route_name)
 
         # Average number of stars awarded out of 4
         stars = route_soup.find('a',
@@ -739,8 +739,8 @@ def MPScraper(path='C:/Users/',
         # Returns 'M' followed by any number
         mixed_rate = re.findall('(M[0-4]+)', grades)
 
-        # Returns X OR R OR PG13
-        danger = re.findall('(X|R|PG13)', grades)
+        # Returns X OR R OR PG13 as long as they aren't followed by UIAA
+        danger = re.findall('(X|R|PG13)(?![\s\+UIVX-]+)', grades)
         if not danger:
             danger = 0
 

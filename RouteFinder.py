@@ -7,13 +7,13 @@ Created on Thu Jam 10 3:42 2019
 Summary:
 Allows users to search for data and displays it in a useful way.
 
-Details:  
+Details:
 After gathering, cleaning, and analyzing data, this program is run to create
 the UI.  It firsts prompts the user for preferences on a variety of metrics,
 including type of route, difficulty, location, maximum distance, danger levels,
 and number of pitches.  It then sifts through the database to find routes that
 fit these parameters, then organizes them based on their quality, distance,
-and the number of other similar routes nearby.    
+and the number of other similar routes nearby.
 """
 
 from googlemaps.haversine import Haversine
@@ -45,9 +45,90 @@ from kivy.properties import StringProperty
 # Connects to DB
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
 
+# List of styles that can be multipitch
+multipitch_styles = [
+    'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
+
+# Ordered lists for route preferences
+pref_conversion = {
+    'danger': ['G', 'PG13', 'R', 'All Danger Levels'],
+    'commitment':[
+        'I', 'II', 'III', 'IV', 'All Commitment Levels']}
+
+# Ordered list of route difficulties in human readable format. Used for sport,
+# trad, and tr routes.  Only Yosemite Decimal System (YDS) is supported right
+# now.
+rope_conv = [
+    '3rd', '4th', 'Easy 5th', '5.0', '5.1', '5.2', '5.3', '5.4', '5.5',
+    '5.6', '5.7', '5.7+', '5.8-', '5.8', '5.8+', '5.9-', '5.9', '5.9+',
+    '5.10a', '5.10-', '5.10a/b', '5.10b', '5.10', '5.10b/c', '5.10c',
+    '5.10+', '5.10c/d', '5.10d', '5.11a', '5.11-', '5.11a/b', '5.11b',
+    '5.11', '5.11b/c', '5.11c', '5.11+', '5.11c/d', '5.11d', '5.12a',
+    '5.12-', '5.12a/b', '5.12b', '5.12', '5.12b/c', '5.12c', '5.12+',
+    '5.12c/d', '5.12d', '5.13a', '5.13-', '5.13a/b', '5.13b', '5.13',
+    '5.13b/c', '5.13c', '5.13+', '5.13c/d', '5.13d', '5.14a', '5.14-',
+    '5.14a/b', '5.14b', '5.14', '5.14b/c', '5.14c', '5.14+', '5.14c/d',
+    '5.14d', '5.15a', '5.15-', '5.15a/b', '5.15b', '5.15', '5.15c',
+    '5.15+', '5.15c/d', '5.15d']
+
+# Ordered list of route difficulties in human readable format. Used for
+# bouldering routes. Only Hueco rating system is supported
+boulder_conv  = [
+    'V-easy', 'V0-', 'V0', 'V0+', 'V0-1', 'V1-', 'V1', 'V1+', 'V1-2',
+    'V2-', 'V2', 'V2+', 'V2-3', 'V3-', 'V3', 'V3+', 'V3-4', 'V4-', 'V4',
+    'V4+', 'V4-5', 'V5-', 'V5', 'V5+', 'V5-6', 'V6-', 'V6', 'V6+', 'V6-7',
+    'V7-', 'V7', 'V7+', 'V7-8', 'V8-', 'V8', 'V8+', 'V8-9', 'V9-', 'V9',
+    'V9+', 'V9-10', 'V10-', 'V10', 'V10+', 'V10-11', 'V11-', 'V11', 'V11+',
+    'V11-12', 'V12-', 'V12', 'V12+', 'V12-13', 'V13-', 'V13', 'V13+',
+    'V13-14', 'V14-', 'V14', 'V14+', 'V14-15', 'V15-', 'V15', 'V15+',
+    'V15-16', 'V16-', 'V16', 'V16+', 'V16-17', 'V17-', 'V17']
+
+# Ordered list of route difficulties in human readable format.  Used for mixed
+# routes.
+mixed_conv = [
+    'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11',
+    'M12']
+
+# Ordered list of route difficulties in human readable format. Used for Aid
+# routes
+aid_conv = ['A0', 'A1', 'A2', 'A2+', 'A3', 'A3+', 'A4', 'A4+', 'A5','A6']
+# Ordered list of route difficulties in human readable format. Used for snow
+# routes.
+snow_conv = ['Easy', 'Mod', 'Steep']
+# Ordered list of route difficulties in human readable format. Used for ice
+# routes.
+ice_conv = [
+    '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+', '4-5',
+    '5', '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
+
+# Links the type of route with the conversion list.
+# Used to communicate with Pandas
+grade_conv = {
+    'sport': 'rope_conv',
+    'trad': 'rope_conv',
+    'tr': 'rope_conv',
+    'boulder': 'boulder_conv',
+    'mixed': 'mixed_conv',
+    'snow': 'snow_conv',
+    'aid': 'aid_conv',
+    'ice': 'ice_conv',
+    'alpine': 'nccs_conv'}
+
+# Communicates with the lists
+conversion = {
+    'sport': rope_conv,
+    'trad': rope_conv,
+    'tr': rope_conv,
+    'boulder': boulder_conv,
+    'mixed': mixed_conv,
+    'aid': aid_conv,
+    'ice': ice_conv,
+    'snow': snow_conv}
+
+
 def get_counts(area_group):
     """Counts the number of similar routes in an area.
-    
+
     Area groups were calculated after the data was gathered, and are used here
     to group similar routes.  Route difficulty, type, and style are all taken
     into account, so the counts cannot be calculated until the user defines
@@ -63,7 +144,7 @@ def get_counts(area_group):
     """
     # An area_group ID of -1 means there are no other routes in the area
     if area_group.name == -1:
-        area_group['area_counts'] = 1        
+        area_group['area_counts'] = 1
     else:
         area_group['area_counts'] = len(area_group)
 
@@ -71,9 +152,9 @@ def get_counts(area_group):
 
 def background(path):
     """Returns image to use as background.
-    
+
     Images are public domain, found at: https://www.pexels.com/
-    
+
     Args:
         path(str): Location of folder to choose picture from
     Returns:
@@ -100,7 +181,7 @@ class FloatInput(TextInput):
     def insert_text(self, substring, from_undo=False):
         """Allows users to input numeric data as any number of digits and 1
         period
-        
+
         Overwrites the default Kivy behavior, which allows all characters.
 
         Args:
@@ -132,40 +213,24 @@ class StylesPage(Screen):
                     human-readable grading system.  Applies to climbing styles
                     with multiple systems.  At this point, each style only
                     supports one system.
-        rope_conv(list): Ordered list of route difficulties in human readable
-            format. Used for sport, trad, and tr routes.  Only Yosemite Decimal
-            System (YDS) is supported right now.
-        boulder_conv(list): Ordered list of route difficulties in human
-            readable format. Used for bouldering routes.  Only Hueco rating
-            system is supported
-        mixed_conv(list): Ordered list of route difficulties in human readable
-            format.  Used for mixed routes.
-        aid_conv(list): Ordered list of route difficulties in human readable
-            format. Used for Aid routes
-        snow_conv(list): Ordered list of route difficulties in human readable
-            format. Used for snow routes.
-        ice_conv(list): Ordered list of route difficulties in human readable
-            format. Used for ice routes.
-        conversion(dict): Links the type of route with the conversion list.
         photo(str): Runs background function to get background picture and
             returns path
-
     Methods:
         set_style: Updates style attribute to reflect the user's style choices
             and difficulty levels and updates widgets in kv file.
         difficulty_conversion: Updates styles to reflect user choices for
             difficulty range, then converts number to corresponding difficulty
-            in human readable format and updates kv. 
+            in human readable format and updates kv.
 
     """
-     
+
     styles = {
         'sport': {
             'search': False,
             'slider_id': 'sport_slide',
             'label_id': 'sport_diff',
             'grades': (None, None),
-            'system': 'yds_rating'}, 
+            'system': 'yds_rating'},
         'trad': {
             'search': False,
             'slider_id': 'trad_slide',
@@ -209,61 +274,17 @@ class StylesPage(Screen):
             'grades': (None, None),
             'system': 'aid_rating'}}
 
-    rope_conv = [
-        '3rd', '4th', 'Easy 5th', '5.0', '5.1', '5.2', '5.3', '5.4', '5.5',
-        '5.6', '5.7', '5.7+', '5.8-', '5.8', '5.8+', '5.9-', '5.9', '5.9+',
-        '5.10a', '5.10-', '5.10a/b', '5.10b', '5.10', '5.10b/c', '5.10c',
-        '5.10+', '5.10c/d', '5.10d', '5.11a', '5.11-', '5.11a/b', '5.11b',
-        '5.11', '5.11b/c', '5.11c', '5.11+', '5.11c/d', '5.11d', '5.12a', 
-        '5.12-', '5.12a/b', '5.12b', '5.12', '5.12b/c', '5.12c', '5.12+',
-        '5.12c/d', '5.12d', '5.13a', '5.13-', '5.13a/b', '5.13b', '5.13',
-        '5.13b/c', '5.13c', '5.13+', '5.13c/d', '5.13d', '5.14a', '5.14-',
-        '5.14a/b', '5.14b', '5.14', '5.14b/c', '5.14c', '5.14+', '5.14c/d',
-        '5.14d', '5.15a', '5.15-', '5.15a/b', '5.15b', '5.15', '5.15c',
-        '5.15+', '5.15c/d', '5.15d']
-
-    boulder_conv  = [
-        'V-easy', 'V0-', 'V0', 'V0+', 'V0-1', 'V1-', 'V1', 'V1+', 'V1-2',
-        'V2-', 'V2', 'V2+', 'V2-3', 'V3-', 'V3', 'V3+', 'V3-4', 'V4-', 'V4',
-        'V4+', 'V4-5', 'V5-', 'V5', 'V5+', 'V5-6', 'V6-', 'V6', 'V6+', 'V6-7',
-        'V7-', 'V7', 'V7+', 'V7-8', 'V8-', 'V8', 'V8+', 'V8-9', 'V9-', 'V9',
-        'V9+', 'V9-10', 'V10-', 'V10', 'V10+', 'V10-11', 'V11-', 'V11', 'V11+',
-        'V11-12', 'V12-', 'V12', 'V12+', 'V12-13', 'V13-', 'V13', 'V13+',
-        'V13-14', 'V14-', 'V14', 'V14+', 'V14-15', 'V15-', 'V15', 'V15+',
-        'V15-16', 'V16-', 'V16', 'V16+', 'V16-17', 'V17-', 'V17']
-    
-    mixed_conv = [
-        'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11',
-        'M12']
-    
-    aid_conv = ['A0', 'A1', 'A2', 'A2+', 'A3', 'A3+', 'A4', 'A4+', 'A5','A6']
-    ice_conv = [
-        '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+', '4-5', '5',
-        '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
-    snow_conv = ['Easy', 'Mod', 'Steep']
-    ice_conv = []
-
-    conversion = {
-        'sport': rope_conv,
-        'trad': rope_conv,
-        'tr': rope_conv,
-        'boulder': boulder_conv,
-        'mixed': mixed_conv,
-        'aid': aid_conv,
-        'ice': ice_conv,
-        'snow': snow_conv}
-
     photo = background(
         'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
 
     def set_style(self, style):
         """Updates style dictionary and kv file to reflect user choices. Runs
         when the user presses any of the style buttons.
-        
+
         Args:
             style(str): Name of the style being modified
         """
-        
+
         # Flips between True and False
         self.styles[style]['search'] = not self.styles[style]['search']
 
@@ -295,7 +316,7 @@ class StylesPage(Screen):
     def difficulty_conversion(self, style, difficulty_range):
         """Updates styles with user's difficulty range and converts integers
         to human readable grading scale.
-        
+
         Args:
             style(str): Name of the style being modified
             difficulty_range(tuple): Integer values for difficulty slider
@@ -305,7 +326,7 @@ class StylesPage(Screen):
         low = int(difficulty_range[0])
         high = int(difficulty_range[1])
         # Gets correct system to convert into
-        grades = self.conversion[style]
+        grades = conversion[style]
 
         # Sliders default to (0, 100) and must be lowered to the range of
         # the relevent conversion chart
@@ -314,7 +335,7 @@ class StylesPage(Screen):
 
         # Updates style dictionary for corresponding style
         self.styles[style]['grades'] = (low, high)
-        
+
         # Gets label ID
         label = self.styles[style]['label_id']
 
@@ -323,7 +344,7 @@ class StylesPage(Screen):
             text = str(grades[high])
         # Else gives a range
         else:
-            text = str(grades[low]) + ' to ' + str(grades[high])
+            text = '%s to %s' % (grades[low], grades[high])
 
         # Updates label
         self.ids[label].text = text
@@ -331,7 +352,7 @@ class StylesPage(Screen):
 
 class PreferencesPage(Screen):
     """Screen for additional user preferences.
-    
+
     Gathers user input on current location, maximum distance away, number of
     pitches, and desired route features.
 
@@ -349,28 +370,24 @@ class PreferencesPage(Screen):
                     to False
         photo(str): Runs background function to get background picture and
             returns path
-        multipitch_styles(list):  Styles for which the pitch bar will be
-            shown
-        pref_conversion(dict): Different preferences and their
-            conversions to human readable form
 
     Methods:
         set_up: Gets inital conditions needed to create page
-        preference_conv: Converts danger and commitment levels to human readable
-            grade ***COMMITMENT NOT SUPPORTED YET
+        preference_conv: Converts danger and commitment levels to human
+            readable grade ***COMMITMENT NOT SUPPORTED YET
         pitch_conv: Generates text from integer range
         set_location: Updates preferences with user's location
         set_distance: Updates preferences with user's max distance
         set_feature: Updateas preferences with user's chosen features
     """
     preferences = {
-        'pitches': (None, None), 
-        'danger': 3, 
+        'pitches': (None, None),
+        'danger': 3,
         'commitment': 3,
         'location': {
             'name': None,
             'coordinates': (None, None)},
-        'distance': 500,
+        'distance': None,
         'features': {
             'arete': False,
             'chimney': False,
@@ -379,25 +396,18 @@ class PreferencesPage(Screen):
             'overhang': False}}
 
     photo = background(
-            'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
-    multipitch_styles = [
-        'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
-    pref_conversion = {
-        'danger': ['G', 'PG13', 'R', 'All Danger Levels'],
-        'commitment':[
-            'I', 'II', 'III', 'IV', 'All Commitment Levels']}
+        'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
 
-            
     def set_up(self, styles):
         """ Gets initial conditions for kv file.
 
         Args:
             styles(dict): Style data from styles screen
         """
-        
+
         # If any of the styles can have multiple pitches, shows pitch
         # labels and slider
-        for style in self.multipitch_styles:
+        for style in multipitch_styles:
             if style in styles.keys():
                 # Makes labels and slider visible
                 self.ids.pitches.opacity = 1
@@ -418,12 +428,12 @@ class PreferencesPage(Screen):
 
     def preference_conv(self, pref, user_value, max_value):
         """Converts integer values to human readable form.
-        
+
         Args:
             pref(str): Type of preference to be converted
             user_value(int): User's choice for that preference
             max_value(int): Maximum value for that preference
-            
+
         Returns:
             text(str): String to be displayed on the screen
         """
@@ -432,24 +442,24 @@ class PreferencesPage(Screen):
         # If the user's choice is less than the maximum, we will search for
         # only values up to their choice
         if user_value < max_value:
-            text = self.pref_conversion[pref][int(user_value)]
+            text = pref_conversion[pref][int(user_value)]
             text += ' and under'
             return text
         # Otherwise, we'll search for all values
         else:
-            text = self.pref_conversion[pref][int(user_value)]
+            text = pref_conversion[pref][int(user_value)]
             return text
-        
+
     def pitch_conversion(self, values):
         """Generates text for pitch information based on user's choices.
-        
+
         Args:
-            values(tuple): User's chosen range of pitches   
+            values(tuple): User's chosen range of pitches
 
         Returns:
             text(str): Text information on pitches to be displayed
         """
-        # Updates 
+        # Updates
         self.preferences['pitches'] = values
 
         low = int(values[0])
@@ -467,141 +477,216 @@ class PreferencesPage(Screen):
             text = '%s to %s pitches' % (low, high)
         return text
 
-    def set_location(self, location): 
-        if location is not '':  
+    def set_location(self, location):
+        """Updates preferences with user's location
+
+        Args:
+            location(str): User's location
+        """
+        if location is not '':
             self.preferences['location']['name'] = location
 
     def set_distance(self, distance):
+        """ Updates preferences with maximum distance to routes
+
+        Args:
+            distance(int): Maximum distance to routes in miles
+        """
         if distance is not '':
             self.preferences['distance'] = int(distance)
-    
+
     def set_feature(self, feature):
+        """ Updates preferences with user's chosen features.  Called when user
+        presses toggle button
+
+        Args:
+            feature(str): Type of features, e.g. 'slab', 'overhang'
+        """
+        # Toggles preference for that feature
         features = self.preferences['features']
         features[feature] = not features[feature]
 
 class ResultsPage(Screen):
+    """ Builds the screen that shows routes.
+
+    Attributes:
+        photo(str): Runs background function to get background picture and
+            returns path
+    Methods:
+        get_routes: Pulls routes that meet the user's specifications from the
+            database
+    """
+    # Sets background image
     photo = background(
-            'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
-
-    def get_routes(self, styles, preferences):
-
-        print(styles, preferences)
-
-        grade_conv = {
-            'sport': 'rope_conv', 
-            'trad': 'rope_conv',
-            'tr': 'rope_conv',
-            'boulder': 'boulder_conv',
-            'mixed': 'mixed_conv',
-            'snow': 'snow_conv',
-            'aid': 'aid_conv',
-            'ice': 'ice_conv',
-            'alpine': 'nccs_conv'}
-        
-        multipitch_styles = [
-            'sport', 'trad', 'aid', 'mixed', 'alpine', 'snow', 'ice']
-
-        query = 'SELECT * FROM Routes'
+        'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
     
+    def get_routes(self, styles, preferences):
+        """ Sorts through the database to find the best routes for the user.
+
+        Args:
+            styles(dict): User's route style choices
+            preferences(dict): User's route preferences
+        """
+        # Base query for SQL
+        query = 'SELECT * FROM Routes'
+
+        # Will hold route styles to search for
         search = []
         first = True
+        # Will hold route styles to ignore
         ignore = []
-        
+
+        # Will hold grading systems
         systems = []
 
+        # Find which styles the user has chosen
         for style, data in styles.items():
+            # If chosen, add to the search list and add corresponding system
+            # to the system list, if not there already
             if data['search']:
                 search.append(style)
                 decoded = data['system']
                 if decoded not in systems:
                     systems.append(decoded)
+            # Else, add to the ignore list
             else:
                 ignore.append(style)
-                
+
+        # For each style chosen, add to the SQL query
         for style in search:
+            # The first style gets 'WHERE' in front, others get 'OR'
             if first:
                 joiner = ' WHERE'
             else:
                 joiner = ' OR'
             first = False
 
-
+            # Find grade range for that style
             grade_range = styles[style]['grades']
             conversion = grade_conv[style]
             keys = (conversion,) + grade_range
             grades = '%s BETWEEN %s AND %s' % keys
-    
+
+            # If that style can be multipitch, find the user's pitch choices
             pitches = ''
             pitch_range = preferences['pitches']
-            if style in multipitch_styles:  
+            if style in multipitch_styles:
+                # If the high end is below 11, finds routes between the low
+                # and high, inclusive.
                 if pitch_range[1] < 11:
                     pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
+                # If the high end is 11, finds routes that are at least the
+                # low end
                 elif pitch_range[1] == 11:
-                    pitches = ' AND pitches > %s' % pitch_range[0]
+                    pitches = ' AND pitches >= %s' % pitch_range[0]
+
+            # Join all strings together
             keys = (joiner, style, grades, pitches)
             query += '%s (%s is 1 AND %s%s)' % (keys)
-        
+
+        # If the user has chosen at least one route, exclude the others.
+        # If the user has chosen no routes, look for all styles
         if len(search) >= 1:
             for style in ignore:
                 query += ' AND %s = 0' % style
 
+        # Query SQL and convert to a dataframe
         routes = pd.read_sql(query, con=conn, index_col='route_id')
-
+        print(routes.head())
+        # If no routes fit this description, terminates
         if len(routes) == 0:
             self.ids.test.text = query
             return
 
-        danger = preferences['danger']
-        routes = routes[routes['danger_conv'].values <= danger]
-        if len(routes) == 0:
-            self.ids.test.text = 'No routes available that safe.  Try expanding your danger levels'
-            return
+        #danger = preferences['danger']
+        #routes = routes[routes['danger_conv'].values <= danger]
+        #if len(routes) == 0:
+        #    self.ids.test.text = 'No routes available that safe.  Try expanding your danger levels'
+        #    return
 
-
+        # Gets user location
         location = preferences['location']
         location_name = location['name']
 
+        # If user has input a location, finds its coordinates
         if location_name is not None:
             location['coordinates'] = GeoCode(location_name)
-            print(location_name)
 
-        coordinates = location['coordinates']   
+        coordinates = location['coordinates']
+        # If coordinates have been sucessfully found, finds the distance
+        # between the user and the route, as the crow flies.
+
         if all(coordinates):
             routes['distance'] = Haversine(
                 coordinates,
                 (routes['latitude'], routes['longitude']))
+            # Removes all routes that are further away than the maximum user
+            # distance from the dataframe
+            distance = preferences['distance']
+            if distance is not None:
+                print(routes.head())
+                print('Failed at Distance')
+                routes = routes[routes.distance < distance]
+                # If no routes are left, terminates
+                if len(routes) == 0:
+                    return
+
+        # If the user has not put in a location or the location coordinates
+        # could not be found, set distance to 1 for all routes.
         else:
             routes['distance'] = 1
 
-        distance = preferences['distance']
-        routes = routes[routes.distance < distance]
+        # Following the convention of setting p = 0.05, select all routes
+        # that have a 0.95 as their score for each feature the user chooses
+        # Note: As the user chooses more routes, the intersection will get
+        # vanishingly small
+        print(routes.head())
+        print('Failed at features')
+        features = preferences['features']            
+        for feature, value in features.items():
+            if value:
+                routes = routes[routes[feature] > 0.95]
 
+        # If no routes meet these criteria, return
         if len(routes) == 0:
-            self.ids.test.text = 'No routes available that close to you.  Try expanding your distance search.'
             return
-            
+
+        # Get area counts for each area group of the remaining routes
         routes = routes.groupby('area_group').apply(get_counts)
 
+        # Calculates the value of the routes.  Highly rated routes should be
+        # more heavily weighted than lower rated ones, and the number of
+        # routes in an area should affect the final rating in a diminishing
+        # way.  Distance should be punished more as it gets further from the
+        # user.
         routes['value'] = (
-            (100 * routes['bayes'] * np.log(routes['area_counts'] + 0.001) + np.e)
-            / (routes['distance'] ** 2))
+            ((routes['bayes'] ** 2) * (np.log(routes['area_counts']) + np.e))
+            / (routes['distance'] ** 3))
 
-        routes = routes.head(10).sort_values(by='value', ascending=False)
+        # Selects the top ten routes
+        routes = routes.sort_values(by='value', ascending=False).head(10)
+        # Renames the columns for later display
         routes.rename(columns={'name': 'Name'}, inplace=True)
         routes = routes.set_index('Name')
+        # Rounds the Bayesian rating to one decimal point
         routes['Rating'] = routes['bayes'].round(1)
 
+        # Collapses different grading systems into one column
         routes['Grade'] = routes[systems].apply(
             lambda x: ', '.join(x.dropna().astype(str)), axis=1)
 
+        # For each route, show the highest score of the features as long as it
+        # is above 0.75
         terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
         routes['Features'] = routes[terrain].idxmax(axis=1)
         routes.loc[routes[terrain].max(axis=1) < 0.75, 'Features'] = ''
 
+        # Columns to display to user
         display_columns = ['Rating', 'Grade', 'Features']
         routes = routes[display_columns]
         routes = routes.to_dict('index')
 
+        # Add Labels for each route
         self.ids.routes.cols = 4
         self.ids.routes.add_widget(Label(text='Name'))
 
@@ -623,7 +708,7 @@ class RouteFinder(App):
         return root_widget
 
 if __name__ == '__main__':
-    RouteFinder().run() 
+    RouteFinder().run()
 
 
 

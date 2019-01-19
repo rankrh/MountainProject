@@ -59,13 +59,13 @@ styles = {
             'search': True,
             'slider_id': 'sport_slide',
             'label_id': 'sport_diff',
-            'grades': (0, 15),
+            'grades': (68, 76),
             'system': 'yds_rating'}, 
         'trad': {
-            'search': True,
+            'search': False,
             'slider_id': 'trad_slide',
             'label_id': 'trad_diff',
-            'grades': (1, 12),
+            'grades': (68, 76),
             'system': 'font_rating'},
         'tr': {
             'search': False,
@@ -117,12 +117,12 @@ decode_systems = {
 
 preferences = {
         'pitches': (0,11), 
-        'danger': 0, 
+        'danger': 3, 
         'commitment': 3,
         'location': {
-            'name': 'Missoula',
+            'name': None,
             'coordinates': (None, None)},
-        'distance': 500,
+        'distance': None,
         'features': {
             'arete': False,
             'chimney': False,
@@ -157,7 +157,8 @@ def route_finder(styles, preferences):
             if decoded not in systems:
                 systems.append(decoded)
         else:
-            ignore.append(style)
+            if style != 'tr':
+                ignore.append(style)
             
     for style in search:
         if first:
@@ -178,37 +179,41 @@ def route_finder(styles, preferences):
             if pitch_range[1] < 11:
                 pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
             elif pitch_range[1] == 11:
-                pitches = ' AND pitches > %s' % pitch_range[0]
+                pitches = ' AND pitches >= %s' % pitch_range[0]
         keys = (joiner, style, grades, pitches)
         query += '%s (%s is 1 AND %s%s)' % (keys)
     
     if len(search) >= 1:
         for style in ignore:
             query += ' AND %s = 0' % style
+    print(query)
         
     routes = pd.read_sql(query, con=conn, index_col='route_id')
+    print(routes)
 
     if len(routes) == 0:
         return 'No Routes'
     
-    danger = preferences['danger']
-    routes = routes[routes['danger_conv'].values <= danger]
+    #danger = preferences['danger']
+    #routes = routes[routes['danger_conv'].values <= danger]
 
     location = preferences['location']
     location_name = location['name']
+    coordinates = location['coordinates']
+
     if location_name is not None:
         location['coordinates'] = GeoCode(location_name)
-        coordinates = location['coordinates']
         
     if all(coordinates):
         routes['distance'] = Haversine(
             coordinates,
             (routes['latitude'], routes['longitude']))
+        distance = preferences['distance']
+        routes = routes[routes.distance < distance]
+
     else:
         routes['distance'] = 1
         
-    distance = preferences['distance']
-    routes = routes[routes.distance < distance]
 
 
     if len(routes) == 0:
