@@ -245,10 +245,10 @@ def route_finder(styles, preferences):
 
 #    routes[terrain] = routes[terrain].mask(routes[terrain] < 0.75)
     
-    #feats = np.where(routes[terrain].gt(0.75, 0), terrain, None)
-    #feats = pd.DataFrame(feats, index=routes.index)
-    #feats = feats.apply(
-    #        lambda x: ', '.join(x.dropna()), axis=1)
+    feats = np.where(routes[terrain].gt(0.75, 0), terrain, None)
+    feats = pd.DataFrame(feats, index=routes.index)
+    feats = feats.apply(
+            lambda x: ', '.join(x.dropna()), axis=1)
     
     routes['Features'] = feats
 

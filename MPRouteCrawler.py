@@ -659,6 +659,8 @@ def MPScraper(path='C:/Users/',
             except:
                 climb_type['nccs_conv'] = -1
             climb_type['nccs_rating'] = nccs
+        else:
+            climb_type['nccs_conv'] = 0
         # All allowed MP route types
         all_types = [
             'Trad', 'TR', 'Sport', 'Aid', 'Snow', 'Ice', 'Mixed', 'Boulder',
@@ -734,7 +736,7 @@ def MPScraper(path='C:/Users/',
         brit = re.findall('([MDVSHE\d]+ [\dabc]+)\s+British', grades)
 
         # Returns 'A' OR 'C' and any number or '-'
-        aid_rate = re.findall('[^\d](A[\d\+]+|C[\d\+]+)', grades)
+        aid_rate = re.findall('[^\d](A[\d\+\-]+|C[\d\+\-]+)', grades)
 
         # Returns 'M' followed by any number
         mixed_rate = re.findall('(M[0-4]+)', grades)
@@ -748,7 +750,7 @@ def MPScraper(path='C:/Users/',
         snow_rate = re.findall('([A-Za-z]+)\s+Snow', grades)
 
         # Returns 'WI' or 'AI' followed by any number
-        ice_rate = re.findall('[AI|WI]([\d][\d+-]{,2})', grades)
+        ice_rate = re.findall('(AI|WI[\d\+-]+)', grades)
 
         # Holds route difficulty information
         difficulty = {
@@ -790,10 +792,10 @@ def MPScraper(path='C:/Users/',
             'M12']
 
         aid_conv = [
-            'A0', 'A1', 'A2', 'A2+', 'A3', 'A3+', 'A4', 'A4+', 'A5', 'A6']
+            '0', '0+', '1', '1+' '2', '2+', '3', '3+', '4', '4+', '5', '6']
         
         ice_conv = [
-            '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+',
+            '0', '1', '1+', '1-2', '2', '2+', '2-3', '3', '3+', '3-4', '4','4+',
             '4-5', '5', '5+', '5-6', '6', '6+', '6-7', '7', '7+', '7-8', '8']
         danger_conv = ['G', 'PG13', 'R', 'X']
         snow_conv = ['Easy', 'Mod', 'Steep']
@@ -827,7 +829,7 @@ def MPScraper(path='C:/Users/',
                         conversion['boulder_conv'] = -1
                 elif item is 'ice_rating':
                     try:
-                        ice = ice_conv.index(difficulty[item])
+                        ice = ice_conv.index(difficulty[item].split('I')[1])
                         conversion['ice_conv'] = ice
                     except:
                         conversion['ice_conv'] = -1
@@ -839,7 +841,7 @@ def MPScraper(path='C:/Users/',
                         conversion['snow_conv'] = -1
                 elif item is 'aid_rating':
                     try:
-                        aid = aid_conv.index(difficulty[item])
+                        aid = aid_conv.index(difficulty[item][1:])
                         conversion['aid_conv'] = aid
                     except:
                         conversion['aid_conv'] = -1
@@ -945,8 +947,11 @@ def MPScraper(path='C:/Users/',
                         .rename(columns={'word': 'word_count'}))
         except:
             print(text)
-        text['tf'] = text['word_count'] / doc_length
-        text.to_sql('Words', con=conn, if_exists='append')
+        try:
+            text['tf'] = text['word_count'] / doc_length
+            text.to_sql('Words', con=conn, if_exists='append')
+        except:
+            pass
 
     def write_to_sql(route_data):
         ''' Writes the dictionary of route data to the DB
