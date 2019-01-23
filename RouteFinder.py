@@ -24,16 +24,21 @@ import sqlite3
 import re
 import os
 import random
+import webbrowser as wb
+from functools import partial
+
 
 import kivy
 
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
+from kivy.properties import StringProperty
 from kivy.uix.rangeslider import RangeSlider
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
 from kivy.uix.label import Label
 
 from kivy.lang import Builder
@@ -163,6 +168,9 @@ def background(path):
     pic = random.choice(pics)
     path += pic
     return path
+
+class ScrollableLabel(ScrollView):
+    text = StringProperty('')
 
 class FloatInput(TextInput):
     """A form of text input that limits characters to digits and a single
@@ -640,8 +648,6 @@ class ResultsPage(Screen):
         # that have a 0.95 as their score for each feature the user chooses
         # Note: As the user chooses more routes, the intersection will get
         # vanishingly small
-        print(routes.head())
-        print('Failed at features')
         features = preferences['features']            
         for feature, value in features.items():
             if value:
@@ -682,22 +688,50 @@ class ResultsPage(Screen):
         feats = feats.apply(
                 lambda x: ', '.join(x.dropna()), axis=1)
 
+        routes['Features'] = feats
+
         # Columns to display to user
-        display_columns = ['Rating', 'Grade', 'Features']
+        display_columns = ['Rating', 'Grade', 'Features', 'url']
         routes = routes[display_columns]
         routes = routes.to_dict('index')
 
-        # Add Labels for each route
-        self.ids.routes.cols = 4
-        self.ids.routes.add_widget(Label(text='Name'))
+        self.ids.routes_layout.clear_widgets()
 
-        for column in display_columns:
-            self.ids.routes.add_widget(Label(text=column))
+        for name, data in routes.items():
+            rating = str(data['Rating'])
+            grade = str(data['Grade'])
+            feat = str(data['Features'])
+            url = str(data['url'])
 
-        for route, data in routes.items():
-            self.ids.routes.add_widget(Label(text=route))
-            for value in data.values():
-                self.ids.routes.add_widget(Label(text=str(value)))
+            self.ids.routes_layout.add_widget(Label(
+                text=name,
+                valign='middle',
+                text_size=self.size))
+            self.ids.routes_layout.add_widget(Label(
+                text=rating,
+                valign='middle',
+                text_size=self.size))
+            self.ids.routes_layout.add_widget(Label(
+                text=grade,
+                valign='middle',
+                text_size=self.size))
+            self.ids.routes_layout.add_widget(Label(
+                text=feat,
+                valign='middle',
+                text_size=self.size))
+
+            btn = Button(text='Go!', url='Hi')
+            btn.bind(on_press=partial(
+                self.get_route_page, url))
+
+            self.ids.routes_layout.add_widget(btn)
+    
+    def get_route_page(self, url, btn):
+        wb.open(url)
+
+            
+            
+                    
 
 class RoutesScreenManager(ScreenManager):
     pass

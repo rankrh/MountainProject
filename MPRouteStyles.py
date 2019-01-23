@@ -475,7 +475,7 @@ def find_route_styles(*styles, path):
             table[column_name] = (
                 1 / (1 + np.e ** (-100 *
                                   (table[column_name]
-                                  - table[column_name].mean()))))
+                                  - table[column_name].median()))))
             
         return table
 

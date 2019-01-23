@@ -19,7 +19,8 @@ RoutesScreenManager:
     color: 1, 1, 1, 1
     outline_width: 2
 
-
+<Button>:
+    url: None
 
 <StylesPage>:
     name: 'styles'
@@ -489,8 +490,24 @@ RoutesScreenManager:
             color: 1, 1, 1, 1
             outline_width: 2
         GridLayout:
-            cols: 1
-            id: routes
+            cols: 5
+            id: routes_layout
+            spacing_vertical: 30
+            Label:
+                text: 'Name'
+                valign: 'top'
+            Label:
+                text: 'Rating'
+                valign: 'top'
+            Label:
+                text: 'Grade'
+                valign: 'top'
+            Label:
+                text: 'Features'
+                valign: 'top'
+            Label:
+                text: 'Go To Page'
+                valign: 'top'
         Button:
             text: 'Previous Page'
             size_hint: None, None

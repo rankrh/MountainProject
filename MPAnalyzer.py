@@ -122,6 +122,58 @@ def MPAnalyzer(path='C:\\Users\\',
         routes['bayes'] = (((routes['votes'] * routes['stars'])
                             + avg_stars * 10) / (routes['votes'] + 10))
         return routes['bayes'].to_frame()
+    
+    def fill_null_loc():
+        """Fills empty route location data.
+        
+        Not all routes have latitude and longitude coordinates, so we must use
+        the coordinates of their parent area instead as a rough estimate.  This
+        function first grabs all routes with no data, then fills in the data
+        with the lowest level area it can, going up as many areas as needed
+        until it finds one with proper coordinates.
+        
+        Returns:
+            Updated SQL Database
+            """
+        # Select a route without location data
+        cursor.execute('''
+            SELECT route_id, area_id, name FROM Routes
+            WHERE latitude is Null OR longitude is Null
+            LIMIT 1''')
+        route = cursor.fetchone()
+        
+        while route is not None:
+            # Route ID
+            rid = route[0]
+            # From ID
+            fid = route[1]
+            name = route[2]
+            print('Processing:', name)
+    
+            # Loops until it finds proper data
+            lat, long = None, None
+            while lat == None or long == None:
+                # Gets latitude and longitude from parent area
+                cursor.execute('''
+                    SELECT latitude, longitude, from_id
+                    FROM Areas
+                    WHERE id = ?''', (fid,))
+                loc = cursor.fetchone()
+                lat, long = loc[0], loc[1]
+                fid = loc[2]
+            # Updates DB
+            cursor.execute('''
+                UPDATE Routes
+                SET latitude = ?, longitude = ?
+                WHERE route_id = ?''', (lat, long, rid))
+            conn.commit()
+            cursor.execute('''
+                SELECT route_id, area_id, name
+                FROM Routes WHERE latitude is Null OR longitude is Null
+                LIMIT 1''')
+            route = cursor.fetchone()
+        return 'Done'    
+
 
     def route_clusters(routes):
         ''' Clusters routes into area groups that are close enough to travel
@@ -716,14 +768,12 @@ def MPAnalyzer(path='C:\\Users\\',
             By manipulating the constants in this function, we can find a
             continuous threshold-like set of values that are bounded by 0 and
             1.  The midpoint of the threshold is the mean value of the scores,
-            meaning that if a route has a higher-than-average cosine score, its
-            final value will be above 0.5, while routes that have cosine values
-            near 1 will still have a final score near 1.  Therefore, the
+            plus one standard devaition.  Therefore, the
             function used here is:
                 
                             f(x) = 1 / (1 + e^(-100(x - x'))
                         
-                                x' = mean score
+                                x' = mean + sigma
                                 e = Euler's constant
 
     
@@ -769,12 +819,14 @@ def MPAnalyzer(path='C:\\Users\\',
                                       + ((1 - table[count].values)
                                       * (1 - table[style].values)
                                       * style_avg))
+                
 
                 # Calculates final score using Sigmoid function
                 table[column_name] = (
                     1 / (1 + np.e ** (-100 *
                                       (table[column_name]
-                                  - table[column_name].mean()))))
+                                  - (table[column_name].mean()
+                                      + table[column_name].std()))))))
     
             return table
     
@@ -863,6 +915,9 @@ def MPAnalyzer(path='C:\\Users\\',
     tfidf()
 
     # Gets cluster information for routes
+    print('Filling in empty locations.........')
+    print(fill_null_loc())
+    
     print('Getting climbing area clusters.....', end=' ')
     cluster_text = '''SELECT route_id, latitude, longitude
                       FROM Routes'''

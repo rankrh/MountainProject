@@ -750,7 +750,7 @@ def MPScraper(path='C:/Users/',
         snow_rate = re.findall('([A-Za-z]+)\s+Snow', grades)
 
         # Returns 'WI' or 'AI' followed by any number
-        ice_rate = re.findall('(AI|WI[\d\+-]+)', grades)
+        ice_rate = re.findall('(AI[\d\+-]+|WI[\d\+-]+)', grades)
 
         # Holds route difficulty information
         difficulty = {
