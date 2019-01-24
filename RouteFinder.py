@@ -27,9 +27,9 @@ import random
 import webbrowser as wb
 from functools import partial
 
-
 import kivy
 
+from kivy.loader import Loader
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.screenmanager import Screen
 from kivy.properties import StringProperty
@@ -38,8 +38,13 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.uix.image import Image
+from kivy.uix.image import AsyncImage
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.graphics import Rectangle
+from kivy.loader import Loader
+from kivy.clock import Clock
 
 from kivy.lang import Builder
 
@@ -166,7 +171,7 @@ def background(path):
         path(str): Location of randomly chosen picture in a given file"""
     pics = os.listdir(path)
     pic = random.choice(pics)
-    path += pic
+    path = os.path.join(path, pic)
     return path
 
 class ScrollableLabel(ScrollView):
@@ -282,8 +287,7 @@ class StylesPage(Screen):
             'grades': (None, None),
             'system': 'aid_rating'}}
 
-    photo = background(
-        'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
+    photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
 
     def set_style(self, style):
         """Updates style dictionary and kv file to reflect user choices. Runs
@@ -403,8 +407,7 @@ class PreferencesPage(Screen):
             'slab': False,
             'overhang': False}}
 
-    photo = background(
-        'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
+    photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
 
     def set_up(self, styles):
         """ Gets initial conditions for kv file.
@@ -514,27 +517,27 @@ class PreferencesPage(Screen):
         features = self.preferences['features']
         features[feature] = not features[feature]
 
-class ResultsPage(Screen):
-    """ Builds the screen that shows routes.
 
-    Attributes:
-        photo(str): Runs background function to get background picture and
-            returns path
-    Methods:
-        get_routes: Pulls routes that meet the user's specifications from the
-            database
-    """
-    # Sets background image
-    photo = background(
-        'C:/Users/Bob/Documents/Python/Mountain Project/images/backgrounds/')
-    
-    def get_routes(self, styles, preferences):
+class LoadingPage(Screen):
+
+    styles = None
+    preferences = None
+    routes = None
+
+    def get_routes(self, styles, preferences, *args):
         """ Sorts through the database to find the best routes for the user.
 
         Args:
             styles(dict): User's route style choices
             preferences(dict): User's route preferences
         """
+        print('Working')
+        print(styles)
+        print(type(styles))
+        print('Args:', *args)
+
+        print(preferences)
+        print(type(preferences))
         # Base query for SQL
         query = 'SELECT * FROM Routes'
 
@@ -695,43 +698,90 @@ class ResultsPage(Screen):
         routes = routes[display_columns]
         routes = routes.to_dict('index')
 
-        self.ids.routes_layout.clear_widgets()
+        self.routes = routes
+        print('Done')
+        print(routes)
 
+    def set_up(self, styles, preferences):
+        
+        image = AsyncImage(
+            source='C:\\Users\\Bob\\Anaconda3\\Lib\\site-packages\\Mountain Project\\images\\Test.gif')
+        self.add_widget(image)
+
+
+        self.styles = styles
+        self.preferences = preferences
+
+
+        print(self.styles)
+
+        if styles is not None and preferences is not None:
+            print('got here')
+            Clock.schedule_once(partial(self.get_routes, styles, preferences), 0)
+
+class ResultsPage(Screen):
+    """ Builds the screen that shows routes.
+
+    Attributes:
+        photo(str): Runs background function to get background picture and
+            returns path
+    Methods:
+        get_routes: Pulls routes that meet the user's specifications from the
+            database
+    """
+    # Sets background image
+    photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
+
+    def set_up(self, routes):
         for name, data in routes.items():
+
             rating = str(data['Rating'])
             grade = str(data['Grade'])
             feat = str(data['Features'])
             url = str(data['url'])
 
-            self.ids.routes_layout.add_widget(Label(
+            names = Label(
                 text=name,
                 valign='middle',
-                text_size=self.size))
-            self.ids.routes_layout.add_widget(Label(
+                halign='right',
+                text_size=(self.ids.name.size))
+            ratings = Label(
                 text=rating,
                 valign='middle',
-                text_size=self.size))
-            self.ids.routes_layout.add_widget(Label(
+                halign='right',
+                text_size=self.ids.rating.size)
+            grades = Label(
                 text=grade,
                 valign='middle',
-                text_size=self.size))
-            self.ids.routes_layout.add_widget(Label(
+                halign='right',
+                text_size=self.ids.grade.size)
+            features = Label(
                 text=feat,
                 valign='middle',
-                text_size=self.size))
-
-            btn = Button(text='Go!', url='Hi')
+                halign='right',
+                text_size=self.ids.features.size)
+            btn = Button(
+                text='Go!')
             btn.bind(on_press=partial(
                 self.get_route_page, url))
 
-            self.ids.routes_layout.add_widget(btn)
-    
+            self.ids.route_layout.add_widget(names)
+            self.ids.route_layout.add_widget(ratings)
+            self.ids.route_layout.add_widget(grades)
+            self.ids.route_layout.add_widget(features)
+            self.ids.route_layout.add_widget(btn)
+
+        self.ids.title.opacity = 1
+        self.ids.name.opacity = 1
+        self.ids.grade.opacity = 1
+        self.ids.rating.opacity = 1
+        self.ids.features.opacity = 1
+        self.ids.page.opacity = 1
+        self.ids.previous.opacity = 1
+        self.ids.previous.disable = False 
+
     def get_route_page(self, url, btn):
         wb.open(url)
-
-            
-            
-                    
 
 class RoutesScreenManager(ScreenManager):
     pass
