@@ -26,6 +26,7 @@ import os
 import random
 import webbrowser as wb
 from functools import partial
+import asyncio
 
 import kivy
 
@@ -51,6 +52,11 @@ from kivy.lang import Builder
 from kivy.app import App
 
 from kivy.properties import StringProperty
+
+from async_gui.engine import Task, MultiProcessTask
+from async_gui.toolkits.kivy import KivyEngine
+
+engine = KivyEngine()
 
 # Connects to DB
 conn = sqlite3.connect('Routes-Cleaned.sqlite')
@@ -519,22 +525,22 @@ class PreferencesPage(Screen):
 
 
 class LoadingPage(Screen):
-
+    photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
     styles = None
     preferences = None
     routes = None
 
-    def get_routes(self, styles, preferences, *args):
+    def get_routes(self, styles, preferences):
         """ Sorts through the database to find the best routes for the user.
 
         Args:
             styles(dict): User's route style choices
             preferences(dict): User's route preferences
         """
+
         print('Working')
         print(styles)
         print(type(styles))
-        print('Args:', *args)
 
         print(preferences)
         print(type(preferences))
@@ -698,26 +704,13 @@ class LoadingPage(Screen):
         routes = routes[display_columns]
         routes = routes.to_dict('index')
 
-        self.routes = routes
         print('Done')
         print(routes)
-
+        return routes
+   
     def set_up(self, styles, preferences):
-        
-        image = AsyncImage(
-            source='C:\\Users\\Bob\\Anaconda3\\Lib\\site-packages\\Mountain Project\\images\\Test.gif')
-        self.add_widget(image)
-
-
-        self.styles = styles
-        self.preferences = preferences
-
-
-        print(self.styles)
-
-        if styles is not None and preferences is not None:
-            print('got here')
-            Clock.schedule_once(partial(self.get_routes, styles, preferences), 0)
+        self.routes = self.get_routes(styles, preferences)
+        self.manager.current = 'results'
 
 class ResultsPage(Screen):
     """ Builds the screen that shows routes.
@@ -732,7 +725,11 @@ class ResultsPage(Screen):
     # Sets background image
     photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
 
+    def on_leave(self):
+        self.ids.route_layout.clear_widgets()
+
     def set_up(self, routes):
+        print(routes)
         for name, data in routes.items():
 
             rating = str(data['Rating'])

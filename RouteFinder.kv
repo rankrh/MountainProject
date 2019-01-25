@@ -471,82 +471,84 @@ RoutesScreenManager:
 <LoadingPage>:
     name: 'loading'
     on_enter: root.set_up(root.manager.get_screen('styles').styles, root.manager.get_screen('preferences').preferences)
+    canvas.before:
+        Rectangle:
+            id: styles_background
+            pos: self.pos
+            size: self.size
+            source: root.photo
+    Label:
+        text: 'Loading...'
+        font_size: 150
 
-# <ResultsPage>:
-#     name: 'results'
-#     routes: root.manager.get_screen('loading').routes
-#     on_pre_enter: root.set_up(root.routes)
-#     canvas.before:
-#         Rectangle:
-#             id: styles_background
-#             pos: self.pos
-#             size: self.size
-#             source: root.photo
-#     BoxLayout:
-#         orientation: 'vertical'
-#         id: results_layout
-#         Label:
-#             id: title
-#             text: 'Routes'
-#             font_size: root.size[0] / 20
-#             size_hint_y: None
-#             size: self.texture_size
-#             outline_color: 0, 0, 0, 1
-#             color: 1, 1, 1, 1
-#             outline_width: 2
-#             opacity: 0
-#         BoxLayout:
-#             orientation:'horizontal'
-#             size_hint_y:None
-#             id: column_names
-#             height: 40
-#             Label:
-#                 id: name
-#                 text: 'Name'
-#                 valign: 'top'
-#                 opacity: 0
-#             Label:
-#                 id: rating
-#                 text: 'Rating'
-#                 valign: 'top'
-#                 opacity: 0
-#             Label:
-#                 id: grade
-#                 text: 'Grade'
-#                 valign: 'top'
-#                 opacity: 0
-#             Label:
-#                 id: features
-#                 text: 'Features'
-#                 valign: 'top'
-#                 opacity: 0
-#             Label:
-#                 id: page
-#                 text: 'Go To Page'
-#                 valign: 'top'
-#                 opacity: 0
-#         GridLayout:
-#             cols: 5
-#             id: route_layout
-#             size_hint: None, None
-#             height: results_layout.height - title.height - column_names.height - previous.height
-#             width: results_layout.width
-#             pos: 0, 36
-#             canvas.before:
-#                 Color:
-#                     rgba: 1, 0, 0, 0.5
-#                 Rectangle:
-#                     size: self.size
-#                     pos: self.pos
-#         Button:
-#             id: previous
-#             text: 'Previous Page'
-#             size_hint: None, None
-#             size: (136, 36)
-#             pos_hint: {'center_y': 0.5}
-#             opacity: 0
-#             disable: True
-#             on_release:
-#                 app.root.current = 'preferences'
-#                 app.root.transition.direction = 'right'
+<ResultsPage>:
+    name: 'results'
+    on_enter: root.set_up(root.manager.get_screen('loading').routes)
+    canvas.before:
+        Rectangle:
+            id: styles_background
+            pos: self.pos
+            size: self.size
+            source: root.photo
+    BoxLayout:
+        orientation: 'vertical'
+        id: results_layout
+        Label:
+            id: title
+            text: 'Routes'
+            font_size: root.size[0] / 20
+            size_hint_y: None
+            size: self.texture_size
+            outline_color: 0, 0, 0, 1
+            color: 1, 1, 1, 1
+            outline_width: 2
+            opacity: 0
+        BoxLayout:
+            orientation:'horizontal'
+            size_hint_y:None
+            id: column_names
+            height: 40
+            Label:
+                id: name
+                text: 'Name'
+                valign: 'top'
+                opacity: 0
+            Label:
+                id: rating
+                text: 'Rating'
+                valign: 'top'
+                opacity: 0
+            Label:
+                id: grade
+                text: 'Grade'
+                valign: 'top'
+                opacity: 0
+            Label:
+                id: features
+                text: 'Features'
+                valign: 'top'
+                opacity: 0
+            Label:
+                id: page
+                text: 'Go To Page'
+                valign: 'top'
+                opacity: 0
+        GridLayout:
+            cols: 5
+            id: route_layout
+            size_hint: None, None
+            height: results_layout.height - title.height - column_names.height - previous.height
+            width: results_layout.width
+            pos: 0, 36
+        Button:
+            id: previous
+            text: 'Previous Page'
+            size_hint: None, None
+            size: (136, 36)
+            pos_hint: {'center_y': 0.5}
+            opacity: 0
+            disable: True
+            on_release:
+                app.root.current = 'preferences'
+                app.root.transition.direction = 'right'
         
