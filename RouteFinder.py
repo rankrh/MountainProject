@@ -525,10 +525,25 @@ class PreferencesPage(Screen):
 
 
 class LoadingPage(Screen):
+    """ Displays simple loading screen while communicating with the database.
+
+    Attributes:
+        photo(str): Path to randomly chosen background photo
+        styles(dict): User's chosen climbing styles
+        preferences(dict): User's route preferences
+        routes(dict): Routes and data associated with them that fits the user's
+            inputs
+
+    Methods:
+        get_routes: Pulls routes that meet the user's specifications from the
+            database
+        set_up: Gets user's inputs from previous screens
+    """
+
     photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
-    styles = None
-    preferences = None
-    routes = None
+    styles = {}
+    preferences = {}
+    routes = {}
 
     def get_routes(self, styles, preferences):
         """ Sorts through the database to find the best routes for the user.
@@ -538,12 +553,6 @@ class LoadingPage(Screen):
             preferences(dict): User's route preferences
         """
 
-        print('Working')
-        print(styles)
-        print(type(styles))
-
-        print(preferences)
-        print(type(preferences))
         # Base query for SQL
         query = 'SELECT * FROM Routes'
 
@@ -704,12 +713,18 @@ class LoadingPage(Screen):
         routes = routes[display_columns]
         routes = routes.to_dict('index')
 
-        print('Done')
-        print(routes)
         return routes
    
     def set_up(self, styles, preferences):
+        """Grabs user's inputs
+        
+        Args:
+            styles(dict): User's style choices
+            preferences(dict): User's route preferences
+        """
+        # Communicates with the database
         self.routes = self.get_routes(styles, preferences)
+        # Changes screens
         self.manager.current = 'results'
 
 class ResultsPage(Screen):
@@ -719,24 +734,38 @@ class ResultsPage(Screen):
         photo(str): Runs background function to get background picture and
             returns path
     Methods:
-        get_routes: Pulls routes that meet the user's specifications from the
-            database
+        on_leave: Removes widgets and resets screen
+        set_up: Adds route data to screen
+        get_route_page: Opens Mountain Project page for each route
+
     """
     # Sets background image
     photo = background(os.path.join(os.getcwd(), 'images', 'backgrounds'))
 
     def on_leave(self):
+        """Resets screen and removes all widgets"""
         self.ids.route_layout.clear_widgets()
 
     def set_up(self, routes):
-        print(routes)
+        """Adds routes to page.
+        
+        Finds the name, rating, grade, features and url, and adds them to a
+        gridlayout in the appropriate way.  Columns have already been added in the
+        kv file.
+        
+        Args:
+            routes(dict): route data from the database
+        """
+        
+        # Loops through the items
         for name, data in routes.items():
-
+            # Gets data on each route
             rating = str(data['Rating'])
             grade = str(data['Grade'])
             feat = str(data['Features'])
             url = str(data['url'])
 
+            # Inputs the data into the correct box in the grid
             names = Label(
                 text=name,
                 valign='middle',
@@ -762,22 +791,18 @@ class ResultsPage(Screen):
             btn.bind(on_press=partial(
                 self.get_route_page, url))
 
+            # Adds all widgets to the gridlayout
             self.ids.route_layout.add_widget(names)
             self.ids.route_layout.add_widget(ratings)
             self.ids.route_layout.add_widget(grades)
             self.ids.route_layout.add_widget(features)
             self.ids.route_layout.add_widget(btn)
 
-        self.ids.title.opacity = 1
-        self.ids.name.opacity = 1
-        self.ids.grade.opacity = 1
-        self.ids.rating.opacity = 1
-        self.ids.features.opacity = 1
-        self.ids.page.opacity = 1
-        self.ids.previous.opacity = 1
-        self.ids.previous.disable = False 
-
     def get_route_page(self, url, btn):
+        """Opens URL of route on MP
+        Args:
+            url(str): Route's URL"""
+            
         wb.open(url)
 
 class RoutesScreenManager(ScreenManager):
