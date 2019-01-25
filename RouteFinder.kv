@@ -502,7 +502,6 @@ RoutesScreenManager:
             outline_color: 0, 0, 0, 1
             color: 1, 1, 1, 1
             outline_width: 2
-            opacity: 0
         BoxLayout:
             orientation:'horizontal'
             size_hint_y:None
@@ -512,30 +511,26 @@ RoutesScreenManager:
                 id: name
                 text: 'Name'
                 valign: 'top'
-                opacity: 0
             Label:
                 id: rating
                 text: 'Rating'
                 valign: 'top'
-                opacity: 0
             Label:
                 id: grade
                 text: 'Grade'
                 valign: 'top'
-                opacity: 0
             Label:
                 id: features
                 text: 'Features'
                 valign: 'top'
-                opacity: 0
             Label:
                 id: page
                 text: 'Go To Page'
                 valign: 'top'
-                opacity: 0
         GridLayout:
             cols: 5
             id: route_layout
+            spacing: 30
             size_hint: None, None
             height: results_layout.height - title.height - column_names.height - previous.height
             width: results_layout.width
@@ -546,7 +541,6 @@ RoutesScreenManager:
             size_hint: None, None
             size: (136, 36)
             pos_hint: {'center_y': 0.5}
-            opacity: 0
             disable: True
             on_release:
                 app.root.current = 'preferences'

@@ -20,7 +20,6 @@ from nltk.corpus import stopwords
 def MPAnalyzer(path='C:\\Users\\',
                folder='Mountain Project\\',
                DBname='MPRoutes'):
-    # FIXME: Update which functions this handles
     '''Finishes cleaning routes using formulas that require information about
     the whole database.
 
@@ -826,7 +825,7 @@ def MPAnalyzer(path='C:\\Users\\',
                     1 / (1 + np.e ** (-100 *
                                       (table[column_name]
                                   - (table[column_name].mean()
-                                      + table[column_name].std()))))))
+                                      + table[column_name].std())))))
     
             return table
     

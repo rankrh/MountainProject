@@ -10,7 +10,7 @@ Crawls Mountain Project to find route data on rock climbs.
 Details:
 The ultimate purpose of the program is to help users optimize their time by
 finding climbing areas based on their preferences.  By combining metrics such
-as distance to user, type and difficulty of routes, and concentration of
+as distance to user, type/difficulty of routes, and concentration of
 routes, we can find where climbers can make best use of their time. The first
 step of process is to create a database of route information. This program
 grabs data from the web pages that will later be processed and organized.

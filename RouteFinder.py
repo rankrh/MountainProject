@@ -600,7 +600,7 @@ class LoadingPage(Screen):
                 # If the high end is below 11, finds routes between the low
                 # and high, inclusive.
                 if pitch_range[1] < 11:
-                    pitches = ' AND pitches BETWEEN %s AND %s' % pitch_range
+                    pitches = ' AND pitches BETWEEN %s AND %s' % (pitch_range[0], pitch_range[1])
                 # If the high end is 11, finds routes that are at least the
                 # low end
                 elif pitch_range[1] == 11:
@@ -618,7 +618,6 @@ class LoadingPage(Screen):
 
         # Query SQL and convert to a dataframe
         routes = pd.read_sql(query, con=conn, index_col='route_id')
-        print(routes.head())
         # If no routes fit this description, terminates
         if len(routes) == 0:
             self.ids.test.text = query
@@ -650,8 +649,6 @@ class LoadingPage(Screen):
             # distance from the dataframe
             distance = preferences['distance']
             if distance is not None:
-                print(routes.head())
-                print('Failed at Distance')
                 routes = routes[routes.distance < distance]
                 # If no routes are left, terminates
                 if len(routes) == 0:
@@ -770,21 +767,25 @@ class ResultsPage(Screen):
                 text=name,
                 valign='middle',
                 halign='right',
-                text_size=(self.ids.name.size))
+                max_lines=2,
+                text_size=self.ids.name.size)
             ratings = Label(
                 text=rating,
                 valign='middle',
                 halign='right',
+                max_lines=2,
                 text_size=self.ids.rating.size)
             grades = Label(
                 text=grade,
                 valign='middle',
                 halign='right',
+                max_lines=2,
                 text_size=self.ids.grade.size)
             features = Label(
                 text=feat,
                 valign='middle',
                 halign='right',
+                max_lines=2,
                 text_size=self.ids.features.size)
             btn = Button(
                 text='Go!')
