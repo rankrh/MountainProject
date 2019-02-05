@@ -12,6 +12,11 @@
 *.sqlite
 *.sqlite-journal
 
+# VS
+*.lnk
+*.pyproj
+*.sln
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
