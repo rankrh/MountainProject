@@ -769,9 +769,9 @@ def MPAnalyzer(path='C:\\Users\\',
             1.  The midpoint of the threshold is the mean value of the scores,
             plus one standard devaition.  Therefore, the
             function used here is:
-                
+
                             f(x) = 1 / (1 + e^(-100(x - x'))
-                        
+
                                 x' = mean + sigma
                                 e = Euler's constant
 

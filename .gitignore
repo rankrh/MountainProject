@@ -7,6 +7,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+*.ini
 
 # DB Files
 *.sqlite

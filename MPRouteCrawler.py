@@ -38,19 +38,18 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from urllib.request import urlopen
+from config import config
 from bs4 import BeautifulSoup
 import pandas as pd
 import urllib.error
 import unidecode
-import sqlite3
-import time
+import psycopg2
 import ssl
 import re
 import os
     
 
-def MPScraper(path='C:/Users/',
-              folder='/Mountain Project'):
+def MPScraper():
     ''' Sets up SQL database for climbing areas and routes.
     
     Creates a database with two tables.  The first, 'Areas', holds climbing
@@ -103,94 +102,79 @@ def MPScraper(path='C:/Users/',
         area_group - ID of area cluster
         area_counts - Number of other routes in that route cluster
         error - ID of any errors that occur during data retrieval'''
-   
-    username = os.getlogin()
-    if path == 'C:/Users/':
-        path += username
-    try:
-        os.chdir(path + folder)        
-    except OSError as e:
-        if e.winerror == 2:
-            try:
-                os.chdir(path)
-                os.mkdir(path + folder)
-                path += folder
-                os.chdir(path)
-            except OSError as e:
-                print(e)
-                return e.winerror
-        else:
-            return e
-    
 
     # Ignore SSL certificate errors
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
-    DBname='MPRoutes'
-    # Connect to SQLite database and create database 'Routes.sqlite'
-    conn = sqlite3.connect(DBname + '.sqlite')
+    params = config.config()
+    print('Connecting to the PostgreSQL database...')
+    conn = psycopg2.connect(**params)
     # Create cursor
     cursor = conn.cursor()
+    cursor.execute('SELECT version()')
+    db_version = cursor.fetchone()
+    print(db_version)
+
 
     # Creates SQL DB with information on climbing areas including the latitude
     # and longitude, as well as how to access the the Mountain Project page
     # The 'complete' column tracks whether the area has been scraped before
     cursor.execute('''
-       CREATE TABLE IF NOT EXISTS Areas(
-            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            name TINYTEXT,
+    CREATE TABLE IF NOT EXISTS Areas(
+            id SERIAL PRIMARY KEY,
+            name TEXT,
             url TEXT UNIQUE,
             from_id INTEGER,
             latitude FLOAT,
             longitude FLOAT,
             error INTEGER,
-            complete BOOLEAN DEFAULT 0)''')
+            complete BOOLEAN DEFAULT FALSE)''')
 
     # The lowest level pages are routes.  This DB stores all route data.
     cursor.execute('''
-       CREATE TABLE IF NOT EXISTS Routes(
+    CREATE TABLE IF NOT EXISTS Routes(
             name TEXT,
-            route_id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
+            route_id SERIAL PRIMARY KEY,
             url TEXT UNIQUE,
             stars FLOAT,
             votes INTEGER,
             bayes FLOAT,
             latitude FLOAT,
             longitude FLOAT,
-            trad BOOLEAN DEFAULT 0,
-            tr BOOLEAN DEFAULT 0,
-            sport BOOLEAN DEFAULT 0,
-            aid BOOLEAN DEFAULT 0,
-            snow BOOLEAN DEFAULT 0,
-            ice BOOLEAN DEFAULT 0,
-            mixed BOOLEAN DEFAULT 0,
-            boulder BOOLEAN DEFAULT 0,
-            alpine BOOLEAN DEFAULT 0,
+            trad BOOLEAN DEFAULT FALSE,
+            tr BOOLEAN DEFAULT FALSE,
+            sport BOOLEAN DEFAULT FALSE,
+            aid BOOLEAN DEFAULT FALSE,
+            snow BOOLEAN DEFAULT FALSE,
+            ice BOOLEAN DEFAULT FALSE,
+            mixed BOOLEAN DEFAULT FALSE,
+            boulder BOOLEAN DEFAULT FALSE,
+            alpine BOOLEAN DEFAULT FALSE,
             pitches INTEGER,
             length INTEGER,
-            nccs_rating TINYTEXT,
+            nccs_rating TEXT,
             nccs_conv INTEGER,
-            hueco_rating TINYTEXT,
-            font_rating TINYTEXT,
-            boulder_conv INTERGER,
-            yds_rating TINYTEXT,
-            french_rating TINYTEXT,
-            ewbanks_rating TINYTEXT,
-            uiaa_rating TINYTEXT,
-            za_rating TINYTEXT,
-            british_rating TINYTEXT,
+            hueco_rating TEXT,
+            font_rating TEXT,
+            boulder_conv INTEGER,
+            yds_rating TEXT,
+            french_rating TEXT,
+            ewbanks_rating TEXT,
+            uiaa_rating TEXT,
+            za_rating TEXT,
+            british_rating TEXT,
             rope_conv INTEGER,
-            ice_rating TINYTEXT,
+            ice_rating TEXT,
             ice_conv INTEGER,
-            snow_rating TINYTEXT,
+            snow_rating TEXT,
             snow_conv INTEGER,
-            aid_rating TINYTEXT,
+            aid_rating TEXT,
             aid_conv INTEGER,
-            mixed_rating TINYTEXT,
+            mixed_rating TEXT,
             mixed_conv INTEGER,
-            danger_rating TINYTEXT,
+            danger_rating TEXT,
             danger_conv INTEGER,
             area_id INTEGER,
             area_group INTEGER,
@@ -198,18 +182,20 @@ def MPScraper(path='C:/Users/',
             error INTEgER)''')
     
     cursor.execute('''
-       CREATE TABLE IF NOT EXISTS Words(
+    CREATE TABLE IF NOT EXISTS Words(
             route_id INTEGER,
-            word TINYTEXT,
+            word TEXT,
             word_count INTEGER,
             tf FLOAT,
             idf FLOAT)''')
     
     cursor.execute('''
-       CREATE TABLE IF NOT EXISTS TFIDF(
+    CREATE TABLE IF NOT EXISTS TFIDF(
             route_id INTEGER,
-            word TINYTEXT,
-            tfidf)''')
+            word TEXT,
+            tfidf FLOAT)''')
+
+    conn.commit()
 
     def get_regions():
         """ Collects region data, the broadest category of climbing area on MP.
@@ -249,8 +235,10 @@ def MPScraper(path='C:/Users/',
             # Writes region name and url to Areas DB.  This gives the region a
             # unique id automatically
             cursor.execute('''
-                INSERT OR IGNORE INTO Areas(url, name)
-                VALUES (?, ?)''', (url, region_name))
+                INSERT INTO Areas(url, name)
+                VALUES ('%s', '%s')
+                ON CONFLICT DO NOTHING
+                ''' % (url, region_name))
             # Commits to DB
         conn.commit()
 
@@ -278,15 +266,15 @@ def MPScraper(path='C:/Users/',
             # information (url, name and id) that will be needed to expand it
             cursor.execute('''
                SELECT url, name, id FROM Areas
-               WHERE complete IS 0
+               WHERE complete IS FALSE
                AND error is Null
                LIMIT 1''')
             area_data = cursor.fetchone()
         else:
             cursor.execute('''
                SELECT url, name, id FROM Areas
-               WHERE complete IS 0
-               AND error ID Null AND area_id = ?
+               WHERE complete IS FALSE
+               AND error ID Null AND area_id = %s,
                LIMIT 1''', (region_id,))
             area_data = cursor.fetchone()
         # If no region is unopened, terminates function
@@ -331,11 +319,11 @@ def MPScraper(path='C:/Users/',
         # moves on to the next page
         except urllib.error.HTTPError as httperror:
             error = httperror.code
-            print('HTTPError: {}'.format(error))
+            print(f'HTTPError: {error}')
             cursor.execute('''
                 UPDATE Areas
-                SET error = ?
-                WHERE url = ?''', (error, main_url,))
+                SET error = %s,
+                WHERE url = %s''', (error, main_url,))
             conn.commit()
             return
 
@@ -391,9 +379,10 @@ def MPScraper(path='C:/Users/',
 
                 # Updates DB with area name, URL, parent area, location
                 cursor.execute('''
-                   INSERT OR IGNORE INTO
+                   INSERT INTO
                    Areas(name, url, from_id,latitude, longitude)
-                   VALUES(?, ?, ?, ?, ?)''',
+                   VALUES(%s, %s, %s, %s, %s)
+                   ON CONFLICT DO NOTHING''',
                    (area_name, area_url, from_id, lat, long))
 
         # If the area only contains routes, passes information to route
@@ -407,14 +396,14 @@ def MPScraper(path='C:/Users/',
             cursor.execute('''
                 SELECT latitude, longitude
                 FROM Areas
-                WHERE url IS ?''', (main_url,))
+                WHERE url = %s''', (main_url,))
             loc = cursor.fetchone()
             lat, long = loc[0], loc[1]
             get_route_urls(main_url, from_id, lat, long)
         cursor.execute('''
             UPDATE Areas
-            SET complete = 1
-            WHERE id = ?''', (from_id,))
+            SET complete = True
+            WHERE id = %s''', (from_id,))
         conn.commit()
 
     def get_route_urls(area_url, area_id, lat, long):
@@ -481,7 +470,7 @@ def MPScraper(path='C:/Users/',
         route_doc = urlopen(route_url, context=ctx)
         if route_doc.getcode() != 200:
             print("Error on page: ", route_doc.getcode())
-            cursor.execute('UPDATE Routes SET error=? WHERE url=?',
+            cursor.execute('UPDATE Routes SET error=%s, WHERE url=%s',
                            (route_doc.getcode(), route_url))
             conn.commit()
         else:
@@ -510,7 +499,7 @@ def MPScraper(path='C:/Users/',
             # Sends to function that updates new DB
             write_to_sql(data)
 
-            cursor.execute('SELECT route_id FROM Routes WHERE url = ?',
+            cursor.execute('SELECT route_id FROM Routes WHERE url = %s',
                            (route_url,))
             route_id = cursor.fetchone()[0]
 
@@ -894,7 +883,6 @@ def MPScraper(path='C:/Users/',
 
         return text
 
-
     def get_text(route_soup, route_name, route_id):
         ''' Gathers and analyzes text data from route name and description and,
         user comments.
@@ -980,7 +968,7 @@ def MPScraper(path='C:/Users/',
         # Enters data
         
         cursor.execute('''
-            INSERT OR IGNORE INTO
+            INSERT INTO
             Routes(name, url, stars, votes, latitude, longitude, trad, tr,
                    sport, aid, snow, ice, mixed, boulder, alpine, pitches,
                    length, nccs_rating, nccs_conv, hueco_rating, font_rating,
@@ -989,8 +977,9 @@ def MPScraper(path='C:/Users/',
                    ice_rating, ice_conv, snow_rating, snow_conv, aid_rating,
                    aid_conv, mixed_rating, mixed_conv, danger_rating,
                    danger_conv, area_id)
-            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                   %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
             ''',
             ((route_data['name'], 
               route_data['url'], 
@@ -1035,14 +1024,12 @@ def MPScraper(path='C:/Users/',
 
         # Commits
         conn.commit()
-            
-    get_regions()
     
-    error = None
-    while error == None:
-        error = get_areas(region_id=None)
+    get_regions()
+    while True:
+        get_areas(region_id=None)
 
 if __name__ == '__main__':
-    print(MPScraper())
+    MPScraper()
 
 
