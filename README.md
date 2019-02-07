@@ -19,4 +19,4 @@ Climbers often have a type of route - e.g. overhangs, slab, cracks - that they l
 MP's search function only allows users to search by one climbing style at a time - bouldering, sport, etc.  This program allows users to select any number of routes that they like, and finds the best areas that have any of these styles.  For example, I may enjoy sport climbing and bouldering, and would want to find nearby areas that have either.  Additionally, in general the grade people can climb changes depending on the type of route, and this function allows users to specify grade in a style-specific way.  
 
 ### Danger and Commitment
-The program also lets users weed-out routes that are too risky or require too much time commitment.  (NB Commitment isn't supported yet, but will be in the next update.
+The program also lets users weed-out routes that are too risky or require too much time commitment.  (NB Commitment isn't supported yet, but will soon.)
