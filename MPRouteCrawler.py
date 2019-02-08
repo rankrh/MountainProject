@@ -914,7 +914,6 @@ def MPScraper():
         # Finds description of the route of BS data
         description = route_soup.find('div', class_="fr-view").get_text()
         text = route_name + ' ' + description
-        print(f"Getting text from {route_name}")
 
         # Finds comment section of the BS data
         cmt = 'comment-body max-height max-height-md-300 max-height-xs-150'
@@ -942,7 +941,7 @@ def MPScraper():
             text['tf'] = text['word_count'] / doc_length
             text.to_sql('words', con=engine, if_exists='append')
         except:
-            print('Could not get text')
+            print(f'        Could not get text for {route_name}')
             pass
 
     def write_to_sql(route_data):
