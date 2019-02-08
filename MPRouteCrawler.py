@@ -37,6 +37,7 @@ that.
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
+from sqlalchemy import create_engine
 from urllib.request import urlopen
 from config import config
 from bs4 import BeautifulSoup
@@ -117,6 +118,7 @@ def MPScraper():
     db_version = cursor.fetchone()
     print(db_version)
 
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/routes')
 
     # Creates SQL DB with information on climbing areas including the latitude
     # and longitude, as well as how to access the the Mountain Project page
@@ -912,6 +914,7 @@ def MPScraper():
         # Finds description of the route of BS data
         description = route_soup.find('div', class_="fr-view").get_text()
         text = route_name + ' ' + description
+        print(f"Getting text from {route_name}")
 
         # Finds comment section of the BS data
         cmt = 'comment-body max-height max-height-md-300 max-height-xs-150'
@@ -937,8 +940,9 @@ def MPScraper():
             print(text)
         try:
             text['tf'] = text['word_count'] / doc_length
-            text.to_sql('Words', con=conn, if_exists='append')
+            text.to_sql('words', con=engine, if_exists='append')
         except:
+            print('Could not get text')
             pass
 
     def write_to_sql(route_data):

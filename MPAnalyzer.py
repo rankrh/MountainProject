@@ -7,19 +7,19 @@ Created on Mon Dec 17 19:51:21 2018
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
-import pandas as pd
-import numpy as np
-import sqlite3
-import os
-import re
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
-import unidecode
 from nltk.corpus import stopwords
+from sqlalchemy import create_engine
+from config import config
+import pandas as pd
+import numpy as np
+import unidecode
+import psycopg2
+import os
+import re
 
-def MPAnalyzer(path='C:\\Users\\',
-               folder='Mountain Project\\',
-               DBname='MPRoutes'):
+def MPAnalyzer():
     '''Finishes cleaning routes using formulas that require information about
     the whole database.
 
@@ -44,39 +44,16 @@ def MPAnalyzer(path='C:\\Users\\',
         Updated SQL Database
     '''
 
-    # FIXME: Improve error handling and figure out the best way to guide users
-    # and the program to the correct folders.
-
-    username = os.getlogin()
-    if path == 'C:\\Users\\':
-        path += username + '\\'
-    else:
-        folder = ''
-
-    try:
-        os.chdir(path + folder)
-    except OSError as e:
-        return e
-
-    try:
-        os.chdir(path + folder + 'Descriptions\\')
-    except OSError as e:
-        if e.winerror == 2:
-            try:
-                os.mkdir(path + folder + 'Descriptions\\')
-                os.chdir(path + folder + 'Descriptions\\')
-            except OSError as e:
-                print(e)
-                return e.winerror
-        else:
-            return e
-
-    os.chdir(path + folder)
-
-    # Connect to SQLite database and create database 'Routes.sqlite'
-    conn = sqlite3.connect(DBname + '.sqlite')
+    params = config.config()
+    print('Connecting to the PostgreSQL database...')
+    conn = psycopg2.connect(**params)
     # Create cursor
     cursor = conn.cursor()
+    cursor.execute('SELECT version()')
+    db_version = cursor.fetchone()
+    print([version for version in db_version])
+
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/routes')
 
     def bayesian_rating(routes):
         ''' Updates route quality with weighted average.
@@ -156,15 +133,15 @@ def MPAnalyzer(path='C:\\Users\\',
                 cursor.execute('''
                     SELECT latitude, longitude, from_id
                     FROM Areas
-                    WHERE id = ?''', (fid,))
+                    WHERE id = %s''', % (fid,))
                 loc = cursor.fetchone()
                 lat, long = loc[0], loc[1]
                 fid = loc[2]
             # Updates DB
             cursor.execute('''
                 UPDATE Routes
-                SET latitude = ?, longitude = ?
-                WHERE route_id = ?''', (lat, long, rid))
+                SET latitude = %s, longitude = %s
+                WHERE route_id = %s''', % (lat, long, rid))
             conn.commit()
             cursor.execute('''
                 SELECT route_id, area_id, name
@@ -362,7 +339,7 @@ def MPAnalyzer(path='C:\\Users\\',
         print('Done')
         routes = routes.set_index('route_id')
         print('Writing to SQL.....................', end=' ')
-        routes.to_sql('TFIDF', con=conn, if_exists='replace')
+        routes.to_sql('TFIDF_TEST', con=conn, if_exists='replace')
         print('Done')
 
         return routes
@@ -766,7 +743,7 @@ def MPAnalyzer(path='C:\\Users\\',
             
             By manipulating the constants in this function, we can find a
             continuous threshold-like set of values that are bounded by 0 and
-            1.  The midpoint of the threshold is the mean value of the scores,
+            1.  The midpoint of the threshold is the mean value of the scores
             plus one standard devaition.  Therefore, the
             function used here is:
 
@@ -808,7 +785,6 @@ def MPAnalyzer(path='C:\\Users\\',
                     column_name = style + '_weighted'
     
     
-                # FIXME: Is there a way to simplify these equations?
                 # Find average cosine similarity across routes
                 style_avg = table[style].mean()
                 # Calculate weighted rating
@@ -906,7 +882,7 @@ def MPAnalyzer(path='C:\\Users\\',
             'error' : 'INTEGER'}
         
         # Write to Database        
-        updated.to_sql('Routes', con=conn, if_exists='replace', dtype = dtype)
+        updated.to_sql('Routes_TEST', con=conn, if_exists='replace', dtype = dtype)
 
         return
 
@@ -943,8 +919,8 @@ def MPAnalyzer(path='C:\\Users\\',
         group = add.loc[route]['area_group']
 
         cursor.execute('''UPDATE Routes
-                         SET bayes = ?, area_group = ?
-                         WHERE route_id = ?''', (rate, group, route))
+                         SET bayes = %s, area_group = %s
+                         WHERE route_id = %s''', % (rate, group, route))
     conn.commit()
     print('Done')
 
