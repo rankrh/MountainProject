@@ -1,4 +1,4 @@
-# Mountain-Project
+# Mountain Project
 Scrapes Mountain Project (MP) and helps find the best areas for your climbing preferences.
 
 https://youtu.be/N_6gbT_i4VY
