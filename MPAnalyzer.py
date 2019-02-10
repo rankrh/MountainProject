@@ -788,12 +788,15 @@ def MPAnalyzer():
                 # Find average cosine similarity across routes
                 style_avg = table[style].mean()
                 # Calculate weighted rating
-                table[column_name] = ((table[style].values
-                                       * np.sqrt(table[style].values ** 2
-                                                 + table[count].values ** 2))
-                                      + ((1 - table[count].values)
-                                      * (1 - table[style].values)
-                                      * style_avg))
+                table[column_name] = np.where(table[column_name] < style_avg,
+                    (table[style].values * np.sqrt(table[style].values ** 2
+                        + table[count].values ** 2))
+                        + ((1 - table[count].values) * (1 - table[style].values) 
+                        * style_avg),
+                    (table[style].values * np.sqrt(table[style].values ** 2
+                        + table[count].values ** 2))
+                        - ((1 - table[count].values) * (1 - table[style].values) 
+                        * style_avg))
                 
 
                 # Calculates final score using Sigmoid function
