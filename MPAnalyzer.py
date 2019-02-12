@@ -744,8 +744,7 @@ def MPAnalyzer():
             By manipulating the constants in this function, we can find a
             continuous threshold-like set of values that are bounded by 0 and
             1.  The midpoint of the threshold is the mean value of the scores
-            plus one standard devaition.  Therefore, the
-            function used here is:
+            plus one standard devaition.  Therefore, the function used here is:
 
                             f(x) = 1 / (1 + e^(-100(x - x'))
 
