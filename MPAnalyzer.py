@@ -114,7 +114,7 @@ def MPAnalyzer():
         routes = routes.apply(lambda x: normalize('tfidf', table=x))
         print('Done')
 
-        print('Writing to SQL.....................', end=' ', flush=True)
+        print('Writing TFIDF scores to SQL........', end=' ', flush=True)
         routes = routes.set_index('route_id')
         routes.to_sql('TFIDF', con=engine, if_exists='replace')
         print('Done')
@@ -907,7 +907,7 @@ def MPAnalyzer():
     print('Writing to SQL.....................', end=' ',flush=True)
     # Writes to the database
     for route in add.index:
-        print(f'\nWriting route {route}', end=' ')
+        print(f'\nWriting route {route}', end=' ', flush=True)
         rate = add.loc[route]['bayes']
         group = add.loc[route]['area_group']
 
