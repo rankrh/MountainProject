@@ -140,7 +140,6 @@ def get_counts(area_group):
 def get_max(table):
     return table
         
-        
 def route_finder(styles, preferences):
     query = 'SELECT * FROM Routes'
     
@@ -255,9 +254,6 @@ def route_finder(styles, preferences):
     display_columns = ['Rating', 'Grade', 'Features']
 
     return routes[display_columns]
-
-
-
 
 print(route_finder(styles, preferences))    
     

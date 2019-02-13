@@ -18,6 +18,8 @@ import unidecode
 import psycopg2
 import os
 import re
+import click
+from tqdm import tqdm
 
 def MPAnalyzer():
     '''Finishes cleaning routes using formulas that require information about
@@ -47,6 +49,7 @@ def MPAnalyzer():
     conn = psycopg2.connect(**params)
     cursor = conn.cursor()
     print('Connected')
+    tqdm.pandas()
 
     def tfidf(min_occur=0.001, max_occur=0.9):
         ''' Calculates Term-Frequency-Inverse-Document-Frequency for a body of
@@ -82,49 +85,48 @@ def MPAnalyzer():
                 routes dataframe
         '''
 
-        print('Getting number of routes...........', end=' ', flush=True)
+        print('Getting number of routes', end=' ', flush=True)
         cursor.execute('SELECT COUNT(route_id) FROM Routes')
         num_docs = cursor.fetchone()[0]
         print(num_docs)
 
-        print('Getting route text data............', end=' ', flush=True)        
+        print('Getting route text data', flush=True)        
         min_occur *= num_docs
         max_occur *= num_docs
         query = 'SELECT route_id, word, tf FROM Words'
         routes = pd.read_sql(query, con=conn, index_col='route_id')
-        print('Done')
 
-        print('Removing non-essential words.......', end=' ', flush=True)
+        print('Removing non-essential words.', flush=True)
         routes = routes.groupby('word', group_keys=False)
-        routes = routes.apply(weed_out, min_occur, max_occur)\
+        routes = routes.progress_apply(
+            weed_out,
+            min_occur=min_occur,
+            max_occur=max_occur)\
                        .set_index('route_id')
-        print('Done')
 
-        print('Getting IDF........................', end=' ', flush=True)
+        print('Getting IDF', flush=True)
         routes = routes.groupby('word', group_keys=False)
-        routes = routes.apply(idf, num_docs=num_docs).set_index('route_id')
-        print('Done')        
+        routes = routes.progress_apply(idf, num_docs=num_docs).set_index('route_id')
 
-        print('Calculating TFIDF..................', end=' ', flush=True)
+        print('Calculating TFIDF', flush=True)
         routes['tfidf'] = routes['tf'] * routes['idf']
-        print('Done')
 
-        print('Normalizing TFIDF values...........', flush=True)
+        print('Normalizing TFIDF values', flush=True)
         routes = routes.groupby(routes.index, group_keys=False)
-        routes = routes.apply(lambda x: normalize('tfidf', table=x))
-        print('Done')
+        routes = routes.progress_apply(lambda x: normalize('tfidf', table=x))
 
-        print('Writing TFIDF scores to SQL........', end=' ', flush=True)
+        print('Writing TFIDF scores to SQL', flush=True)
         routes = routes.set_index('route_id')
-        routes.to_sql('TFIDF', con=engine, if_exists='replace')
-        print('Done')
+        routes = routes[['word', 'idf', 'tfidfn']]
+
+        routes.to_sql('TFIDF', con=engine, if_exists='replace', chunksize=1000)
 
     def weed_out(table, min_occur, max_occur):
         if min_occur < len(table) < max_occur:
             return table.reset_index()
 
     def idf(word, num_docs):
-        ''' Findes inverse document frequency for each word in the selected
+        ''' Finds inverse document frequency for each word in the selected
         corpus.
 
         Inverse document frequency(IDF) is a measure of how often a word
@@ -167,7 +169,6 @@ def MPAnalyzer():
         Returns:
             table(pandas dataframe): Updated dataframe with normalized values.
         '''
-        print(f'Normalizing {table.name}...')
         for column in columns:
             if not inplace:
                 column_name = column + 'n'
@@ -190,7 +191,7 @@ def MPAnalyzer():
         Returns:
             Updated SQL Database
             """
-        print('Filling in empty locations.........', flush=True)
+        print('Filling in empty locations', flush=True)
         # Select a route without location data
         cursor.execute('''
             SELECT route_id, area_id, name FROM Routes
@@ -228,7 +229,6 @@ def MPAnalyzer():
                 FROM Routes WHERE latitude is Null OR longitude is Null
                 LIMIT 1''')
             route = cursor.fetchone()
-        print('Done')
 
     def route_clusters(routes):
         ''' Clusters routes into area groups that are close enough to travel
@@ -331,14 +331,14 @@ def MPAnalyzer():
         '''
 
         # Average rating of all routes
-        stars = pd.read_sql('SELECT stars FROM Routes', con=engine)
+        stars = pd.read_sql('SELECT stars FROM Routes', con=conn)
         avg_stars = np.mean(stars)['stars']
         # Weighted Bayesian rating
         routes['bayes'] = round((((routes['votes'] * routes['stars'])
                             + avg_stars * 10) / (routes['votes'] + 10)), 1)
         return routes['bayes'].to_frame()
     
-    def find_route_styles(*styles, path):
+    def find_route_styles(*styles, path='Descriptions/'):
         ''' Returns weighted scores that represent a route's likelihood of
         containing any of a series of features, e.g., a roof, arete, or crack.
     
@@ -492,10 +492,10 @@ def MPAnalyzer():
                     from the Database.'''
     
             # Formats query to include list of unique words
-            query = '''SELECT DISTINCT(word), idf
-                       FROM TFIDF WHERE word IN {}'''.format(words)
+            query = f'''SELECT DISTINCT(word), idf
+                       FROM "TFIDF" WHERE word IN {words}'''
             # Pulls SQL data into Pandas dataframe
-            archetypes = pd.read_sql(query, con=engine, index_col='word')
+            archetypes = pd.read_sql(query, con=conn, index_col='word')
     
             return archetypes
     
@@ -510,11 +510,11 @@ def MPAnalyzer():
     
             # Pulls route_id, word, and normalized TFIDF value
             if route_ids is None:
-                query = 'SELECT route_id, word, tfidfn FROM TFIDF'
+                query = 'SELECT * FROM "TFIDF"'
             else:
                 route_ids = tuple(route_ids)
-                query = '''SELECT route_id, word, tfidfn FROM TFIDF
-                           WHERE route_id in {}'''.format(route_ids)
+                query = f'''SELECT * FROM "TFIDF"
+                           WHERE route_id in {route_ids}'''
     
             # Creates Pandas Dataframe
             routes = pd.read_sql(query,
@@ -539,17 +539,17 @@ def MPAnalyzer():
                 query = 'SELECT route_id, word_count FROM Words'
             else:
                 route_ids = tuple(route_ids)
-                query = '''SELECT route_id, word_count FROM Words
-                           WHERE route_id in {}'''.format(route_ids)
+                query = f'''SELECT route_id, word_count FROM Words
+                           WHERE route_id in {route_ids}'''
     
             # Calculates document length
             word_count = pd.read_sql(query,
-                                     con=engine,
+                                     con=conn,
                                      index_col='route_id').groupby(level=0)
 
             # We will take the log of the word count later, so we cannot leave
             # zeroes in the series
-            word_count = word_count.apply(lambda x: np.sum(x) + 0.01)
+            word_count = word_count.progress_apply(lambda x: np.sum(x) + 0.01)
             word_count.fillna(0.01, inplace=True)
             
             return word_count
@@ -597,7 +597,6 @@ def MPAnalyzer():
             # Creates dataframe from the dictionary
             terrain = pd.DataFrame.from_dict(terrain)
             # Updates user
-            print('    Scoring route''', route.name)
     
             return terrain
     
@@ -643,7 +642,7 @@ def MPAnalyzer():
     
             # Groups words by route_id, then finds cosine similarity for each
             # route-style combination
-            routes = routes.groupby('route_id').apply(cosine_similarity,
+            routes = routes.groupby('route_id').progress_apply(cosine_similarity,
                                                       archetypes)
             # Reformats routes dataframe
             routes.index = routes.index.droplevel(1)
@@ -801,24 +800,21 @@ def MPAnalyzer():
     
             return table
     
-        path = 'Descriptions/'
-    
         # Run functions
-        print('Getting word count.................', end=' ')
+        print('Getting word count',)
         word_count = get_word_count()
-        print('Done')
-        print('Getting route information..........', end=' ')
+
+        print('Getting route information',)
         routes = get_routes()
-        print('Done')
-        print('Scoring routes.....................')
+
+        print('Scoring routes')
         routes = score_routes(*styles,
                               word_count=word_count,
                               path=path,
                               routes=routes)
-        print('Getting weighted scores............', end=' ')
+        print('Getting weighted scores',)
         routes = weighted_scores(*styles, table=routes, inplace=True)
         routes = routes.round(4)
-        print('Done')
         
         # Collects the full database
         query = 'SELECT * FROM Routes'
@@ -878,49 +874,48 @@ def MPAnalyzer():
             'error' : 'INTEGER'}
         
         # Write to Database        
-        updated.to_sql('Routes_TEST', con=engine, if_exists='replace', dtype = dtype)
+        updated.to_sql('Routes', con=engine, if_exists='replace', dtype = dtype)
 
         return
 
     # Fills in empty location data
-    fill_null_loc()
+    if click.confirm("Find location and rating data?"):
+        fill_null_loc()
 
-    print('Getting climbing area clusters.....', end=' ', flush=True)
-    cluster_text = '''
-        SELECT route_id, latitude, longitude
-        FROM Routes'''
-    clusters = pd.read_sql(cluster_text, con=engine, index_col='route_id')
-    clusters = route_clusters(clusters)
-    print('Done')
+        print('Getting climbing area clusters', flush=True)
+        cluster_text = '''
+            SELECT route_id, latitude, longitude
+            FROM Routes'''
+        clusters = pd.read_sql(cluster_text, con=conn, index_col='route_id')
+        clusters = route_clusters(clusters)
 
-    print('Getting Bayesian rating............', end=' ', flush=True)
-    # Gets Bayesian rating for routes
-    query = '''SELECT route_id, stars, votes
-                    FROM Routes'''
-    bayes = pd.read_sql(query, con=engine, index_col='route_id')
-    bayes = bayesian_rating(bayes)
-    print('Done')
+        print('Getting Bayesian rating', flush=True)
+        # Gets Bayesian rating for routes
+        query = '''SELECT route_id, stars, votes
+                        FROM Routes'''
+        bayes = pd.read_sql(query, con=conn, index_col='route_id')
+        bayes = bayesian_rating(bayes)
+        
+        print('Writing to SQL',flush=True)
+        # Combines metrics
+        add = pd.concat([bayes, clusters], axis=1)
+        # Writes to the database
+        with click.progressbar(add.index) as bar:
+            for route in bar:
+                rate = add.loc[route]['bayes']
+                group = add.loc[route]['area_group']
 
-    # Combines metrics
-    add = pd.concat([bayes, clusters], axis=1)
+                cursor.execute(f'''UPDATE Routes
+                                SET bayes = {rate}, area_group = {group}
+                                WHERE route_id = {route}''')
+        conn.commit()
 
-    print('Writing to SQL.....................', end=' ',flush=True)
-    # Writes to the database
-    for route in add.index:
-        print(f'\nWriting route {route}', end=' ', flush=True)
-        rate = add.loc[route]['bayes']
-        group = add.loc[route]['area_group']
+    if click.confirm("Update TFIDF scores?"):
+        tfidf()
 
-        cursor.execute(f'''UPDATE Routes
-                         SET bayes = {rate}, area_group = {group}
-                         WHERE route_id = {route}''')
-    conn.commit()
-    print('\nDone')
-
-    # Gets route scores for climbing styles
-    tfidf()
-    find_route_styles('arete', 'chimney', 'crack', 'slab', 'overhang',
-                      path=path)
+    if click.confirm("Find terrain scores?"):
+        # Gets route scores for climbing styles
+        find_route_styles('arete', 'chimney', 'crack', 'slab', 'overhang')
     print('Complete')
 
 
