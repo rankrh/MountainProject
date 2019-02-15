@@ -393,7 +393,7 @@ def MPAnalyzer():
             # Converts to lowercase
             text = text.lower()
             # Strips punctuation and converts accented characters to unaccented
-            text = re.sub(r"[^\w\s']", '', text)
+            text = re.sub(r"[^\w\s]", '', text)
             text = unidecode.unidecode(text)
             # Tokenizes words and returns a list
             text = word_tokenize(text)
@@ -510,19 +510,19 @@ def MPAnalyzer():
     
             # Pulls route_id, word, and normalized TFIDF value
             if route_ids is None:
-                query = 'SELECT * FROM "TFIDF"'
+                query = 'SELECT route_id, word, tfidfn FROM "TFIDF"'
             else:
                 route_ids = tuple(route_ids)
-                query = f'''SELECT * FROM "TFIDF"
+                query = f'''SELECT route_id, word, tfidfn FROM "TFIDF"
                            WHERE route_id in {route_ids}'''
     
             # Creates Pandas Dataframe
-            routes = pd.read_sql(query,
-                                 con=engine,
-                                 index_col=['route_id', 'word'])
-    
-            # Converts to series
+            routes = pd.read_sql(
+                query,
+                con=engine,
+                index_col=['route_id', 'word'])
             routes = routes.squeeze()
+
             return routes
     
         def get_word_count(route_ids=None):
@@ -579,26 +579,21 @@ def MPAnalyzer():
             Returns:
                 terrain(Pandas dataframe): Frame with columns for each style,
                     holding cosine simlarity values.'''
-    
-            # Removes the route_id level of the multiindex
-            route.index = route.index.droplevel(0)
-            # Multiplies the route TFIDF values by each column of the
-            # archetypes frame
-            archetypes = archetypes.multiply(route, axis=0)
-    
-            # Initiates dictionary that will hold the cosine similarity for
-            # each style
-            terrain = {}
-            for column in archetypes:
-                # Sums the vector and passes it into the dictionary
-                cosine = np.sum(archetypes[column])
-                terrain[column] = [cosine]
-    
-            # Creates dataframe from the dictionary
-            terrain = pd.DataFrame.from_dict(terrain)
-            # Updates user
-    
+
+            try:
+                rid = route.index[0][0]
+            except:
+                return
+
+            route = archetypes.multiply(route, axis=0)
+            terrain = pd.DataFrame(index=[rid])
+
+            for column in route:
+                cosine_sim = np.sum(route[column])
+                terrain[column] = cosine_sim
+
             return terrain
+
     
         def score_routes(*styles, word_count, path, routes):
             '''Gets TF, IDF data for archetypes, then finds TFIDF and cosine
@@ -618,37 +613,41 @@ def MPAnalyzer():
                     would expect when adding new styles.
                 routes(Pandas dataframe): Holds cosine similarity for each
                     route/style combination'''
+            if click.confirm('Rescore archetypes?'):
+                # Gets Term-Frequency data for words in archetype documents
+                archetypes = archetypal_tf(*styles, path=path)
+                # Gets list of unique words in archetype documents
+                words = tuple(archetypes.index.tolist())
+                # Gets IDF Values for those words from the Database
+                idf = archetypal_idf(words)
+                # Selects words for archetype documents that have a correpsonding
+                # IDF value in the database
+                archetypes = archetypes[archetypes.index.isin(idf.index)]
+        
+                # Multiplies TF by IDF values to get TFIDF score
+                archetypes = archetypes.mul(idf['idf'], axis=0)
+                # Normalizes TFIDF scores
+                archetypes = normalize(table=archetypes,
+                                    inplace=True,
+                                    *styles)
+                archetypes = archetypes.rename(columns={'index': 'word'})\
+                                    .set_index('word')
+                # Writes to CSV
+                archetypes.to_csv(path + 'TFIDF.csv')
     
-            # Gets Term-Frequency data for words in archetype documents
-            archetypes = archetypal_tf(*styles, path=path)
-            # Gets list of unique words in archetype documents
-            words = tuple(archetypes.index.tolist())
-            # Gets IDF Values for those words from the Database
-            idf = archetypal_idf(words)
-            # Selects words for archetype documents that have a correpsonding
-            # IDF value in the database
-            archetypes = archetypes[archetypes.index.isin(idf.index)]
-    
-            # Multiplies TF by IDF values to get TFIDF score
-            archetypes = archetypes.mul(idf['idf'], axis=0)
-            # Normalizes TFIDF scores
-            archetypes = normalize(table=archetypes,
-                                   inplace=True,
-                                   *styles)
-            archetypes = archetypes.rename(columns={'index': 'word'})\
-                                   .set_index('word')
-            # Writes to CSV
-            archetypes.to_csv(path + 'TFIDF.csv')
+            archetypes = pd.read_csv(path + 'TFIDF.csv', index_col='word')
     
             # Groups words by route_id, then finds cosine similarity for each
             # route-style combination
-            routes = routes.groupby('route_id').progress_apply(cosine_similarity,
-                                                      archetypes)
+            routes = routes.groupby('route_id').progress_apply(
+                cosine_similarity,
+                archetypes=archetypes)
+            print(routes)
             # Reformats routes dataframe
             routes.index = routes.index.droplevel(1)
             routes = pd.concat([routes, word_count], axis=1, sort=False)
             routes.fillna(0, inplace=True)
-    
+
             return routes
     
         def weighted_scores(*styles, table, inplace=False):
@@ -790,31 +789,31 @@ def MPAnalyzer():
                         - ((1 - table[count].values) * (1 - table[style].values) 
                         * style_avg))
                 
-
+                threshold = table[column_name].mean() + table[column_name].std()
                 # Calculates final score using Sigmoid function
                 table[column_name] = (
                     1 / (1 + np.e ** (-100 *
-                                      (table[column_name]
-                                  - (table[column_name].mean()
-                                      + table[column_name].std())))))
+                                        (table[column_name]
+                                    - threshold))))
+                
     
             return table
     
         # Run functions
-        print('Getting word count',)
-        word_count = get_word_count()
 
-        print('Getting route information',)
+        print('Getting route information')
         routes = get_routes()
+
+        print('Getting word count')
+        word_count = get_word_count()
 
         print('Scoring routes')
         routes = score_routes(*styles,
                               word_count=word_count,
                               path=path,
                               routes=routes)
-        print('Getting weighted scores',)
+        print('Getting weighted scores')
         routes = weighted_scores(*styles, table=routes, inplace=True)
-        routes = routes.round(4)
         
         # Collects the full database
         query = 'SELECT * FROM Routes'
@@ -826,55 +825,58 @@ def MPAnalyzer():
                                     all_routes], sort=False)
         updated.update(routes)
 
+        columns = [
+            'name', 'url', 'bayes', 'latitude', 'longitude',
+            'trad', 'tr', 'sport', 'aid', 'snow', 'ice', 'mixed', 'boulder',
+            'alpine', 'pitches', 'length', 'nccs_conv', 'boulder_conv',
+            'rope_conv', 'ice_conv', 'snow_conv', 'aid_conv',
+            'mixed_conv', 'danger_conv', 'area_id', 'area_group', 'error'
+        ]
+
+        for style in styles:
+            columns.append(style)
+
+        updated = updated[columns]
+
+        from sqlalchemy.types import TEXT, INTEGER, BOOLEAN, FLOAT
+
         # Datatypes for columns
         dtype = {
-            'name' : 'TEXT',
-            'route_id' : 'INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE',
-            'url' : 'TEXT UNIQUE',
-            'stars' : 'FLOAT',
-            'votes' : 'INTEGER',
-            'bayes' : 'FLOAT',
-            'latitude' : 'FLOAT',
-            'longitude' : 'FLOAT',
-            'trad' : 'BOOLEAN DEFAULT 0',
-            'tr' : 'BOOLEAN DEFAULT 0',
-            'sport' : 'BOOLEAN DEFAULT 0',
-            'aid' : 'BOOLEAN DEFAULT 0',
-            'snow' : 'BOOLEAN DEFAULT 0',
-            'ice' : 'BOOLEAN DEFAULT 0',
-            'mixed' : 'BOOLEAN DEFAULT 0',
-            'boulder' : 'BOOLEAN DEFAULT 0',
-            'alpine' : 'BOOLEAN DEFAULT 0',
-            'pitches' : 'INTEGER',
-            'length' : 'INTEGER',
-            'nccs_rating' : 'TINYTEXT',
-            'nccs_conv' : 'INTEGER',
-            'hueco_rating' : 'TINYTEXT',
-            'font_rating' : 'TINYTEXT',
-            'boulder_conv' : 'INTERGER',
-            'yds_rating' : 'TINYTEXT',
-            'french_rating' : 'TINYTEXT',
-            'ewbanks_rating' : 'TINYTEXT',
-            'uiaa_rating' : 'TINYTEXT',
-            'za_rating' : 'TINYTEXT',
-            'british_rating' : 'TINYTEXT',
-            'rope_conv' : 'INTEGER',
-            'ice_rating' : 'TINYTEXT',
-            'ice_conv' : 'INTEGER',
-            'snow_rating' : 'TINYTEXT',
-            'snow_conv' : 'INTEGER',
-            'aid_rating' : 'TINYTEXT',
-            'aid_conv' : 'INTEGER',
-            'mixed_rating' : 'TINYTEXT',
-            'mixed_conv' : 'INTEGER',
-            'danger_rating' : 'TINYTEXT',
-            'danger_conv' : 'INTEGER',
-            'area_id' : 'INTEGER',
-            'area_group' : 'INTEGER',
-            'error' : 'INTEGER'}
-        
+            'route_id' : INTEGER(),
+            'name' : TEXT(),
+            'url' : TEXT(),
+            'bayes' : FLOAT(),
+            'latitude' : FLOAT(),
+            'longitude' : FLOAT(),
+            'trad' : BOOLEAN(),
+            'tr' : BOOLEAN(),
+            'sport' : BOOLEAN(),
+            'aid' : BOOLEAN(),
+            'snow' : BOOLEAN(),
+            'ice' : BOOLEAN(),
+            'mixed' : BOOLEAN(),
+            'boulder' : BOOLEAN(),
+            'alpine' : BOOLEAN(),
+            'pitches' : INTEGER(),
+            'length' : INTEGER(),
+            'nccs_conv' : INTEGER(),
+            'boulder_conv' : INTEGER(),
+            'rope_conv' : INTEGER(),
+            'ice_conv' : INTEGER(),
+            'snow_conv' : INTEGER(),
+            'aid_rating' : TEXT(),
+            'aid_conv' : INTEGER(),
+            'mixed_conv' : INTEGER(),
+            'danger_conv' : INTEGER(),
+            'area_id' : INTEGER(),
+            'area_group' : INTEGER(),
+            'error' : INTEGER()}
+
+        for style in styles:
+            dtype[style] = FLOAT()
+
         # Write to Database        
-        updated.to_sql('Routes', con=engine, if_exists='replace', dtype = dtype)
+        updated.to_sql('Routes_scored', con=engine, if_exists='replace')
 
         return
 

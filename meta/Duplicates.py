@@ -22,13 +22,14 @@ conn = sqlite3.connect(DBname + '.sqlite')
 # Create cursor
 cursor = conn.cursor()
 
-query = 'SELECT * FROM Words'
+query = 'SELECT * FROM Routes'
 
 data = pd.read_sql(query, con=conn)
 
 def drop_dupes(table):
-    table = table.drop_duplicates(subset='word')
-    return table[['route_id', 'word', 'word_count', 'tf']]
+    table = table.drop_duplicates()
+    return table
 
-data = data.groupby('route_id').apply(drop_dupes).set_index(['route_id', 'word'])
-data.to_sql('Words', con=conn, if_exists='replace')
+#data = data.groupby('route_id').apply(drop_dupes)
+#data.to_sql('Words', con=conn, if_exists='replace')
+print(data)
