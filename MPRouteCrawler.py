@@ -48,6 +48,9 @@ import psycopg2
 import ssl
 import re
 import os
+import time
+
+
     
 
 def MPScraper():
@@ -1033,6 +1036,11 @@ def MPScraper():
         get_areas(region_id=None)
 
 if __name__ == '__main__':
-    MPScraper()
+    while True:
+        try:
+            MPScraper()
+        except Exception as error:
+            print(error)
+            time.sleep(120)
 
 
