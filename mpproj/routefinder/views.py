@@ -11,7 +11,7 @@ def index(request):
     return HttpResponse('This is the routes page')
 
 def search(request):
-    return HttpResponse('This is the search page')
+    return render(request, 'routefinder/search.html')
 
 def results(request):
     return HttpResponse('This is the results page')

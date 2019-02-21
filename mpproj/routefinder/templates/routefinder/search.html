@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Search</title>
+        <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+    </head>
+    <body>
+        <form method="GET">
+            <div id="styles">
+                <input type="checkbox" id="rock" name="sport" value='True' onclick="climbing_style_handler(this)">Sport<br>
+                <input type="checkbox" id="rock" name="trad" value='True' onclick="climbing_style_handler(this)">Trad<br>
+                <input type="checkbox" id="rock" name="tr" value='True' onclick="climbing_style_handler(this)">Top Rope<br>
+                <input type="checkbox" id="boulder" name="boulder" value='True' onclick="climbing_style_handler(this)">Boulder<br>
+                <input type="checkbox" id="snow" name="snow" value='True' onclick="climbing_style_handler(this)">Snow<br>
+                <input type="checkbox" id="ice" name="ice" value='True' onclick="climbing_style_handler(this)">Ice<br>
+                <input type="checkbox" id="mixed" name="mixed" value='True' onclick="climbing_style_handler(this)">Mixed<br>
+                <input type="checkbox" id="aid" name="aid" value='True' onclick="climbing_style_handler(this)">Aid<br>
+            </div>
+            <div id="grade">
+                <select name="rope">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="audi">Audi</option>
+                </select>
+                <select name="boulder">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="audi">Audi</option>
+                </select> 
+                <select name="snow">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="audi">Audi</option>
+                </select> 
+                <select name="ice">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="audi">Audi</option>
+                </select> 
+                <select name="mixed">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="audi">Audi</option>
+                </select> 
+                <select name="aid">
+                    <option value="volvo">Volvo</option>
+                    <option value="saab">Saab</option>
+                    <option value="fiat">Fiat</option>
+                    <option value="audi">Audi</option>
+                </select> 
+
+            </div>
+            <input type="submit">
+        </form>
+        <script src="{% static search.js %}"></script>
+    </body>
+</html>
