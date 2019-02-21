@@ -1,12 +1,4 @@
-# This is an auto-generated Django model module.
-# You'll have to do the following manually to clean this up:
-#   * Rearrange models' order
-#   * Make sure each model has one field with primary_key=True
-#   * Make sure each ForeignKey has `on_delete` set to the desired behavior.
-#   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
-# Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-
 
 class Route(models.Model):
     name = models.TextField(blank=True, null=True)
@@ -49,7 +41,7 @@ class Route(models.Model):
     def __str__(self):
         return self.name
 
-    def find_terrain_types(self):
+    def terrain_types(self):
         terrain = {
             'arete': self.arete,
             'chimney': self.chimney,
@@ -58,13 +50,78 @@ class Route(models.Model):
             'overhang': self.overhang
         }
 
-
-        terrain_types = []
+        terrain_types = ''
+        return terrain
         for terrain_type, terrain_score in terrain.items():
-            if terrain_score >= 0.95:
-                terrain_types.append(terrain_type)
+            if terrain_score >= 0.75:
+                terrain_types += f' {terrain_type}({terrain_score})'
 
         if len(terrain_types) == 0:
-            return 'Unknown'
+            terrain_type = list(terrain.keys())
+            terrain_score = list(terrain.values())
+            most_likely_terrain = terrain_type[terrain_score.index(max(terrain_score))]
+            return f'{most_likely_terrain}({max(terrain_score)})'
+        
         return terrain_types
 
+    def other_routes_in_area(self):
+        other_routes = Route.objects.filter(area_id=self.area_id)
+        other_routes = other_routes.exclude(name=self.name)
+        other_routes = other_routes.order_by('-bayes')
+
+        return other_routes
+
+    def similar_routes_nearby(self):
+        
+        route_information = {
+            'sport': {
+                'search': self.sport,
+                'grade': self.rope_conv,
+                'system': 'rope_conv'},
+            'trad': {
+                'search': self.trad,
+                'grade': self.rope_conv,
+                'system': 'rope_conv'},
+            'tr': {
+                'search': self.tr,
+                'grade': self.rope_conv,
+                'system': 'rope_conv'},
+            'boulder': {
+                'search': self.boulder,
+                'grade': self.boulder_conv,
+                'system': 'boulder_conv'},
+            'mixed': {
+                'search': self.mixed,
+                'grade': self.mixed_conv,
+                'system': 'mixed_conv'},
+            'snow': {
+                'search': self.snow,
+                'grade': self.snow_conv,
+                'system': 'snow_conv'},
+            'aid': {
+                'search': self.aid,
+                'grade': self.aid_conv,
+                'system': 'aid_conv'},
+            'ice': {
+                'search': self.ice,
+                'grade': self.ice_conv,
+                'system': 'ice_conv'},
+            'alpine': {
+                'search': self.alpine,
+                'grade': self.nccs_conv,
+                'system': 'nccs_conv'}}
+
+        filters = {'area_group': self.area_group}
+
+        for style, data in route_information.items():
+            filters[style] = data['search']
+            if data['search']:
+                system_name = data['system']
+                filters[style] = data['search']
+                filters[system_name] = data['grade']
+
+        other_routes = Route.objects.filter(**filters)
+        other_routes = other_routes.exclude(name=self.name)
+        other_routes = other_routes.order_by('-bayes')
+
+        return other_routes
