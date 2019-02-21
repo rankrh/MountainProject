@@ -119,6 +119,7 @@ def MPAnalyzer():
         routes = routes.set_index('route_id')
         routes = routes[['word', 'idf', 'tfidfn']]
 
+        # This will take a long time
         routes.to_sql('TFIDF', con=engine, if_exists='replace', chunksize=1000)
 
     def weed_out(table, min_occur, max_occur):
@@ -214,7 +215,8 @@ def MPAnalyzer():
                 cursor.execute(f'''
                     SELECT latitude, longitude, from_id
                     FROM Areas
-                    WHERE id = {fid}''')
+                    WHERE id = {fid}
+                    LIMIT 1''')
                 loc = cursor.fetchone()
                 lat, long = loc[0], loc[1]
                 fid = loc[2]
@@ -837,12 +839,13 @@ def MPAnalyzer():
             columns.append(style)
 
         updated = updated[columns]
-
+        updated = updated.rename(columns={'route_id': 'id'})
+        
         from sqlalchemy.types import TEXT, INTEGER, BOOLEAN, FLOAT
 
         # Datatypes for columns
         dtype = {
-            'route_id' : INTEGER(),
+            'id' : INTEGER(),
             'name' : TEXT(),
             'url' : TEXT(),
             'bayes' : FLOAT(),
