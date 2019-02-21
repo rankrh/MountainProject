@@ -1,0 +1,144 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+li {
+    display: inline-block;
+}
+
+
+* {
+    border: 1px solid green;
+}
+
+/* Text Settings */
+
+p, h1, h2, h3, h4, h5, a, label {
+    font: 300 16px/20px "Noto Sans", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+p {
+    padding: 12px 0;
+    font-size: 18px;
+}
+
+h1, label {
+    font-style: italic;
+    color: #575555;
+}
+
+h2 {
+    font-size: 18px;
+    line-height: 27px;
+}
+
+h3 {
+    font-size: 24px;
+    line-height: 36px;
+    font-weight: 700;
+    padding-top: 12px;
+}
+
+h4 {
+    font-size: 22px;
+    line-height: 33px;
+    font-weight: 400;
+    text-align: center;
+}
+
+h5 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 48px;
+}
+
+a {
+    text-decoration: None;
+    color: #1e2744;
+}
+
+a:hover {
+    color: #575555;
+}
+
+/* Layout */
+.grid {
+    padding: 16px;
+    width: 768px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid green;
+    }
+
+.container {
+    margin: 0 auto;
+    overflow: auto;
+    border: 1px solid green;
+}
+
+.col-1-3,
+.col-1-4,
+.col-3-4 {
+    margin: 0;
+    border: 0;
+    padding: 0;
+}
+
+.col-1-3 {
+    width: 33%;
+    display: inline-block;
+    vertical-align: top;
+    border: 1px solid green;
+}
+
+.col-3-4 {
+    width: 75%;
+    display: inline-block;
+    vertical-align: top;
+}
+
