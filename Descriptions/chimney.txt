@@ -1,55 +1,8 @@
-﻿Chimneys
-cracks
-wide
-fit
-body
-Chimneys
-body-width
-chimneys
-wide
-squeeze
-wide
-gaping
-chimneys
-bridging
-stemming
-opposite
-walls
-chimneys
-squeeze
-chimneys
-full-body
-chimneys
-Small
-chimneys
-off-width
-cracks
-Chimneys
-dihedrals
-stem
-techniques
-Stemming
-opposing
-pressure
-chimney
-friction
-fits
-inside
-squeeze
-chimney
-chimney
-tight
-fit
-Wider
-squeeze
-chimneys
-technique
-squeeze
-chimney
-heel-toe
-off-width
-wider
-chimneys
-opposite
-pushing
-against
+﻿Chimneys are cracks wide enough for you to fit your body in.  Chimneys range in width from body-width chimneys, which are just wide enough for you to squeeze into, to
+wide gaping chimneys that you climb by bridging and stemming your arms and legs on opposite walls. The two basic kinds of chimneys aresqueeze chimneys and full-body
+chimneys.  Small chimneys are similar to off-width cracks.
+
+Chimneys are similar to dihedrals because they require stem techniques.  Stemming uses opposing pressure on both sides of the chimney to create friction and make
+vertical progress.  Your body fits inside a squeeze chimney. If the chimney is a tight fit, then progress is made by inches. Wider squeeze chimneys allow you to
+slither upward inside it. The basic technique to climb a squeeze chimney is the secure heel-toe movement also used in off-width.On wider chimneys, keep both feet on
+the opposite  wall and move by pushing against the wall behind your back with your hands.

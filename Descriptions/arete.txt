@@ -1,44 +1,6 @@
-﻿Aretes
-edges
-ridges
-point
-joining
-plates
-convex
-corner
-aretes
-ridges
-Aretes
-sharp
-corners
-striking
-slopers
-rounded
-edges
-Aretes
-aretes
-laybacks
-lay
-backs
-lie
-back
-Laybacks
-aretes
-corner
-side
-edge
-arete
-laying
-arete
-technique
-heelhook
-heel
-hook
-corner
-arete
-Balance
-arete
-control
-barndoor
-barn
-door
+﻿Aretes are edges or ridges of cliffs and peaks.  They point out from the wall and are defined by the joining of two plates or planes of the rock.  In other words, a 
+convex corner.  Alpine aretes are ridges.
+
+Aretes can be sharp corners, slopers, or rounded edges.  Aretes can be either veritical or horizontal ridges, but most aretes require laybacks (lay backs, lie back)
+to climb.  Laybacks on aretes involve using the corner, side or edge of the arete and laying back.  Another common arete technique is the heelhook (heel hook) which
+can help you stay close to the wall on the corner of the arete.  Balance is also important for arete climbing in order to control barndoor (barn door).

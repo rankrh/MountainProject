@@ -32,7 +32,8 @@ body {
 	line-height: 1;
 }
 ol, ul {
-	list-style: none;
+    list-style: none;
+    border: 1px solid green;
 }
 blockquote, q {
 	quotes: none;
@@ -48,18 +49,24 @@ table {
 }
 
 li {
-    display: inline-block;
+    display: block;
 }
 
-
-* {
-    border: 1px solid green;
-}
 
 /* Text Settings */
 
 p, h1, h2, h3, h4, h5, a, label {
     font: 300 16px/20px "Noto Sans", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    border: 1px solid green;
+}
+
+a {
+    text-decoration: None;
+    color: #1e2744;
+}
+
+a:hover {
+    color: #575555;
 }
 
 p {
@@ -67,7 +74,7 @@ p {
     font-size: 18px;
 }
 
-h1, label {
+h1 {
     font-style: italic;
     color: #575555;
 }
@@ -83,27 +90,10 @@ h3 {
     font-weight: 700;
     padding-top: 12px;
 }
-
-h4 {
-    font-size: 22px;
-    line-height: 33px;
-    font-weight: 400;
-    text-align: center;
-}
-
 h5 {
     font-size: 32px;
     font-weight: 700;
     line-height: 48px;
-}
-
-a {
-    text-decoration: None;
-    color: #1e2744;
-}
-
-a:hover {
-    color: #575555;
 }
 
 /* Layout */
@@ -141,4 +131,3 @@ a:hover {
     display: inline-block;
     vertical-align: top;
 }
-

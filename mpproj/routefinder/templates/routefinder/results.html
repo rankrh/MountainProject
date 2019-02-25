@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Results</title>
+        <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+    </head>
+    <body>
+        {% if best_routes is not None %}
+            {% for route in best_routes %}
+                <p class="route">
+                    <h1><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></h1>
+                    <p>{{ route.bayes }} -- {{ route.style }} -- {{ route.grade }} -- {{ route.features }}</p> 
+                </section>
+                {% endfor %}
+        {% else %}
+            <p>No routes fit that description</p>
+            {% endif %}
+    </body>
+</html>

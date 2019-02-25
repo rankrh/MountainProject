@@ -11,7 +11,6 @@
                 dropdown.disabled = !dropdown.disabled;
             }
         </script>
-    
     </head>
     <body>
         <section>      
@@ -23,14 +22,14 @@
                         <input type="checkbox" name="{{ style }}" value="True" onclick="ToggleGrade('{{ style }}_min');ToggleGrade('{{ style }}_max');"><br>
                         <select name="{{ style }}_min" id="{{ style }}_min" disabled>
                             {% for grade in grades %}
-                                <option value="{{ grade }}">
+                                <option value="{{ forloop.counter0 }}">
                                     <p>{{ grade }}</p>
                                 </option>
                                 {% endfor %}
                         </select>
                         <select name="{{ style }}_max" id="{{ style }}_max" disabled>
                             {% for grade in grades %}
-                                <option value="{{ grade }}" selected=""
+                                <option value="{{ forloop.counter0 }}" selected=""
                                     {% if forloop.last %}
                                     selected = "selected"
                                     {% endif %}>
@@ -44,17 +43,17 @@
                     <h2>Preferences</h2>
                     <h1>Location</h1>
                     <input type="text" name="location"><br>
-                    <label for="maximum_distance">Maximum Distance</label>
-                    <input type="number" name="maximum_distance" min="0">
+                    <label for="distance">Maximum Distance</label>
+                    <input type="number" name="distance" min="0">
                     <h1>Number of Pitches</h1>
                     <select name="pitch_min">
                         {% for pitch in pitch_count %}
-                            <option value="{{ pitch }}"><p>{{ pitch }}</p></option>
+                            <option value="{{ forloop.counter0 }}"><p>{{ pitch }}</p></option>
                             {% endfor %}
                     </select>
                     <select name="pitch_max">
                         {% for pitch in pitch_count %}
-                            <option value="{{ pitch }}" selected=""
+                            <option value="{{ forloop.counter0 }}" selected=""
                                 {% if forloop.last %}
                                     selected = "selected"
                                     {% endif %}>
@@ -74,7 +73,7 @@
                             {% endfor %}
                     </select>
                     <h1>Maximum Commitment Level</h1>
-                    <select name="commitment_level">
+                    <select name="commitment">
                         {% for commitment_level in commitment_levels %}
                             <option value="{{ forloop.counter0 }}" selected=""
                             {% if forloop.last %}

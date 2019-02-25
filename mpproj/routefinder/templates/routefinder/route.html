@@ -7,26 +7,40 @@
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
     </head>
     <body>
-        <section>
-            <h5>{{ route_name }}</h5>
-            <a href={{ url }}>Link</a>
-            <h4>{{ terrain }}</h4>
-            <section>
-                <h3>Other Routes in this Area</h3>
-                <ul>
-                    {% for route in area_routes %}
-                        <li><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></li>
-                        {% endfor %}
-                </ul>
+        <header>
+            
+        </header>
+        <div class="main-content">
+            <section class="container route">
+                <a href="{{ url }}"><h5>{{ route_name }}</h5></a>
+                <p>{{ terrain }}</p>
+                {% for terrain_type, terrain_score in terrain.items %}
+                    {% if terrain_score > 50 %}
+                        <p>This route probably has {{ terrain_type }} features on it.  I am {{ terrain_score }}% sure of that.</p>
+                    {% else %}
+                        <p>This route might have {{ terrain_type }} features on it, but I'm only {{ terrain_score }}% sure of that.</p>
+                        {% endif %}
+                    {% endfor %}
             </section>
-            <section>
-                <h3>Other Similar Routes Nearby</h3>
-                <ul>
-                    {% for route in similar_routes %}
-                        <li><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></li>
-                        {% endfor %}
-                </ul>
-            </section>
-
-        </section>
+            {% if similar_routes is not None %}
+                <aside class="container">
+                    <h3>Other Similar Routes Nearby</h3>
+                    <ul>
+                        {% for route in similar_routes %}
+                            <li><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></li>
+                            {% endfor %}
+                    </ul>
+                </aside>
+                {% endif %}
+            {% if area_routes is not None %}
+                <aside class="container">
+                    <h3>Other Routes in this Area</h3>
+                    <ul>
+                        {% for route in area_routes %}
+                            <li><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></li>
+                            {% endfor %}
+                    </ul>
+                </aside>
+                {% endif %}
+        </div>
     </body>

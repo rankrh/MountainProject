@@ -291,9 +291,24 @@ def MPAnalyzer():
         core_samples_mask[db.core_sample_indices_] = True
         # Cluster names
         labels = db.labels_
+        unique, counts = np.unique(labels, return_counts=True)
+        counts = dict(zip(unique, counts))
+        # Number of routes in the same cluster as a given route
+        area_counts = []
+        
+        for label in labels:
+            if label >= 0:
+                # Counts number of routes
+                area_counts.append(counts[label])
+            # Areas are given a cluster id of -1 if the are not part of a
+            # cluster
+            elif label == -1:
+                # If so, there is only 1 route in their 'cluster'
+                area_counts.append(1)
 
         routes['area_group'] = labels
-        routes = routes['area_group']
+        routes['area_counts'] = area_counts
+        routes = routes[['area_group', 'area_counts']]
         return routes
 
     def bayesian_rating(routes):
@@ -781,24 +796,19 @@ def MPAnalyzer():
                 # Find average cosine similarity across routes
                 style_avg = table[style].mean()
                 # Calculate weighted rating
-                table[column_name] = np.where(table[column_name] < style_avg,
-                    (table[style].values * np.sqrt(table[style].values ** 2
-                        + table[count].values ** 2))
-                        + ((1 - table[count].values) * (1 - table[style].values) 
-                        * style_avg),
-                    (table[style].values * np.sqrt(table[style].values ** 2
-                        + table[count].values ** 2))
-                        - ((1 - table[count].values) * (1 - table[style].values) 
-                        * style_avg))
-                
+                table[column_name] = (
+                    table[style].values * np.sqrt(
+                        table[style].values ** 2 + table[count].values ** 2)
+                    + (1 - table[count].values) * (1 - table[style].values)
+                    * style_avg)
+
                 threshold = table[column_name].mean() + table[column_name].std()
                 # Calculates final score using Sigmoid function
                 table[column_name] = (
                     1 / (1 + np.e ** (-100 *
                                         (table[column_name]
                                     - threshold))))
-                
-    
+
             return table
     
         # Run functions
@@ -832,48 +842,47 @@ def MPAnalyzer():
             'trad', 'tr', 'sport', 'aid', 'snow', 'ice', 'mixed', 'boulder',
             'alpine', 'pitches', 'length', 'nccs_conv', 'boulder_conv',
             'rope_conv', 'ice_conv', 'snow_conv', 'aid_conv',
-            'mixed_conv', 'danger_conv', 'area_id', 'area_group', 'error'
-        ]
+            'mixed_conv', 'danger_conv', 'area_id', 'area_counts', 'area_group']
 
         for style in styles:
             columns.append(style)
 
         updated = updated[columns]
-        updated = updated.rename(columns={'route_id': 'id'})
+        updated.rename_axis('id', inplace=True)
         
         from sqlalchemy.types import TEXT, INTEGER, BOOLEAN, FLOAT
 
         # Datatypes for columns
         dtype = {
-            'id' : INTEGER(),
-            'name' : TEXT(),
-            'url' : TEXT(),
-            'bayes' : FLOAT(),
-            'latitude' : FLOAT(),
-            'longitude' : FLOAT(),
-            'trad' : BOOLEAN(),
-            'tr' : BOOLEAN(),
-            'sport' : BOOLEAN(),
-            'aid' : BOOLEAN(),
-            'snow' : BOOLEAN(),
-            'ice' : BOOLEAN(),
-            'mixed' : BOOLEAN(),
-            'boulder' : BOOLEAN(),
-            'alpine' : BOOLEAN(),
-            'pitches' : INTEGER(),
-            'length' : INTEGER(),
-            'nccs_conv' : INTEGER(),
-            'boulder_conv' : INTEGER(),
-            'rope_conv' : INTEGER(),
-            'ice_conv' : INTEGER(),
-            'snow_conv' : INTEGER(),
-            'aid_rating' : TEXT(),
-            'aid_conv' : INTEGER(),
-            'mixed_conv' : INTEGER(),
-            'danger_conv' : INTEGER(),
-            'area_id' : INTEGER(),
-            'area_group' : INTEGER(),
-            'error' : INTEGER()}
+            'id': INTEGER(),
+            'name': TEXT(),
+            'url': TEXT(),
+            'bayes': FLOAT(),
+            'latitude': FLOAT(),
+            'longitude': FLOAT(),
+            'trad': BOOLEAN(),
+            'tr': BOOLEAN(),
+            'sport': BOOLEAN(),
+            'aid': BOOLEAN(),
+            'snow': BOOLEAN(),
+            'ice': BOOLEAN(),
+            'mixed': BOOLEAN(),
+            'boulder': BOOLEAN(),
+            'alpine': BOOLEAN(),
+            'pitches': INTEGER(),
+            'length': INTEGER(),
+            'nccs_conv': INTEGER(),
+            'boulder_conv': INTEGER(),
+            'rope_conv': INTEGER(),
+            'ice_conv': INTEGER(),
+            'snow_conv': INTEGER(),
+            'aid_rating': TEXT(),
+            'aid_conv': INTEGER(),
+            'mixed_conv': INTEGER(),
+            'danger_conv': INTEGER(),
+            'area_id': INTEGER(),
+            'area_group': INTEGER(),
+            'area_counts': INTEGER()}
 
         for style in styles:
             dtype[style] = FLOAT()
@@ -909,10 +918,12 @@ def MPAnalyzer():
             for route in bar:
                 rate = add.loc[route]['bayes']
                 group = add.loc[route]['area_group']
+                cnt = add.loc[route]['area_counts']
 
-                cursor.execute(f'''UPDATE Routes
-                                SET bayes = {rate}, area_group = {group}
-                                WHERE route_id = {route}''')
+                cursor.execute(f'''
+                    UPDATE Routes
+                    SET bayes = {rate}, area_group = {group}, area_counts = {cnt}
+                    WHERE route_id = {route}''')
         conn.commit()
 
     if click.confirm("Update TFIDF scores?"):
