@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Search</title>
+        <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <script src="{% static 'routefinder/index.js' %}"></script>
+    </head>
+    <body>
+        <form method="GET" action="{% url 'routefinder:results'%}" class="search-menu">
+            <fieldset class="col-1-3">
+                {% for style, grades in styles.items %}
+                    <div class="route-style">
+                        <label for="{{ style }}" id="{{ style }}-label" class="style-label">{{ style.capitalize }}
+                            <input type="checkbox" id="{{ style }}" name="{{ style }}" value="True" onclick="ToggleGrade('{{ style }}');">
+                        </label>
+                        <div class="style-grades">
+                            <select name="{{ style }}-min" id="{{ style }}-min" class="grade" disabled>
+                                {% for grade in grades %}
+                                    <option value="{{ forloop.counter0 }}">
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                            </select><!--
+                         --><select name="{{ style }}-max" id="{{ style }}-max" class="grade" disabled>
+                                {% for grade in grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endfor %}
+            </fieldset><!--
+         --><fieldset class="col-1-3">
+                <div id="map"></div>
+                <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_KEY }}&callback=initMap"></script>
+                <fieldset id="location">
+                    <div id="user-location">
+                        <input type="text" name="location" placeholder="Location" id="location-input"><!--
+                     --><input type="button" onclick="SetLocation(this.value);" value="Go" id="location-button">
+                    </div>
+                    <div id="user-distance">
+                        <h1 for="distance" id="distance-label">How many miles are you willing to go?</h1><!--
+                     --><input type="text" pattern="\d*" name="distance" min="0" maxlength="4" id="distance-input">    
+                    </div>
+                </fieldset>
+                <fieldset id="terrain">
+                    {% for terrain in terrain_types %}
+                    <label for="{{ terrain }}">
+                        <input type="radio" id="{{ terrain }}" name="terrain-type" value="{{ terrain }}">
+                        <span class="terrain-type" id="{{ terrain }}-label">
+                                {{ terrain.capitalize }}
+                        </span>
+                    </label>
+                    {% endfor %}
+                    <label for="no-pref" class="terrain" class="terrain-label">
+                        <input type="radio" id="no-pref" name="terrain-type" value="" checked>
+                        <span class="terrain-type" id="no-pref-label">
+                            None
+                        </span>
+                    </label>
+                </fieldset>
+            </fieldset><!--
+         --><fieldset class="col-1-3">
+                <div id="pitches">
+                    <h1 id="pitch-label">
+                        How many pitches do you want to climb?
+                    </h1>
+                    <select name="pitch-min" id="pitch-min">
+                        {% for pitch in pitch_count %}
+                            {% if forloop.first %}
+                                <option value="{{ forloop.counter0 }}">
+                                    <p>
+                                        Any number
+                                    </p>
+                                </option>
+                            {% elif forloop.last %}
+                            {% else %}
+                                <option value="{{ forloop.counter0 }}">
+                                    <p>
+                                        At least {{ pitch }}
+                                    </p>
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select name="pitch-max" id="pitch-max">
+                        {% for pitch in pitch_count %}
+                            <option value="{{ forloop.counter0 }}"
+                                {% if forloop.last %}
+                                    selected = "selected"
+                                {% endif %}>
+                                {% if forloop.last %}
+                                    <p>
+                                        up to any number
+                                    </p>
+                                {% else %}
+                                    <p>
+                                        up to {{ pitch }}
+                                    </p>
+                                {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="commitment">
+                    <h1 id="commitment-label">How committed are you?</h1>
+                    <select name="commitment" id="commitment-max">
+                        {% for commitment_level in commitment_levels %}
+                            <option value="{{ forloop.counter0 }}"
+                            {% if forloop.last %}
+                                selected = "selected"
+                                {% endif %}>
+                                <p>{{ commitment_level }}</p>
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="danger">
+                    <h1 id="danger-label">What's your appetite for danger?</h1>
+                    <select name="danger" id="danger-max">
+                        {% for danger_level in danger_levels %}
+                            <option value="{{ forloop.counter0 }}"
+                                {% if forloop.last %}
+                                    selected = "selected"
+                                    {% endif %}>
+                                {% if forloop.first or forloop.last%}
+                                    <p>
+                                        {{ danger_level }}
+                                    </p>
+                                {% else %}
+                                    <p>
+                                        {{ danger_level }} and under
+                                    </p>
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                    </select>
+                </div>
+                <div id="submit">
+                    <input type="submit" value="Find Routes" >
+                </div>
+            </fieldset>
+        </form>
+        <footer>
+            <nav class="primary-footer">
+                <ul>
+                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                </ul>
+            </nav>
+        </footer>
+    </body>
+</html>

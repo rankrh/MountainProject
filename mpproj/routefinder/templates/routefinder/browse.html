@@ -3,8 +3,9 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Results</title>
+        <title>Browse</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
         <header>
@@ -15,15 +16,7 @@
                 </ul>
             </nav>
         </header>
-        {% if best_routes is not None %}
-            {% for route in best_routes %}
-                <p class="route">
-                    <h1><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></h1>
-                    <p>{{ route.bayes }} -- {{ route.style }} -- {{ route.grade }} -- {{ route.features }}</p> 
-                </section>
-                {% endfor %}
-        {% else %}
-            <p>No routes fit that description</p>
-            {% endif %}
+        Enter your name: <input type="text" id="fname" onblur="myFunction()">
+        <p>When you leave the input field, a function is triggered which transforms the input text to upper case.</p>
     </body>
 </html>

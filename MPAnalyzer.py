@@ -837,17 +837,6 @@ def MPAnalyzer():
                                     all_routes], sort=False)
         updated.update(routes)
 
-        columns = [
-            'name', 'url', 'bayes', 'latitude', 'longitude',
-            'trad', 'tr', 'sport', 'aid', 'snow', 'ice', 'mixed', 'boulder',
-            'alpine', 'pitches', 'length', 'nccs_conv', 'boulder_conv',
-            'rope_conv', 'ice_conv', 'snow_conv', 'aid_conv',
-            'mixed_conv', 'danger_conv', 'area_id', 'area_counts', 'area_group']
-
-        for style in styles:
-            columns.append(style)
-
-        updated = updated[columns]
         updated.rename_axis('id', inplace=True)
         
         from sqlalchemy.types import TEXT, INTEGER, BOOLEAN, FLOAT
@@ -863,26 +852,43 @@ def MPAnalyzer():
             'trad': BOOLEAN(),
             'tr': BOOLEAN(),
             'sport': BOOLEAN(),
-            'aid': BOOLEAN(),
-            'snow': BOOLEAN(),
-            'ice': BOOLEAN(),
-            'mixed': BOOLEAN(),
-            'boulder': BOOLEAN(),
-            'alpine': BOOLEAN(),
-            'pitches': INTEGER(),
-            'length': INTEGER(),
-            'nccs_conv': INTEGER(),
-            'boulder_conv': INTEGER(),
+            'yds_rating' : TEXT(),
+            'french_rating' : TEXT(),
+            'ewbanks_rating' : TEXT(),
+            'uiaa_rating' : TEXT(),
+            'za_rating' : TEXT(),
+            'british_rating' : TEXT(),
             'rope_conv': INTEGER(),
-            'ice_conv': INTEGER(),
+            'aid': BOOLEAN(),
+            'aid_rating' : TEXT(),
+            'snow': BOOLEAN(),
+            'snow_rating' : TEXT(),
             'snow_conv': INTEGER(),
+            'ice': BOOLEAN(),
+            'ice_rating' : TEXT(),
+            'ice_conv': INTEGER(),
+            'mixed': BOOLEAN(),
+            'mixed_rating' : TEXT(),
+            'mixed_conv': INTEGER(),
+            'boulder': BOOLEAN(),
+            'hueco_rating' : TEXT(),
+            'font_rating' : TEXT(),
+            'boulder_conv': INTEGER(),
+            'alpine': BOOLEAN(),
+            'nccs_rating' : TEXT(),
+            'nccs_conv': INTEGER(),
             'aid_rating': TEXT(),
             'aid_conv': INTEGER(),
-            'mixed_conv': INTEGER(),
+            'danger_rating' : TEXT(),
             'danger_conv': INTEGER(),
+            'pitches': INTEGER(),
+            'length': INTEGER(),
             'area_id': INTEGER(),
             'area_group': INTEGER(),
             'area_counts': INTEGER()}
+
+
+            
 
         for style in styles:
             dtype[style] = FLOAT()

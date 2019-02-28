@@ -3,7 +3,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Results</title>
+        <title>{{ area.name }}</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
     </head>
     <body>
@@ -15,15 +15,11 @@
                 </ul>
             </nav>
         </header>
-        {% if best_routes is not None %}
-            {% for route in best_routes %}
-                <p class="route">
-                    <h1><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></h1>
-                    <p>{{ route.bayes }} -- {{ route.style }} -- {{ route.grade }} -- {{ route.features }}</p> 
-                </section>
-                {% endfor %}
-        {% else %}
-            <p>No routes fit that description</p>
-            {% endif %}
+        <h5>{{ area.name }}</h5>
+        <h4>{{ parent }}</h4>
+        <h3>{{ children }}</h3>
+        <h2>{{ features }}</h2>
+        <h2>{{ styles }}</h2>
+        <h1>{{ grades }}</h1>
     </body>
 </html>

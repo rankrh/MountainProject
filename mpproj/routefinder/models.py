@@ -7,7 +7,7 @@ from config import config
 from sqlalchemy import create_engine
 from googlemaps.haversine import Haversine
 from googlemaps.geocode import GeoCode
-
+from django.shortcuts import get_object_or_404
 
 user = config.config()['user']
 host = config.config()['host']
@@ -17,34 +17,125 @@ database = config.config()['database']
 connection = f'postgresql://{user}:{password}@{host}:5432/{database}'
 engine = create_engine(connection)
 
-def get_counts(area_group):
-    """Counts the number of similar routes in an area.
 
-    Area groups were calculated after the data was gathered, and are used here
-    to group similar routes.  Route difficulty, type, and style are all taken
-    into account, so the counts cannot be calculated until the user defines
-    their preferences.
+class Area(models.Model):
+    name = models.TextField(blank=True, null=True)
+    url = models.TextField(unique=True, blank=True, null=True)
+    from_id = models.IntegerField(blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
 
-    Args:
-        area_group(Pandas Dataframe): Grouped by area group ID given by the
-            MPAnalyzer script
+    child_routes = None
+    main_style = None
+    
+    class Meta:
+        managed = False
+        db_table = 'areas'
 
-    Returns:
-        area_group(Pandas Dataframe): Dataframe with new column 'area_counts'
-            that holds the number of routes in the area group
-    """
-    # An area_group ID of -1 means there are no other routes in the area
-    if area_group.name == -1:
-        area_group['area_counts'] = 1
-    else:
-        area_group['area_counts'] = len(area_group)
+    def get_areas(self):
+        path = [self.id]
+        if self.from_id is not None:
+            parent = Area.objects.get(pk=self.from_id)
+            parent = parent.get_areas()
+            for area in parent:
+                path.append(area)
+        return path
 
-    return area_group
+    def parent_areas(self):
+        path = self.get_areas()
+
+        path = [Area.objects.get(pk=area) for area in path]
+        return path
+
+    def children_areas(self):
+
+        children = Area.objects.filter(from_id=self.id)
+
+        if len(children) == 0:
+            children = Route.objects.filter(area_id=self.id)
+            if len(children) > 0:
+                self.child_routes = children
+        
+        return children
+
+    def terrain(self):
+        if self.child_routes is not None:
+            number_of_children = len(self.child_routes)
+            terrain = pd.Series(
+                [0] * len(terrain_types),
+                index = terrain_types)
+            terrain['Unknown'] = 0
+
+            for child in self.child_routes:
+                child_terrain = child.get_terrain_types()
+                if child_terrain is not None:
+                    for t_type, score in child_terrain.items():
+                        terrain_type_known = False
+                        if score > 50:
+                            terrain[t_type] += 1
+                            terrain_type_known = True
+                        if not terrain_type_known:
+                            terrain['Unknown'] += 1
+
+                else:
+                    terrain['Unknown'] += 1
+
+            terrain = 100 * terrain / sum(terrain)
+            terrain = terrain.round(0)
+
+            return terrain.to_dict()
+
+    def styles(self):
+        if self.child_routes is not None:
+            child_styles = pd.Series(
+                [0] * (len(climbing_styles) + 1),
+                index = climbing_styles + ['alpine'])
+
+            for child in self.child_routes:
+                child_style = {
+                    'sport': child.sport,
+                    'trad': child.trad,
+                    'tr': child.tr,
+                    'boulder': child.boulder,
+                    'mixed': child.mixed,
+                    'aid': child.aid,
+                    'ice': child.ice,
+                    'snow': child.snow,
+                    'alpine': child.alpine
+                    }
+                for style, value in child_style.items():
+                    if value:
+                        child_styles[style] += 1
+            self.main_style = child_styles.idxmax()
+            return self.main_style
+
+    def grades(self):
+        if self.child_routes is not None and self.main_style is not None:
+            number_of_children = len(self.child_routes)
+            if number_of_children > 0:
+                score = 0
+                
+                for child in self.child_routes:
+                    score += getattr(child, climb_style_to_system[self.main_style])
+
+                score = score // number_of_children
+
+                score = climb_style_to_grade[self.main_style][int(score)]
+
+                return score
 
 
 class Route(models.Model):
+    arete = models.FloatField(blank=True, null=True)
+    chimney = models.FloatField(blank=True, null=True)
+    crack = models.FloatField(blank=True, null=True)
+    slab = models.FloatField(blank=True, null=True)
+    overhang = models.FloatField(blank=True, null=True)
+    word_count = models.FloatField(blank=True, null=True)
     name = models.TextField(blank=True, null=True)
     url = models.TextField(blank=True, null=True)
+    stars = models.FloatField(blank=True, null=True)
+    votes = models.FloatField(blank=True, null=True)
     bayes = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
@@ -59,21 +150,32 @@ class Route(models.Model):
     alpine = models.BooleanField(blank=True, null=True)
     pitches = models.FloatField(blank=True, null=True)
     length = models.FloatField(blank=True, null=True)
+    nccs_rating = models.TextField(blank=True, null=True)
     nccs_conv = models.FloatField(blank=True, null=True)
+    hueco_rating = models.TextField(blank=True, null=True)
+    font_rating = models.TextField(blank=True, null=True)
     boulder_conv = models.FloatField(blank=True, null=True)
+    yds_rating = models.TextField(blank=True, null=True)
+    french_rating = models.TextField(blank=True, null=True)
+    ewbanks_rating = models.TextField(blank=True, null=True)
+    uiaa_rating = models.TextField(blank=True, null=True)
+    za_rating = models.TextField(blank=True, null=True)
+    british_rating = models.TextField(blank=True, null=True)
     rope_conv = models.FloatField(blank=True, null=True)
+    ice_rating = models.TextField(blank=True, null=True)
     ice_conv = models.FloatField(blank=True, null=True)
+    snow_rating = models.TextField(blank=True, null=True)
     snow_conv = models.FloatField(blank=True, null=True)
+    aid_rating = models.TextField(blank=True, null=True)
     aid_conv = models.FloatField(blank=True, null=True)
+    mixed_rating = models.TextField(blank=True, null=True)
     mixed_conv = models.FloatField(blank=True, null=True)
+    danger_rating = models.TextField(blank=True, null=True)
     danger_conv = models.FloatField(blank=True, null=True)
     area_id = models.FloatField(blank=True, null=True)
     area_group = models.FloatField(blank=True, null=True)
-    arete = models.FloatField(blank=True, null=True)
-    chimney = models.FloatField(blank=True, null=True)
-    crack = models.FloatField(blank=True, null=True)
-    slab = models.FloatField(blank=True, null=True)
-    overhang = models.FloatField(blank=True, null=True)
+    area_counts = models.FloatField(blank=True, null=True)
+    error = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -100,6 +202,8 @@ class Route(models.Model):
             int(round(self.crack, 1) * 100)],
             index=terrain_types)
 
+        if len(terrain[terrain >= 30]) == 0:
+            return
         most_likely_terrain = terrain.max()
         most_likely_terrain =  terrain[terrain == most_likely_terrain]
 
@@ -156,7 +260,7 @@ class Route(models.Model):
 
         for style, data in route_information.items():
             filters[style] = data['search']
-            if data['search']:
+            if data['search'] and data['grade'] is not None:
                 filters[style] = data['search']
                 filters[climb_style_to_system[style] + "__lte"] = data['grade'] + 3
                 filters[climb_style_to_system[style] + "__gte"] = data['grade'] - 3
@@ -164,11 +268,83 @@ class Route(models.Model):
 
         other_routes = Route.objects.filter(**filters)
         other_routes = other_routes.exclude(name=self.name)
+        if len(other_routes) == 0:
+            return
+
         other_routes = other_routes.order_by('-bayes')
+
 
         return other_routes
 
+    def area(self):
+        parent = get_object_or_404(Area, id=self.area_id)
+        return parent.parent_areas()
+
+    def route_style(self):
+
+        route_styles = pd.Series([
+            self.sport,
+            self.trad,
+            self.tr,
+            self.boulder,
+            self.mixed,
+            self.aid,
+            self.snow,
+            self.ice,
+            self.alpine],
+            index = climbing_styles + ['alpine'])
+        
+        route_styles = list(route_styles[route_styles == True].index)
+
+        return route_styles
+
+    def grade_conversion(self):
+        return {}
+
+    def route_grade(self):
+        grades = {
+            'YDS': self.yds_rating,
+            'French': self.french_rating,
+            'Ewbank': self.ewbanks_rating,
+            'UIAA': self.uiaa_rating,
+            'South Africa': self.za_rating,
+            'British': self.british_rating,
+            'Hueco': self.hueco_rating,
+            'Fontaine Bleu': self.font_rating,
+            'Mixed': self.mixed_rating,
+            'Aid': self.aid_rating,
+            'Snow': self.snow_rating,
+            'Ice': self.ice_rating,
+            'NCCS': self.nccs_rating}
+
+        grades = {system: grade for system, grade in grades.items() if grade is not None}
+
+        return grades
+
     def best_routes(get_request):
+        def get_counts(area_group):
+            """Counts the number of similar routes in an area.
+
+            Area groups were calculated after the data was gathered, and are used here
+            to group similar routes.  Route difficulty, type, and style are all taken
+            into account, so the counts cannot be calculated until the user defines
+            their preferences.
+
+            Args:
+                area_group(Pandas Dataframe): Grouped by area group ID given by the
+                    MPAnalyzer script
+
+            Returns:
+                area_group(Pandas Dataframe): Dataframe with new column 'area_counts'
+                    that holds the number of routes in the area group
+            """
+            # An area_group ID of -1 means there are no other routes in the area
+            if area_group.name == -1:
+                area_group['area_counts'] = 1
+            else:
+                area_group['area_counts'] = len(area_group)
+
+            return area_group
 
         if len(get_request) == 0:
             return
@@ -193,14 +369,17 @@ class Route(models.Model):
             get_request[key] = value
 
         try:
-            pitch_min = get_request['pitch_min']
+            pitch_min = get_request['pitch-min']
         except KeyError:
             pitch_min = 0
 
         try:
-            pitch_max = get_request['pitch_max']
+            pitch_max = get_request['pitch-max']
         except KeyError:
             pitch_max = 10
+
+        if pitch_min > pitch_max:
+            return
 
         try:
             user_location = get_request['location']
@@ -286,7 +465,6 @@ class Route(models.Model):
         else:
             query += ' WHERE bayes > 3.0'
             query += ' AND area_counts >= 20 LIMIT 100'
-            query += ' LIMIT 100'
 
         routes = pd.read_sql(query, con=engine)
 
@@ -329,11 +507,8 @@ class Route(models.Model):
 
         routes['features'] = feats
 
-        for style, system in climbing_systems.items():
-            routes[style] = routes[style].map(pd.Series(system))
-
         # Collapses different grading systems into one column
-        routes['grade'] = routes[list(climbing_systems.keys())].apply(
+        routes['grade'] = routes[converted_systems].apply(
             lambda x: ', '.join(x.dropna()), axis=1)
 
         for style in climbing_styles:

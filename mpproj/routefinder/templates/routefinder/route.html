@@ -3,44 +3,67 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>{{ route_name }}</title>
+        <title>{{ route.name }}</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
     </head>
     <body>
-        <header>
-            
+        <header class="primary-header">
+            <nav class="area-nav">
+
+            </nav>
         </header>
-        <div class="main-content">
-            <section class="container route">
-                <a href="{{ url }}"><h5>{{ route_name }}</h5></a>
-                <p>{{ terrain }}</p>
-                {% for terrain_type, terrain_score in terrain.items %}
-                    {% if terrain_score > 50 %}
-                        <p>This route probably has {{ terrain_type }} features on it.  I am {{ terrain_score }}% sure of that.</p>
-                    {% else %}
-                        <p>This route might have {{ terrain_type }} features on it, but I'm only {{ terrain_score }}% sure of that.</p>
+        <section class="main">
+            <div id="area-routes">
+
+            </div>
+            <div class="container" id="route-info">
+                <div id="route-text">
+                    {{grades}}
+                    {% for system in grades %}
+                        {% if system in sport_systems %}
+                            <label for="{{ system }}">
+                                <input type="radio" id="{{ system }}" name="rope-systems" value="{{ system }}"
+                                    {% if forloop.first %}
+                                        checked="checked"
+                                    {% endif %}>
+                                <span class="rope-type" id="{{ system }}-label">
+                                    {{ system }}
+                                </span>
+                            </label>
+                        {% elif system in boulder_systems %}
+                        <label for="{{ system }}">
+                            <input type="radio" id="{{ system }}" name="boulder-systems" value="{{ system }}"
+                            {% if forloop.first %}
+                                checked="checked"
+                            {% endif %}>
+                            <span class="boulder-type" id="{{ system }}-label">
+                                {{ system }}
+                            </span>
+                        </label>
                         {% endif %}
                     {% endfor %}
-            </section>
-            {% if similar_routes is not None %}
-                <aside class="container">
-                    <h3>Other Similar Routes Nearby</h3>
-                    <ul>
-                        {% for route in similar_routes %}
-                            <li><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></li>
-                            {% endfor %}
-                    </ul>
-                </aside>
-                {% endif %}
-            {% if area_routes is not None %}
-                <aside class="container">
-                    <h3>Other Routes in this Area</h3>
-                    <ul>
-                        {% for route in area_routes %}
-                            <li><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></li>
-                            {% endfor %}
-                    </ul>
-                </aside>
-                {% endif %}
-        </div>
+                    {% for style in styles %}
+                        {{style}}
+                    {% endfor %}
+                </div>
+                <div id="terrain-graph">
+
+                </div>
+                <div id="map">
+
+                </div>
+            </div>
+            <div id="similar-routes">
+
+            </div>
+        </section>
+        <footer>
+            <nav class="primary-footer">
+                <ul>
+                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                </ul>
+            </nav>
+        </footer>
     </body>
+</html>
