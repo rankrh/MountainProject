@@ -30,17 +30,22 @@ def area(request, area_id):
 
 def route(request, route_id):
     route_data = get_object_or_404(Route, pk=route_id)
+
     context = {
         'route': route_data,
         'terrain': route_data.get_terrain_types(),
         'url': route_data.url,
-        'area': route_data.area(),
+        'location': {
+            'lat': route_data.latitude,
+            'lng': route_data.longitude},
+        'areas': route_data.area(),
         'area_routes': route_data.other_routes_in_area(),
         'similar_routes': route_data.similar_routes_nearby(),
         'styles': route_data.route_style(),
         'grades': route_data.route_grade(),
         'sport_systems': ['YDS', 'French', 'Ewbank', 'UIAA', 'South Africa', 'British'],
-        'boulder_systems': ['Hueco', 'Fontaine Bleu']
+        'boulder_systems': ['Hueco', 'Fontaine Bleu'],
+        'GOOGLE_KEY': os.environ.get('GOOGLE_API_KEY'),
     }
     return render(request, 'routefinder/route.html', context)
 

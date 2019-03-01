@@ -251,10 +251,7 @@ class Route(models.Model):
                 'grade': self.aid_conv},
             'ice': {
                 'search': self.ice,
-                'grade': self.ice_conv},
-            'alpine': {
-                'search': self.alpine,
-                'grade': self.nccs_conv}}
+                'grade': self.ice_conv}}
 
         filters = {'area_group': self.area_group}
 
@@ -265,6 +262,14 @@ class Route(models.Model):
                 filters[climb_style_to_system[style] + "__lte"] = data['grade'] + 3
                 filters[climb_style_to_system[style] + "__gte"] = data['grade'] - 3
 
+        filters["nccs_conv__lte"] = self.nccs_conv
+        filters["danger_conv__lte"] = self.danger_conv
+        
+        if self.pitches <= 1:
+            filters["pitches__lte"] = 1
+        else:
+            filters["pitches__lte"] = self.pitches + 2
+            filters["pitches__gte"] = self.pitches - 2
 
         other_routes = Route.objects.filter(**filters)
         other_routes = other_routes.exclude(name=self.name)
@@ -277,8 +282,12 @@ class Route(models.Model):
         return other_routes
 
     def area(self):
-        parent = get_object_or_404(Area, id=self.area_id)
-        return parent.parent_areas()
+        parents = get_object_or_404(Area, id=self.area_id)
+        parents = parents.parent_areas()
+
+        parents = parents[::-1]
+
+        return parents
 
     def route_style(self):
 
@@ -314,8 +323,7 @@ class Route(models.Model):
             'Mixed': self.mixed_rating,
             'Aid': self.aid_rating,
             'Snow': self.snow_rating,
-            'Ice': self.ice_rating,
-            'NCCS': self.nccs_rating}
+            'Ice': self.ice_rating}
 
         grades = {system: grade for system, grade in grades.items() if grade is not None}
 

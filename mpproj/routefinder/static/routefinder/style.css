@@ -55,7 +55,7 @@ li {
 
 /* Text Settings */
 
-/* p, h1, h2, h3, h4, h5, a, label, input {
+p, h1, h2, h3, h4, h5, a, label, input, span {
     font: 300 16px/20px "Noto Sans", "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -93,7 +93,7 @@ h5 {
     font-size: 32px;
     font-weight: 700;
     line-height: 48px;
-} */
+}
 
 /* Layout */
 .col-1-3 {
@@ -153,12 +153,14 @@ input[type=text] {
 }
 
 input[type=radio],
-input[type=checkbox] {
+input[type="checkbox"] {
     display: none;
 }
 
 .style-label:hover,
 .terrain-type:hover,
+.rope-type:hover,
+.boulder-type:hover,
 input[type=button]:hover,
 input[type=submit]:hover {
     background: #677e91;
@@ -261,18 +263,28 @@ input[type=submit] {
 .terrain-type,
 .rope-type,
 .boulder-type {
-    width: 96px;
     border: 1px solid #d9dee2;
     cursor: pointer;
     background: #d9dee2;
     border-radius: 5px;
     text-align: center;
-    margin: 10px 16px;
-    padding: 4px;
     display: inline-block;
     text-align: center;
     -webkit-transition: .4s;
     transition: .4s;
+}
+
+.terrain-type {
+    width: 96px;
+    margin: 10px 16px;
+    padding: 4px;
+}
+
+.rope-type,
+.boulder-type {
+    width: 15%;
+    min-width: 70px;
+    margin: auto;
 }
 
 input:checked + .terrain-type,
@@ -331,17 +343,16 @@ input[type='submit'] {
 
 /* Route Page */
 .primary-header {
-    height: 12vh;
+    height: 6vh;
     width: 100%;
 }
 
 .area-nav {
     height: 4vh;
-    max-width: 400px;
     margin: 4vh 12px;
 }
 .main {
-    height: 78vh;
+    height: 84vh;
     width: 100vw;
 }
 
@@ -356,11 +367,46 @@ input[type='submit'] {
     width: 25vw;
 }
 
+#area-routes-title,
+#area-routes-list,
+#similar-routes-title,
+#similar-routes-list {
+    border: 1px solid red;
+}
+
+#area-routes-title,
+#similar-routes-title {
+    height: 48px;
+    min-height: 48px;
+    margin-top: 12px;
+    overflow: auto;
+}
+
+#area-routes-title,
+#similar-routes-title,
+#area-routes-list,
+#similar-routes-list {
+    width: 85%;
+    margin: 24px auto;
+}
+
+#area-routes-list,
+#similar-routes-list {
+    overflow: hidden;
+    overflow-y: auto;
+    height: 440px;
+    background: #677e91;
+}
+
 #route-info {
     width: 50vw;
     height: 100%;
 }
 
+#route-text {
+    position: relative;
+
+}
 #route-text,
 #terrain-graph {
     height: 25%;
@@ -369,7 +415,34 @@ input[type='submit'] {
 #route-text,
 #map,
 #terrain-graph {
-    border: 1px solid green;
     margin: 2% 5%;
     float: top; 
 }
+
+
+.rope-grades,
+.boulder-grades {
+    display: none;
+}
+
+#YDS,
+#Hueco {
+    display: inline;
+}
+
+#grade-buttons {
+    margin: auto;
+    text-align: center;
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+    left:0;
+    right: 0;
+}
+
+#route-name,
+#route-data {
+    text-align: center;
+    margin: auto;
+}
+

@@ -5,56 +5,133 @@
         <meta charset="UTF-8">
         <title>{{ route.name }}</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
         <header class="primary-header">
             <nav class="area-nav">
-
+                {% for area in areas %}
+                    <a href="{{ area.url }}">
+                        <span> -- {{area.name}}<span>
+                    </a>
+                {% endfor %}
             </nav>
         </header>
         <section class="main">
             <div id="area-routes">
-
+                <div id="area-routes-title">
+                    {% with areas|last as area %}
+                        <h4>Other Routes in {{ area.name }}</h4>
+                    {% endwith %}
+                </div>
+                <ul id="area-routes-list">
+                    {% for area_route in area_routes %}
+                        <li><a href="{% url 'routefinder:route' area_route.id %}">{{ area_route.name }}</a></li>
+                    {% endfor %}
+                </ul>
             </div>
             <div class="container" id="route-info">
                 <div id="route-text">
-                    {{grades}}
-                    {% for system in grades %}
-                        {% if system in sport_systems %}
-                            <label for="{{ system }}">
-                                <input type="radio" id="{{ system }}" name="rope-systems" value="{{ system }}"
-                                    {% if forloop.first %}
-                                        checked="checked"
-                                    {% endif %}>
-                                <span class="rope-type" id="{{ system }}-label">
-                                    {{ system }}
-                                </span>
-                            </label>
-                        {% elif system in boulder_systems %}
-                        <label for="{{ system }}">
-                            <input type="radio" id="{{ system }}" name="boulder-systems" value="{{ system }}"
-                            {% if forloop.first %}
-                                checked="checked"
-                            {% endif %}>
-                            <span class="boulder-type" id="{{ system }}-label">
-                                {{ system }}
+                    <h5 id="route-name">
+                        {{ route.name }}
+                    </h5>
+                    <h3 id="route-data">
+                        <span>A </span>
+                        {% if route.pitches > 0 %}
+                            <span id="route-pitches">
+                                {{ route.pitches|floatformat:"0" }} pitch 
                             </span>
-                        </label>
                         {% endif %}
-                    {% endfor %}
-                    {% for style in styles %}
-                        {{style}}
-                    {% endfor %}
-                </div>
-                <div id="terrain-graph">
+                        {% for system, grade in grades.items %}
+                            {% if system not in sport_systems and system not in boulder_systems %}
+                                <span id="{{ system }}" class="singular-grade">
+                                    {{ grade }}
+                                </span>
+                            {% elif system in sport_systems %}
+                                <span id="{{ system }}" class="rope-grades">
+                                    {{ grade }} {% if grade in "['3rd', '4th']" %} class {% endif %}
+                                </span>
+                                {% elif system in boulder_systems %}
+                                <span id="{{ system }}" class="boulder-grades">
+                                    {{ grade }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
 
-                </div>
-                <div id="map">
+                        {% for style in styles %}
+                            {% if forloop.last and forloop.first %}
+                                <span id="{{ style }}" class="route-style">
+                                    {{ style }}
+                                </span>
+                            {% elif not forloop.last and forloop.first %}
+                                <span id="{{ style }}" class="route-style">
+                                    {{ style }}
+                                </span>
+                            {% elif not forloop.last %}
+                                <span id="{{ style }}" class="route-style">
+                                    , {{ style }}
+                                </span>
+                            {% else %}
+                                <span id="{{ style }}" class="route-style">
+                                    and {{ style }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
 
+                        <span>
+                            route
+                        </span>
+
+                        {% if route.danger_conv > 0 %}
+                            <span id="route-danger">
+                                ({{ route.danger_rating }})
+                            </span>
+                        {% endif %}
+
+                        {% if route.nccs_conv > 0 %}
+                            <span>
+                                (NCCS: {{route.nccs_rating }})
+                            </span>
+
+                        {% endif %}
+                    </h3>
+                    <div id="grade-buttons">
+                        {% for system, grade in grades.items %}
+                            {% if system in sport_systems %}
+                                <label for="{{ system }}-radio">
+                                    <input type="radio" id="{{ system }}-radio" name="rope-systems" value="{{ grade }}"
+                                        onchange="ToggleSystem('{{ system }}', 'rope-grades');">
+                                    <span class="rope-type" id="{{ system }}-label">
+                                        {{ system }}
+                                    </span>
+                                </label>
+
+                            {% elif system in boulder_systems %}
+                                <label for="{{ system }}-radio">
+                                    <input type="radio" id="{{ system }}-radio" name="boulder-systems" value="{{ grade }}"
+                                        onchange="ToggleSystem('{{ system }}', 'boulder-grades');">
+                                    <span class="boulder-type" id="{{ system }}-label">
+                                        {{ system }}
+                                    </span>
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
+
+                <div id="terrain-graph"></div>
+                <div id="map"></div>
+
             </div>
             <div id="similar-routes">
-
+                <div id="similar-routes-title">
+                    <h4>Similar routes to {{ route.name }}</h4>
+                </div>
+                <ul id="similar-routes-list">
+                    {% for similar_route in similar_routes %}
+                        <li><a href="{% url 'routefinder:route' similar_route.id %}">{{ similar_route.name }}</a></li>
+                    {% endfor %}
+                </ul>
             </div>
         </section>
         <footer>
