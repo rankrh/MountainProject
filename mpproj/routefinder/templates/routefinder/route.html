@@ -12,7 +12,8 @@
             <nav class="area-nav">
                 {% for area in areas %}
                     <a href="{{ area.url }}">
-                        <span> -- {{area.name}}<span>
+                        {% if not forloop.first %}<span> > </span> {% endif %}
+                        <span>{{area.name}}<span>
                     </a>
                 {% endfor %}
             </nav>
@@ -24,17 +25,17 @@
                         <h4>Other Routes in {{ area.name }}</h4>
                     {% endwith %}
                 </div>
-                <ul id="area-routes-list">
+                <ul id="area-routes-list"  class="scroll">
                     {% for area_route in area_routes %}
                         <li><a href="{% url 'routefinder:route' area_route.id %}">{{ area_route.name }}</a></li>
                     {% endfor %}
                 </ul>
             </div>
-            <div class="container" id="route-info">
+            <div id="route-info">
                 <div id="route-text">
-                    <h5 id="route-name">
+                    <a href="{{route.url}}"><h5 id="route-name">
                         {{ route.name }}
-                    </h5>
+                    </h5></a>
                     <h3 id="route-data">
                         <span>A </span>
                         {% if route.pitches > 0 %}
@@ -119,15 +120,56 @@
                     </div>
                 </div>
 
-                <div id="terrain-graph"></div>
+                <div id="terrain-images">
+                    <div class="terrain-image-container">
+                        <img src="{% static 'images/arete.gif' %}" class="terrain-image" style="opacity: {{terrain_val.arete}};" />
+                        <div class="middle">
+                            <div class="text">
+                                <h1>{{ terrain.arete }} arete features</h1>
+                            </div>
+                        </div>
+                    </div><!--
+                 --><div class="terrain-image-container">
+                        <img src="{% static 'images/slab.gif' %}" class="terrain-image" style="opacity: {{terrain_val.slab}};"/>
+                        <div class="middle">
+                            <div class="text">
+                                <h1>{{ terrain.slab }} slab features</h1>
+                            </div>
+                        </div>
+                    </div><!--
+                 --><div class="terrain-image-container">
+                        <img src="{% static 'images/chimney.gif' %}" class="terrain-image" style="opacity: {{terrain_val.chimney}};"/>
+                        <div class="middle">
+                            <div class="text">
+                                <h1> {{ terrain.chimney }} chimney features</h1>
+                            </div>
+                        </div>
+                    </div><!--
+                 --><div class="terrain-image-container">
+                        <img src="{% static 'images/overhang.gif' %}" class="terrain-image" style="opacity: {{terrain_val.overhang}};"/>
+                        <div class="middle">
+                            <div class="text">
+                                <h1>{{ terrain.overhang }} overhang features</h1>
+                            </div>
+                        </div>
+                    </div><!--
+                 --><div class="terrain-image-container">
+                        <img src="{% static 'images/crack.gif' %}" class="terrain-image" style="opacity: {{terrain_val.crack}};"/>
+                        <div class="middle">
+                            <div class="text">
+                                <h1>{{ terrain.crack }} crack features</h1>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div id="map"></div>
-
+                <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_KEY }}&callback=initMap"></script>
             </div>
             <div id="similar-routes">
                 <div id="similar-routes-title">
                     <h4>Similar routes to {{ route.name }}</h4>
                 </div>
-                <ul id="similar-routes-list">
+                <ul id="similar-routes-list"  class="scroll">
                     {% for similar_route in similar_routes %}
                         <li><a href="{% url 'routefinder:route' similar_route.id %}">{{ similar_route.name }}</a></li>
                     {% endfor %}

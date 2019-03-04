@@ -97,5 +97,16 @@ converted_systems = [
     'mixed_rating',
     'aid_rating',
     'snow_rating',
-    'ice_rating',
-    'nccs_rating']
+    'ice_rating']
+
+rope_systems = [
+    'yds_rating',
+    'french_rating',
+    'ewbanks_rating',
+    'uiaa_rating',
+    'za_rating',
+    'british_rating']
+
+boulder_systems = [
+    'hueco_rating',
+    'font_rating']

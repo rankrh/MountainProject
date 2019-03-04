@@ -7,12 +7,16 @@ function ToggleGrade(style) {
 
     var label = document.getElementById(style + '-label')
 
-    if (grade_max.disabled) {
-        label.style.background = "#d9dee2"
+    var color = window.getComputedStyle(document.body)
+    var selected_color = color.getPropertyValue('--highlight');
+    var unselected_color = color.getPropertyValue('--secondary');
 
+    if (grade_max.disabled) {
+        label.style.background = unselected_color
     }
+
     else {
-        label.style.background = "#677e91"
+        label.style.background = selected_color
     }
 }
 
@@ -29,22 +33,45 @@ function ToggleSystem(chosen_system, style) {
     chosen.style.display = "inline";
 }
 
-function initMap(location={'lat': -25.344, 'lng': 131.036}) {
-    var map = new google.maps.Map( document.getElementById('map'),
-        {zoom: 6, center: location});
-    var marker = new google.maps.Marker({position: location, map: map});
+function NextSystem(this_style, system) {
+    current_system = this_style.className
+
+    var rope_systems = [
+        'yds_rating',
+        'french_rating',
+        'ewbanks_rating',
+        'uiaa_rating',
+        'za_rating',
+        'british_rating'];
+
+    var boulder_systems = [
+        'hueco_rating',
+        'font_rating'];
+
+    if (system == "rope") {
+        next_system = rope_systems.indexOf(current_system) + 1;
+        if (next_system == 6) {
+            next_system = 0
+        }
+
+        next_system = rope_systems[next_system];
+
+    } else if (system == 'boulder') {
+        next_system = boulder_systems.indexOf(current_system) + 1;
+        if (next_system == 2) {
+            next_system = 0
+        }
+
+        next_system = boulder_systems[next_system];
+
+    }
+    
+    next_system = document.getElementsByClassName(next_system);
+    current_system = document.getElementsByClassName(current_system);
+    var number_of_routes = current_system.length;
+
+    for (var i=0; i<number_of_routes;i++){
+        next_system[i].style.display = 'inline';
+        current_system[i].style.display = 'none';
 }
-
-var map;
-function maps() {
-    lats = 53.430967;
-    longs = -2.960835;
-
-    var mapProp = {
-        center: new google.maps.LatLng(lats, longs),
-        zoom: 17,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-      };
-
-    map = new google.maps.Map(document.getElementById("googleMap"), mapProp);
 }

@@ -184,15 +184,30 @@ class Route(models.Model):
     def __str__(self):
         return self.name
 
+    def format_terrain(self):
+        terrain = {
+            'arete': round(self.arete, 2),
+            'chimney': round(self.chimney, 2),
+            'slab': round(self.slab, 2),
+            'overhang': round(self.overhang, 2),
+            'crack': round(self.crack, 2)
+            }
+
+        for style, value in terrain.items():
+            if value >= 0.95:
+                terrain[style] = "Definitely"
+            elif value >= 0.75:
+                terrain[style] = "Almost certainly"
+            elif value >= 0.5:
+                terrain[style] = "Probably"
+            elif value >= 0.15:
+                terrain[style] = "Probably no"
+            else:
+                terrain[style] = "Almost certainly no"
+
+        return terrain
+
     def get_terrain_types(self):
-        terrain = pd.Series([
-            self.arete,
-            self.chimney,
-            self.slab,
-            self.overhang,
-            self.crack],
-            index=terrain_types
-        )
 
         terrain = pd.Series([
             int(round(self.arete, 1) * 100),
@@ -400,7 +415,7 @@ class Route(models.Model):
             distance_max = 500
 
         try:
-            terrain_type = get_request['terrain_type']
+            terrain_type = get_request['terrain-type']
         except KeyError:
             terrain_type = None
 
@@ -427,11 +442,11 @@ class Route(models.Model):
                 query += f'{joiner} ({style} is TRUE'
 
                 try:
-                    grade_min = int(get_request[style+'_min'])
+                    grade_min = int(get_request[style+'-min'])
                 except KeyError:
                     grade_min = 0
                 try:
-                    grade_max = int(get_request[style+'_max'])
+                    grade_max = int(get_request[style+'-max'])
                 except KeyError:
                     grade_max = 100
                 grade_system = climb_style_to_system[style]
@@ -504,30 +519,36 @@ class Route(models.Model):
         # way.  Distance should be punished more as it gets further from the
         # user.
         routes['value'] = (
-            ((routes['bayes'] ** 2) * (np.log(routes['area_counts']) + np.e))
-            / (routes['distance'] ** 3))
+            ((routes['bayes'] ** 2) * routes['area_counts'])
+            / (routes['distance'] ** 2))
 
         terrain = ['arete', 'chimney', 'crack', 'slab', 'overhang']
         feats = np.where(routes[terrain].gt(0.51, 0), terrain, None)
         feats = pd.DataFrame(feats, index=routes.index)
         feats = feats.apply(
-                lambda x: ', '.join(x.dropna()), axis=1)
+                lambda x: '/'.join(x.dropna()), axis=1)
 
-        routes['features'] = feats
-
-        # Collapses different grading systems into one column
-        routes['grade'] = routes[converted_systems].apply(
-            lambda x: ', '.join(x.dropna()), axis=1)
+        routes['terrain'] = feats
 
         for style in climbing_styles:
             routes[style] = np.where(routes[style], style, None)
+
+        routes['rope_grades'] = routes[rope_systems].to_dict(orient='records')
+        routes['boulder_grades'] = routes[boulder_systems].to_dict(orient='records')
 
         routes['style'] = routes[climbing_styles].apply(
             lambda x: ', '.join(x.dropna()), axis=1
         )
         # Selects the top ten routes
         routes = routes.sort_values(by='value', ascending=False)
-        display_columns = ['id', 'name', 'bayes', 'grade', 'features', 'style', 'pitches', 'length', 'url']
+
+        display_columns = [
+            'id', 'name', 'bayes', 'terrain', 'style', 'pitches',
+            'length', 'url', 'area_group', 'area_counts', 'rope_grades',
+            'boulder_grades', 'mixed_rating', 'aid_rating', 'snow_rating',
+            'ice_rating', 'distance']
+
+        routes['area_counts'] = routes['area_counts'] - 1
         routes = routes[display_columns]
 
         routes = routes.to_dict(orient='records')

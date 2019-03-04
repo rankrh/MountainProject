@@ -33,11 +33,14 @@ def route(request, route_id):
 
     context = {
         'route': route_data,
-        'terrain': route_data.get_terrain_types(),
-        'url': route_data.url,
-        'location': {
-            'lat': route_data.latitude,
-            'lng': route_data.longitude},
+        'terrain': route_data.format_terrain(),
+        'terrain_val': {
+            'arete': max(route_data.arete, 0.15),
+            'chimney': max(route_data.chimney, 0.15),
+            'crack': max(route_data.crack, 0.15),
+            'slab': max(route_data.slab, 0.15),
+            'overhang': max(route_data.overhang, 0.15)
+            },
         'areas': route_data.area(),
         'area_routes': route_data.other_routes_in_area(),
         'similar_routes': route_data.similar_routes_nearby(),
@@ -54,9 +57,8 @@ def results(request):
 
     best_routes = Route.best_routes(dict(request.GET))
 
-
     context = {
-        'best_routes': best_routes
+        'best_routes': best_routes,
     }
 
     return render(request, 'routefinder/results.html', context)

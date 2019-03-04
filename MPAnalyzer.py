@@ -659,7 +659,6 @@ def MPAnalyzer():
             routes = routes.groupby('route_id').progress_apply(
                 cosine_similarity,
                 archetypes=archetypes)
-            print(routes)
             # Reformats routes dataframe
             routes.index = routes.index.droplevel(1)
             routes = pd.concat([routes, word_count], axis=1, sort=False)
@@ -780,9 +779,13 @@ def MPAnalyzer():
     
             # As the word count increases, the credibility increases as a
             # logarithmic function
-            table[count] = np.log(table['word_count'])
-            table[count] = ((table[count] - table[count].min())
-                            / (table[count].max() - table[count].min()))
+            table[count] = np.log10(table['word_count'])
+
+            table_min = table[count].min()
+            table_max = table[count].max()
+            table_diff = table_max - table_min
+
+            table[count] = (table[count].values - table_min) / table_diff
     
             # Gets weighted scores for each style
             for style in styles:
