@@ -1,5 +1,6 @@
 # All climbing styles
 climbing_styles = ['sport', 'trad', 'tr', 'boulder', 'mixed', 'aid', 'ice', 'snow']
+climbing_styles_formatted = ['Sport', 'Trad', 'Top Rope', 'Boulder', 'Mixed', 'Aid', 'Ice']
 
 # Styles that support multipitch routes
 multipitch_styles = ['sport', 'trad', 'mixed', 'aid', 'ice', 'snow']
@@ -64,6 +65,16 @@ climb_style_to_grade = {
     'aid': aid_conv,
     'ice': ice_conv,
     'snow': snow_conv}
+
+climb_style_to_grade_formatted = {
+    'Sport': rope_conv,
+    'Trad': rope_conv,
+    'Top Rope': rope_conv,
+    'Boulder': boulder_conv,
+    'Mixed': mixed_conv,
+    'Aid': aid_conv,
+    'Ice': ice_conv,
+    'Snow': snow_conv}
 
 climb_style_to_system = {
     'sport': 'rope_conv',

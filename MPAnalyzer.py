@@ -16,7 +16,6 @@ import pandas as pd
 import numpy as np
 import unidecode
 import psycopg2
-import os
 import re
 import click
 from tqdm import tqdm

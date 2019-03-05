@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
+from .models import Results
 from .models import Route
 from .models import Area
 from .StyleInformation import *
@@ -55,7 +56,7 @@ def route(request, route_id):
 
 def results(request):
 
-    best_routes = Route.best_routes(dict(request.GET))
+    best_routes = Results.best_routes(dict(request.GET))
 
     context = {
         'best_routes': best_routes,

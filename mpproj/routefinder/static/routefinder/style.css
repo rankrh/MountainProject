@@ -570,8 +570,8 @@ input:checked + .rope-type,
 }
 
 #center-col {
-    width: 640px;
-    margin-left: 150px;
+    width: 800px;
+    margin-left: 120px;
 }
 
 .route {

@@ -21,7 +21,7 @@
                 <fieldset class="col-1-3">
                     {% for style, grades in styles.items %}
                         <div class="route-style">
-                            <label for="{{ style }}" id="{{ style }}-label" class="style-label">{{ style.capitalize }}
+                            <label for="{{ style }}" id="{{ style }}-label" class="style-label">{{ style }}
                                 <input type="checkbox" id="{{ style }}" name="{{ style }}" value="True" onclick="ToggleGrade('{{ style }}');">
                             </label><!--
                             --><select name="{{ style }}-min" id="{{ style }}-min" class="grade" disabled>

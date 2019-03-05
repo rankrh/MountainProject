@@ -344,6 +344,7 @@ class Route(models.Model):
 
         return grades
 
+class Results(models.Model):
     def best_routes(get_request):
         def get_counts(area_group):
             """Counts the number of similar routes in an area.
@@ -368,6 +369,11 @@ class Route(models.Model):
                 area_group['area_counts'] = len(area_group)
 
             return area_group
+
+        def get_parent_areas(pk):
+            parents =  get_object_or_404(Area, pk=pk)
+            parents = parents.parent_areas()
+            return parents[::-1]
 
         if len(get_request) == 0:
             return
@@ -433,6 +439,7 @@ class Route(models.Model):
         except ValueError:
             return Http404
 
+
         ignore = []
 
         query = 'SELECT * FROM "Routes_scored"'
@@ -476,7 +483,7 @@ class Route(models.Model):
             try:
                 query += f' AND danger_conv <= {danger}'
                 query += f' AND nccs_conv <= {commitment}'
-    
+
             except ValueError:
                 raise Http404
 
@@ -537,16 +544,17 @@ class Route(models.Model):
         routes['boulder_grades'] = routes[boulder_systems].to_dict(orient='records')
 
         routes['style'] = routes[climbing_styles].apply(
-            lambda x: ', '.join(x.dropna()), axis=1
-        )
-        # Selects the top ten routes
+            lambda x: ', '.join(x.dropna()), axis=1)
+
+        routes['area'] = routes['area_id'].apply(get_parent_areas)
+
         routes = routes.sort_values(by='value', ascending=False)
 
         display_columns = [
             'id', 'name', 'bayes', 'terrain', 'style', 'pitches',
-            'length', 'url', 'area_group', 'area_counts', 'rope_grades',
+            'length', 'url', 'area_counts', 'rope_grades',
             'boulder_grades', 'mixed_rating', 'aid_rating', 'snow_rating',
-            'ice_rating', 'distance']
+            'ice_rating', 'distance', 'area']
 
         routes['area_counts'] = routes['area_counts'] - 1
         routes = routes[display_columns]
