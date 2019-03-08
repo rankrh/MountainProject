@@ -6,8 +6,13 @@ from django.shortcuts import get_object_or_404
 from .models import Results
 from .models import Route
 from .models import Area
+from .models import AreaTerrain
+from .models import AreaGrades
+from .models import AreaLinks
 from .StyleInformation import *
+from .forms import SortMethod
 import os
+import pandas as pd
 
 
 def browse(request):
@@ -19,11 +24,10 @@ def area(request, area_id):
 
     context = {
         'area': area_data,
-        'parent': area_data.parent_areas(),
-        'children': area_data.children_areas(),
-        'features': area_data.terrain(),
-        'styles': area_data.styles(),
-        'grades': area_data.grades(),
+        'parent': area_data.parents(),
+        'children': area_data.children(),
+        'terrain': get_object_or_404(AreaTerrain, pk=area_id),
+        'styles': get_object_or_404(AreaGrades, pk=area_id)
     }
 
     return render(request, 'routefinder/area.html', context)
@@ -34,32 +38,37 @@ def route(request, route_id):
 
     context = {
         'route': route_data,
-        'terrain': route_data.format_terrain(),
-        'terrain_val': {
-            'arete': max(route_data.arete, 0.15),
-            'chimney': max(route_data.chimney, 0.15),
-            'crack': max(route_data.crack, 0.15),
-            'slab': max(route_data.slab, 0.15),
-            'overhang': max(route_data.overhang, 0.15)
-            },
-        'areas': route_data.area(),
-        'area_routes': route_data.other_routes_in_area(),
-        'similar_routes': route_data.similar_routes_nearby(),
-        'styles': route_data.route_style(),
-        'grades': route_data.route_grade(),
-        'sport_systems': ['YDS', 'French', 'Ewbank', 'UIAA', 'South Africa', 'British'],
-        'boulder_systems': ['Hueco', 'Fontaine Bleu'],
-        'GOOGLE_KEY': os.environ.get('GOOGLE_API_KEY'),
+        'areas': route_data.areas(),
+        'area_routes': route_data.area_routes(),
+        'similar_routes': route_data.similar_routes(),
+        'terrain': route_data.terrain(),
+        'styles': route_data.styles(),
+        'rope_grades': route_data.rope_grades(),
+        'boulder_grades': route_data.boulder_grades(),
+        'other_grades': route_data.other_grades(),
     }
     return render(request, 'routefinder/route.html', context)
 
 
 def results(request):
 
-    best_routes = Results.best_routes(dict(request.GET))
+    get_request = Results.parse_get_request(request.GET)
+    try:
+        sort = get_request['sort']
+    except:
+        sort = 'value'
+
+    best_routes = Results.best_routes(get_request, sort=sort)
+
+    user_location = get_request['location']
+    if user_location is '':
+        user_location = None
 
     context = {
+        'user_location': user_location,
         'best_routes': best_routes,
+        'form': SortMethod(),
+        'get_request': request.GET,
     }
 
     return render(request, 'routefinder/results.html', context)
@@ -67,11 +76,15 @@ def results(request):
 
 def search(request):
     context = {
-        'styles': climb_style_to_grade,
+        'rope_grades': rope_conv,
+        'boulder_grades': boulder_conv,
+        'mixxed_grades': mixed_conv,
+        'aid_grades': aid_conv,
+        'snow_grades': snow_conv,
+        'ice_grades': ice_conv,
         'pitch_count': [p for p in range(11)],
         'danger_levels': ['G', 'PG13', 'R', 'All Danger Levels'],
         'commitment_levels':['I', 'II', 'III', 'IV', 'All Commitment Levels'],
-        'terrain_types': ['arete', 'crack', 'chimney', 'slab', 'overhang'],
-        'GOOGLE_KEY': os.environ.get('GOOGLE_API_KEY'),}
+        'terrain_types': ['arete', 'crack', 'chimney', 'slab', 'overhang']}
     return render(request, 'routefinder/index.html', context)
 

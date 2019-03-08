@@ -1,11 +1,22 @@
 # All climbing styles
 climbing_styles = ['sport', 'trad', 'tr', 'boulder', 'mixed', 'aid', 'ice', 'snow']
-climbing_styles_formatted = ['Sport', 'Trad', 'Top Rope', 'Boulder', 'Mixed', 'Aid', 'Ice']
+climbing_styles_formatted = {
+    'sport': 'Sport', 'trad': 'Trad', 'tr': 'Top Rope',
+    'boulder': 'Boulder', 'mixed': 'Mixed', 'aid': 'Aid',
+    'ice': 'Ice', 'alpine': 'Alpine'}
+
+sort_methods = {
+    'area_group': True,
+    'distance': True,
+    'style': False,
+    'bayes': False,
+    'value': False}
 
 # Styles that support multipitch routes
 multipitch_styles = ['sport', 'trad', 'mixed', 'aid', 'ice', 'snow']
 
 terrain_types = ['arete', 'chimney', 'slab', 'overhang', 'crack']
+
 # Ordered list of route difficulties in human readable format. Used for sport,
 # trad, and tr routes.  Only Yosemite Decimal System (YDS) is supported right
 # now.

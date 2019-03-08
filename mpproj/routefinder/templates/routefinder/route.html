@@ -8,181 +8,172 @@
         <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
-        <header class="primary-header">
-            <nav class="area-nav">
-                {% for area in areas %}
-                    <a href="{{ area.url }}">
-                        {% if not forloop.first %}<span> > </span> {% endif %}
-                        <span>{{area.name}}<span>
-                    </a>
-                {% endfor %}
-            </nav>
+        <header class='primary-header'>
+            <div class="container">
+                <h5 id="main-heading">
+                    RouteFinder
+                </h5>            
+                <nav class="primary-nav">
+                    <ul>
+                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                    </ul>
+                </nav>
+                <nav class="area-nav">
+                    {% for area in areas %}
+                        <a href="{% url 'routefinder:area' area.id %}">
+                            {% if not forloop.first %}<span> > </span> {% endif %}
+                            <span>{{area.name}}<span>
+                        </a>
+                    {% endfor %}
+                </nav>
+            </div>
         </header>
-        <section class="main">
-            <div id="area-routes">
-                <div id="area-routes-title">
-                    {% with areas|last as area %}
-                        <h4>Other Routes in {{ area.name }}</h4>
-                    {% endwith %}
+        <div class="content">
+            <div class="main">
+                <div class="sidebar left">
+                    <div class="sidebar-head">
+                        {% with areas|last as area %}
+                            <h4>Other Routes in {{ area.name }}</h4>
+                        {% endwith %}
+                    </div>
+                    <div class="sidebar-body scroll">
+                        <ul>
+                            {% for area_route in area_routes %}
+                                <li><a href="{% url 'routefinder:route' area_route.id %}">{{ area_route.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
-                <ul id="area-routes-list"  class="scroll">
-                    {% for area_route in area_routes %}
-                        <li><a href="{% url 'routefinder:route' area_route.id %}">{{ area_route.name }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div id="route-info">
-                <div id="route-text">
-                    <a href="{{route.url}}"><h5 id="route-name">
-                        {{ route.name }}
-                    </h5></a>
-                    <h3 id="route-data">
-                        <span>A </span>
-                        {% if route.pitches > 0 %}
-                            <span id="route-pitches">
+                <div class="main-content">
+                    <div class="content-head">
+                        <h5><a href="{{route.url}}">{{route.name}}</a></h5>
+                    </div>
+                    <div class="content-text">
+                        <h3>
+                            A
+                            {% if route.pitches > 0 %}
                                 {{ route.pitches|floatformat:"0" }} pitch 
-                            </span>
-                        {% endif %}
-                        {% for system, grade in grades.items %}
-                            {% if system not in sport_systems and system not in boulder_systems %}
-                                <span id="{{ system }}" class="singular-grade">
-                                    {{ grade }}
-                                </span>
-                            {% elif system in sport_systems %}
-                                <span id="{{ system }}" class="rope-grades">
-                                    {{ grade }} {% if grade in "['3rd', '4th']" %} class {% endif %}
-                                </span>
-                                {% elif system in boulder_systems %}
-                                <span id="{{ system }}" class="boulder-grades">
-                                    {{ grade }}
-                                </span>
+                            {% elif route.length > 0 %}
+                                {{route.length|floatformat:"0" }}-foot long
                             {% endif %}
-                        {% endfor %}
 
-                        {% for style in styles %}
-                            {% if forloop.last and forloop.first %}
-                                <span id="{{ style }}" class="route-style">
+                            {% for system, grade in route.rope_grades.items %}
+                                {% if grade is not None %}
+                                    <span class="{{system}}" onclick="NextSystem(this, 'rope');">
+                                        {{grade}}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% for system, grade in route.boulder_grades.items %}
+                                {% if grade is not None %}
+                                    <span class="{{system}}" onclick="NextSystem(this, 'boulder');">
+                                        <label>{{grade}} </label>
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if route.mixed_rating is not None %}
+                                {{route.mixed_rating}}
+                            {% endif %}
+
+                            {% if route.aid_rating is not None %}
+                                {{route.aid_rating}}
+                            {% endif %}
+
+                            {% if route.snow_rating is not None %}
+                                {{route.snow_rating}}
+                            {% endif %}
+
+                            {% if route.ice_rating is not None %}
+                                {{route.ice_rating}}
+                            {% endif %}
+
+
+
+                            {% for style in styles %}
+                                {% if forloop.last and forloop.first %}
                                     {{ style }}
-                                </span>
-                            {% elif not forloop.last and forloop.first %}
-                                <span id="{{ style }}" class="route-style">
+                                {% elif not forloop.last and forloop.first %}
                                     {{ style }}
-                                </span>
-                            {% elif not forloop.last %}
-                                <span id="{{ style }}" class="route-style">
+                                {% elif not forloop.last %}
                                     , {{ style }}
-                                </span>
-                            {% else %}
-                                <span id="{{ style }}" class="route-style">
+                                {% else %}
                                     and {{ style }}
-                                </span>
-                            {% endif %}
-                        {% endfor %}
+                                {% endif %}
+                            {% endfor %}
 
-                        <span>
-                            route
-                        </span>
+                            route.
 
-                        {% if route.danger_conv > 0 %}
-                            <span id="route-danger">
+                            {% if route.danger_conv > 0 %}
                                 ({{ route.danger_rating }})
-                            </span>
-                        {% endif %}
-
-                        {% if route.nccs_conv > 0 %}
-                            <span>
-                                (NCCS: {{route.nccs_rating }})
-                            </span>
-
-                        {% endif %}
-                    </h3>
-                    <div id="grade-buttons">
-                        {% for system, grade in grades.items %}
-                            {% if system in sport_systems %}
-                                <label for="{{ system }}-radio">
-                                    <input type="radio" id="{{ system }}-radio" name="rope-systems" value="{{ grade }}"
-                                        onchange="ToggleSystem('{{ system }}', 'rope-grades');">
-                                    <span class="rope-type" id="{{ system }}-label">
-                                        {{ system }}
-                                    </span>
-                                </label>
-
-                            {% elif system in boulder_systems %}
-                                <label for="{{ system }}-radio">
-                                    <input type="radio" id="{{ system }}-radio" name="boulder-systems" value="{{ grade }}"
-                                        onchange="ToggleSystem('{{ system }}', 'boulder-grades');">
-                                    <span class="boulder-type" id="{{ system }}-label">
-                                        {{ system }}
-                                    </span>
-                                </label>
                             {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
+            
+                            {% if route.nccs_conv > 0 %}
+                                (NCCS: {{route.nccs_rating }})           
+                            {% endif %}
+            
 
-                <div id="terrain-images">
-                    <div class="terrain-image-container">
-                        <img src="{% static 'images/arete.gif' %}" class="terrain-image" style="opacity: {{terrain_val.arete}};" />
-                        <div class="middle">
-                            <div class="text">
-                                <h1>{{ terrain.arete }} arete features</h1>
+            
+                        </h3>
+                    </div>
+                    <div id="terrain-images">
+                        <div class="terrain-image-container">
+                            <img src="{% static 'images/arete.gif' %}" class="terrain-image" style="opacity: {{terrain.scores.arete}};" />
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>{{ terrain.message.arete }} arete features</h1>
+                                </div>
                             </div>
-                        </div>
-                    </div><!--
-                 --><div class="terrain-image-container">
-                        <img src="{% static 'images/slab.gif' %}" class="terrain-image" style="opacity: {{terrain_val.slab}};"/>
-                        <div class="middle">
-                            <div class="text">
-                                <h1>{{ terrain.slab }} slab features</h1>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/slab.gif' %}" class="terrain-image" style="opacity: {{terrain.scores.slab}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>{{ terrain.message.slab }} slab features</h1>
+                                </div>
                             </div>
-                        </div>
-                    </div><!--
-                 --><div class="terrain-image-container">
-                        <img src="{% static 'images/chimney.gif' %}" class="terrain-image" style="opacity: {{terrain_val.chimney}};"/>
-                        <div class="middle">
-                            <div class="text">
-                                <h1> {{ terrain.chimney }} chimney features</h1>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/chimney.gif' %}" class="terrain-image" style="opacity: {{terrain.scores.chimney}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1> {{ terrain.message.chimney }} chimney features</h1>
+                                </div>
                             </div>
-                        </div>
-                    </div><!--
-                 --><div class="terrain-image-container">
-                        <img src="{% static 'images/overhang.gif' %}" class="terrain-image" style="opacity: {{terrain_val.overhang}};"/>
-                        <div class="middle">
-                            <div class="text">
-                                <h1>{{ terrain.overhang }} overhang features</h1>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/overhang.gif' %}" class="terrain-image" style="opacity: {{terrain.scores.overhang}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>{{ terrain.message.overhang }} overhang features</h1>
+                                </div>
                             </div>
-                        </div>
-                    </div><!--
-                 --><div class="terrain-image-container">
-                        <img src="{% static 'images/crack.gif' %}" class="terrain-image" style="opacity: {{terrain_val.crack}};"/>
-                        <div class="middle">
-                            <div class="text">
-                                <h1>{{ terrain.crack }} crack features</h1>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/crack.gif' %}" class="terrain-image" style="opacity: {{terrain.scores.crack}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>{{ terrain.message.crack }} crack features</h1>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="map"></div>
-                <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_KEY }}&callback=initMap"></script>
-            </div>
-            <div id="similar-routes">
-                <div id="similar-routes-title">
-                    <h4>Similar routes to {{ route.name }}</h4>
+                <div class="sidebar right">
+                    <div class="sidebar-head">
+                        <h4>Routes similar to {{ route.name }}</h4>
+                    </div>
+                    <div class="sidebar-body scroll">
+                        <ul>
+                            {% for similar_route in similar_routes %}
+                                <li><a href="{% url 'routefinder:route' similar_route.id %}">{{ similar_route.name }}</a></li>
+                            {% endfor %}
+                        </ul>    
+                    </div>
                 </div>
-                <ul id="similar-routes-list"  class="scroll">
-                    {% for similar_route in similar_routes %}
-                        <li><a href="{% url 'routefinder:route' similar_route.id %}">{{ similar_route.name }}</a></li>
-                    {% endfor %}
-                </ul>
             </div>
-        </section>
-        <footer>
-            <nav class="primary-footer">
-                <ul>
-                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
-                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
-                </ul>
-            </nav>
-        </footer>
-    </body>
+        </div>
+    </body> 
 </html>

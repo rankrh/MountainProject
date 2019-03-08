@@ -24,67 +24,33 @@ class Area(models.Model):
     from_id = models.IntegerField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
-
-    child_routes = None
-    main_style = None
     
     class Meta:
         managed = False
         db_table = 'areas'
+        ordering = ['from_id']
 
-    def get_areas(self):
-        path = [self.id]
-        if self.from_id is not None:
-            parent = Area.objects.get(pk=self.from_id)
-            parent = parent.get_areas()
-            for area in parent:
-                path.append(area)
-        return path
+    def __str__(self):
+        return self.name
 
-    def parent_areas(self):
-        path = self.get_areas()
+    def parents(self):
+        parent_areas = []
 
-        path = [Area.objects.get(pk=area) for area in path]
-        return path
+        for area in AreaLinks.objects.filter(pk=self.id).order_by('from_id'):
+            parent_areas.append(get_object_or_404(Area, pk=area.from_id))
+            print(area.id)
+        parent_areas.append(self)
 
-    def children_areas(self):
+        return parent_areas
 
-        children = Area.objects.filter(from_id=self.id)
-
+    def children(self):
+        level = 'Routes'
+        children = Route.objects.filter(area_id=self.id)
         if len(children) == 0:
-            children = Route.objects.filter(area_id=self.id)
-            if len(children) > 0:
-                self.child_routes = children
+            children = Area.objects.filter(from_id=self.id)
+            level = 'Areas'
+        return children, level
         
-        return children
-
-    def terrain(self):
-        if self.child_routes is not None:
-            number_of_children = len(self.child_routes)
-            terrain = pd.Series(
-                [0] * len(terrain_types),
-                index = terrain_types)
-            terrain['Unknown'] = 0
-
-            for child in self.child_routes:
-                child_terrain = child.get_terrain_types()
-                if child_terrain is not None:
-                    for t_type, score in child_terrain.items():
-                        terrain_type_known = False
-                        if score > 50:
-                            terrain[t_type] += 1
-                            terrain_type_known = True
-                        if not terrain_type_known:
-                            terrain['Unknown'] += 1
-
-                else:
-                    terrain['Unknown'] += 1
-
-            terrain = 100 * terrain / sum(terrain)
-            terrain = terrain.round(0)
-
-            return terrain.to_dict()
-
     def styles(self):
         if self.child_routes is not None:
             child_styles = pd.Series(
@@ -111,12 +77,17 @@ class Area(models.Model):
 
     def grades(self):
         if self.child_routes is not None and self.main_style is not None:
+            print(self.main_style)
             number_of_children = len(self.child_routes)
             if number_of_children > 0:
                 score = 0
                 
                 for child in self.child_routes:
-                    score += getattr(child, climb_style_to_system[self.main_style])
+                    child_score = getattr(child, climb_style_to_system[self.main_style])
+                    if child_score is not None:
+                        score += child_score
+                    else:
+                        number_of_children -= 1
 
                 score = score // number_of_children
 
@@ -124,6 +95,61 @@ class Area(models.Model):
 
                 return score
 
+
+class AreaTerrain(models.Model):
+    slab = models.FloatField(blank=True, null=True)
+    arete = models.FloatField(blank=True, null=True)
+    crack = models.FloatField(blank=True, null=True)
+    chimney = models.FloatField(blank=True, null=True)
+    overhang = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'area_terrain'
+
+
+class AreaGrades(models.Model):
+    id = models.FloatField(blank=True, primary_key=True)
+    sport = models.FloatField(blank=True, null=True)
+    trad = models.FloatField(blank=True, null=True)
+    tr = models.FloatField(blank=True, null=True)
+    boulder = models.FloatField(blank=True, null=True)
+    mixed = models.FloatField(blank=True, null=True)
+    aid = models.FloatField(blank=True, null=True)
+    ice = models.FloatField(blank=True, null=True)
+    snow = models.FloatField(blank=True, null=True)
+    alpine = models.FloatField(blank=True, null=True)
+    pitches = models.FloatField(blank=True, null=True)
+    length = models.FloatField(blank=True, null=True)
+    danger_conv = models.FloatField(blank=True, null=True)
+    bayes = models.FloatField(blank=True, null=True)
+    rope_conv = models.FloatField(blank=True, null=True)
+    boulder_conv = models.FloatField(blank=True, null=True)
+    mixed_conv = models.FloatField(blank=True, null=True)
+    aid_conv = models.FloatField(blank=True, null=True)
+    ice_conv = models.FloatField(blank=True, null=True)
+    snow_conv = models.FloatField(blank=True, null=True)
+    nccs_conv = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'area_grades'
+
+class AreaLinks(models.Model):
+    from_id = models.BigIntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'area_links'
+
+
+class RouteLinks(models.Model):
+    area = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'route_links'
+        
 
 class Route(models.Model):
     arete = models.FloatField(blank=True, null=True)
@@ -179,57 +205,20 @@ class Route(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'Routes_scored'
+        db_table = 'routes_scored'
 
     def __str__(self):
         return self.name
 
-    def format_terrain(self):
-        terrain = {
-            'arete': round(self.arete, 2),
-            'chimney': round(self.chimney, 2),
-            'slab': round(self.slab, 2),
-            'overhang': round(self.overhang, 2),
-            'crack': round(self.crack, 2)
-            }
+    def areas(self):
+        parents = []
 
-        for style, value in terrain.items():
-            if value >= 0.95:
-                terrain[style] = "Definitely"
-            elif value >= 0.75:
-                terrain[style] = "Almost certainly"
-            elif value >= 0.5:
-                terrain[style] = "Probably"
-            elif value >= 0.15:
-                terrain[style] = "Probably no"
-            else:
-                terrain[style] = "Almost certainly no"
+        for area in RouteLinks.objects.filter(pk=self.id).order_by('area'):
+            parents.append(get_object_or_404(Area, pk=area.area))
+        return parents
 
-        return terrain
 
-    def get_terrain_types(self):
-
-        terrain = pd.Series([
-            int(round(self.arete, 1) * 100),
-            int(round(self.chimney, 1) * 100),
-            int(round(self.slab, 1) * 100),
-            int(round(self.overhang, 1) * 100),
-            int(round(self.crack, 1) * 100)],
-            index=terrain_types)
-
-        if len(terrain[terrain >= 30]) == 0:
-            return
-        most_likely_terrain = terrain.max()
-        most_likely_terrain =  terrain[terrain == most_likely_terrain]
-
-        terrain = terrain[terrain > 50]
-        terrain = terrain.sort_values(ascending=False)
-        if len(terrain) > 0:
-            return terrain.to_dict()
-        else:
-            return most_likely_terrain.to_dict()
-
-    def other_routes_in_area(self):
+    def area_routes(self):
         other_routes = Route.objects.filter(area_id=self.area_id)
         other_routes = other_routes.exclude(name=self.name)
         if len(other_routes) == 0:
@@ -238,7 +227,7 @@ class Route(models.Model):
 
         return other_routes
 
-    def similar_routes_nearby(self):
+    def similar_routes(self):
         if self.area_group == -1:
             return
         
@@ -296,15 +285,7 @@ class Route(models.Model):
 
         return other_routes
 
-    def area(self):
-        parents = get_object_or_404(Area, id=self.area_id)
-        parents = parents.parent_areas()
-
-        parents = parents[::-1]
-
-        return parents
-
-    def route_style(self):
+    def styles(self):
 
         route_styles = pd.Series([
             self.sport,
@@ -317,35 +298,64 @@ class Route(models.Model):
             self.ice,
             self.alpine],
             index = climbing_styles + ['alpine'])
-        
-        route_styles = list(route_styles[route_styles == True].index)
+
+        route_styles = route_styles.rename(climbing_styles_formatted)
+        route_styles = route_styles[route_styles == True].index
 
         return route_styles
 
-    def grade_conversion(self):
-        return {}
-
-    def route_grade(self):
+    def rope_grades(self):
         grades = {
-            'YDS': self.yds_rating,
-            'French': self.french_rating,
-            'Ewbank': self.ewbanks_rating,
-            'UIAA': self.uiaa_rating,
-            'South Africa': self.za_rating,
-            'British': self.british_rating,
-            'Hueco': self.hueco_rating,
-            'Fontaine Bleu': self.font_rating,
-            'Mixed': self.mixed_rating,
-            'Aid': self.aid_rating,
-            'Snow': self.snow_rating,
-            'Ice': self.ice_rating}
+            'yds_rating': self.yds_rating,
+            'french_rating': self.french_rating,
+            'ewbanks_rating': self.ewbanks_rating,
+            'uiaa_rating': self.uiaa_rating,
+            'za_rating': self.za_rating,
+            'british_rating': self.british_rating}
+        return grades
 
-        grades = {system: grade for system, grade in grades.items() if grade is not None}
+    def boulder_grades(self):
+        grades = {
+            'hueco_rating': self.hueco_rating,
+            'font_rating': self.font_rating}
+        return grades
+
+    def other_grades(self):
+        grades = {
+        'mixed_rating': self.mixed_rating,
+        'aid_rating': self.aid_rating,
+        'snow_rating': self.snow_rating,
+        'ice_rating': self.ice_rating}
 
         return grades
 
+    def terrain(self):
+
+        terrain_scores = pd.DataFrame({
+            'scores': [
+                max(self.arete, .15),
+                max(self.chimney, .15),
+                max(self.slab, .15),
+                max(self.overhang, .15),
+                max(self.crack, .15),
+            ],
+            'message': ['Unknown'] * 5},
+            index=terrain_types)
+
+        if terrain_scores['scores'].sum() <= 0.75:
+            return terrain_scores
+        else:
+            terrain_scores['message'].loc[terrain_scores['scores'].lt(0.25)] =  'Almost certainly no'
+            terrain_scores['message'].loc[terrain_scores['scores'].between(0.25, 0.5)] =  'Probably no'
+            terrain_scores['message'].loc[terrain_scores['scores'].between(0.5, 0.75)] =  'Probably'
+            terrain_scores['message'].loc[terrain_scores['scores'].between(0.75, 0.95)] =  'Almost certainly'
+            terrain_scores['message'].loc[terrain_scores['scores'].gt(0.95)] =  'Definitely'
+
+        return terrain_scores
+
+
 class Results(models.Model):
-    def best_routes(get_request):
+    def best_routes(get_request, sort='value'):
         def get_counts(area_group):
             """Counts the number of similar routes in an area.
 
@@ -375,28 +385,6 @@ class Results(models.Model):
             parents = parents.parent_areas()
             return parents[::-1]
 
-        if len(get_request) == 0:
-            return
-
-        for key, value in get_request.items():
-            value = value[0]
-            if value.isdigit():
-                value = int(value)
-            elif value == '':
-                value = None
-            elif value == "True":
-                value = True
-            elif value == "False":
-                value = False
-            elif key == "location":
-                # Returns tuple of coordinates
-                location_name = value
-                value = GeoCode(value)
-            elif value not in terrain_types:
-                raise Http404
-
-            get_request[key] = value
-
         try:
             pitch_min = get_request['pitch-min']
         except KeyError:
@@ -408,7 +396,7 @@ class Results(models.Model):
             pitch_max = 10
 
         if pitch_min > pitch_max:
-            return
+            return 
 
         try:
             user_location = get_request['location']
@@ -439,10 +427,9 @@ class Results(models.Model):
         except ValueError:
             return Http404
 
-
         ignore = []
 
-        query = 'SELECT * FROM "Routes_scored"'
+        query = 'SELECT * FROM routes_scored'
         joiner = ' WHERE'
         for style in climbing_styles:
             if style in get_request:
@@ -477,7 +464,7 @@ class Results(models.Model):
             else:
                 ignore.append(style)
 
-        if query != 'SELECT * FROM "Routes_scored"':
+        if query != 'SELECT * FROM routes_scored':
             for style in ignore:
                 query += f' AND {style} IS FALSE'
             try:
@@ -548,7 +535,10 @@ class Results(models.Model):
 
         routes['area'] = routes['area_id'].apply(get_parent_areas)
 
-        routes = routes.sort_values(by='value', ascending=False)
+        if sort == "area_group":
+            routes['area_group'] = routes['area_group'] * routes['area_counts']
+
+        routes = routes.sort_values(by=sort, ascending=sort_methods[sort])
 
         display_columns = [
             'id', 'name', 'bayes', 'terrain', 'style', 'pitches',
@@ -562,3 +552,39 @@ class Results(models.Model):
         routes = routes.to_dict(orient='records')
 
         return routes
+        
+    def parse_get_request(get_request):
+        get_request = dict(get_request)
+        if len(get_request) == 0:
+                return
+
+        for key, value in get_request.items():
+            value = value[0]
+            if value.isdigit():
+                value = int(value)
+            elif value == '':
+                value = None
+            elif value == "True":
+                value = True
+            elif value == "False":
+                value = False
+            elif key == "location":
+                # Returns tuple of coordinates
+                location_name = value
+                value = GeoCode(value)
+            elif key == "sort":
+                if value not in sort_methods:
+                    value = 'value'
+            elif value not in terrain_types:
+                raise Http404
+            get_request[key] = value
+
+        return get_request
+    
+
+
+
+
+
+
+

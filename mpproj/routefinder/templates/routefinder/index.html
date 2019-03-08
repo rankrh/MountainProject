@@ -8,6 +8,19 @@
         <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
+        <header class='primary-header'>
+            <div class="container">
+                <h5 id="main-heading">
+                    RouteFinder
+                </h5>            
+                <nav class="primary-nav">
+                    <ul>
+                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
         <form method="GET" action="{% url 'routefinder:results'%}" class="search-menu">
             <div class="headings">
                 <div class="style-header">
@@ -19,20 +32,19 @@
             </div>
             <div class="inputs">
                 <fieldset class="col-1-3">
-                    {% for style, grades in styles.items %}
-                        <div class="route-style">
-                            <label for="{{ style }}" id="{{ style }}-label" class="style-label">{{ style }}
-                                <input type="checkbox" id="{{ style }}" name="{{ style }}" value="True" onclick="ToggleGrade('{{ style }}');">
+                    <div class="route-style">
+                        <label for="sport" id="sport-label" class="style-label">Sport
+                                <input type="checkbox" id="sport" name="sport" value="True" onclick="ToggleGrade('sport');">
                             </label><!--
-                            --><select name="{{ style }}-min" id="{{ style }}-min" class="grade" disabled>
-                                {% for grade in grades %}
+                            --><select name="sport-min" id="sport-min" class="grade" disabled>
+                                {% for grade in rope_grades %}
                                     <option value="{{ forloop.counter0 }}">
                                         <p>{{ grade }}</p>
                                     </option>
                                     {% endfor %}
                             </select><!--
-                            --><select name="{{ style }}-max" id="{{ style }}-max" class="grade" disabled>
-                            {% for grade in grades %}
+                            --><select name="sport-max" id="sport-max" class="grade" disabled>
+                            {% for grade in rope_grades %}
                                 <option value="{{ forloop.counter0 }}"
                                     {% if forloop.last %}
                                         selected = "selected"
@@ -41,8 +53,161 @@
                                 </option>
                                 {% endfor %}
                             </select>
-                        </div>
-                    {% endfor %}
+                    </div>
+                    <div class="route-style">
+                            <label for="trad" id="trad-label" class="style-label">Trad
+                                    <input type="checkbox" id="trad" name="trad" value="True" onclick="ToggleGrade('trad');">
+                                </label><!--
+                                --><select name="trad-min" id="trad-min" class="grade" disabled>
+                                    {% for grade in rope_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="trad-max" id="trad-max" class="grade" disabled>
+                                {% for grade in rope_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="route-style">
+                            <label for="tr" id="tr-label" class="style-label">Top Rope
+                                    <input type="checkbox" id="tr" name="tr" value="True" onclick="ToggleGrade('tr');">
+                                </label><!--
+                                --><select name="tr-min" id="tr-min" class="grade" disabled>
+                                    {% for grade in rope_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="tr-max" id="tr-max" class="grade" disabled>
+                                {% for grade in rope_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="route-style">
+                            <label for="boulder" id="boulder-label" class="style-label">Boulder
+                                    <input type="checkbox" id="boulder" name="boulder" value="True" onclick="ToggleGrade('boulder');">
+                                </label><!--
+                                --><select name="boulder-min" id="boulder-min" class="grade" disabled>
+                                    {% for grade in boulder_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="boulder-max" id="boulder-max" class="grade" disabled>
+                                {% for grade in boulder_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="route-style">
+                            <label for="mixed" id="mixed-label" class="style-label">Mixed
+                                    <input type="checkbox" id="mixed" name="mixed" value="True" onclick="ToggleGrade('mixed');">
+                                </label><!--
+                                --><select name="mixed-min" id="mixed-min" class="grade" disabled>
+                                    {% for grade in mixed_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="mixed-max" id="mixed-max" class="grade" disabled>
+                                {% for grade in mixed_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="route-style">
+                            <label for="aid" id="aid-label" class="style-label">Aid
+                                    <input type="checkbox" id="aid" name="aid" value="True" onclick="ToggleGrade('aid');">
+                                </label><!--
+                                --><select name="aid-min" id="aid-min" class="grade" disabled>
+                                    {% for grade in aid_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="aid-max" id="aid-max" class="grade" disabled>
+                                {% for grade in aid_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="route-style">
+                            <label for="snow" id="snow-label" class="style-label">Snow
+                                    <input type="checkbox" id="snow" name="snow" value="True" onclick="ToggleGrade('snow');">
+                                </label><!--
+                                --><select name="snow-min" id="snow-min" class="grade" disabled>
+                                    {% for grade in snow_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="snow-max" id="snow-max" class="grade" disabled>
+                                {% for grade in snow_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="route-style">
+                            <label for="ice" id="ice-label" class="style-label">Ice
+                                    <input type="checkbox" id="ice" name="ice" value="True" onclick="ToggleGrade('ice');">
+                                </label><!--
+                                --><select name="ice-min" id="ice-min" class="grade" disabled>
+                                    {% for grade in ice_grades %}
+                                        <option value="{{ forloop.counter0 }}">
+                                            <p>{{ grade }}</p>
+                                        </option>
+                                        {% endfor %}
+                                </select><!--
+                                --><select name="ice-max" id="ice-max" class="grade" disabled>
+                                {% for grade in ice_grades %}
+                                    <option value="{{ forloop.counter0 }}"
+                                        {% if forloop.last %}
+                                            selected = "selected"
+                                        {% endif %}>
+                                        <p>{{ grade }}</p>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
                 </fieldset><!--
             --><fieldset class="col-1-3">
                     <fieldset id="location">
@@ -60,6 +225,7 @@
                                 <span class="terrain-type" id="{{ terrain }}-label">
                                         {{ terrain.capitalize }}
                                 </span>
+                            </label>
                             </label>
                             {% endfor %}
                             <label for="no-pref" class="terrain" class="terrain-label">
@@ -151,13 +317,5 @@
                 </fieldset>
             </div>
         </form>
-        <footer>
-            <nav class="primary-footer">
-                <ul>
-                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
-                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
-                </ul>
-            </nav>
-        </footer>
     </body>
 </html>

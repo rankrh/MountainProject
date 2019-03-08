@@ -8,8 +8,8 @@ function ToggleGrade(style) {
     var label = document.getElementById(style + '-label')
 
     var color = window.getComputedStyle(document.body)
-    var selected_color = color.getPropertyValue('--highlight');
-    var unselected_color = color.getPropertyValue('--secondary');
+    var selected_color = color.getPropertyValue('--highlight-alt');
+    var unselected_color = color.getPropertyValue('--highlight');
 
     if (grade_max.disabled) {
         label.style.background = unselected_color

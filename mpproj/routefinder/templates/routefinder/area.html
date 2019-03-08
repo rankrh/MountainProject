@@ -7,19 +7,153 @@
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
     </head>
     <body>
-        <header>
-            <nav class="primary-header">
-                <ul>
-                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
-                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
-                </ul>
-            </nav>
+        <header class='primary-header'>
+            <div class="container">
+                <h5 id="main-heading">
+                    RouteFinder
+                </h5>            
+                <nav class="primary-nav">
+                    <ul>
+                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                    </ul>
+                </nav>
+                <nav class="area-nav">
+                    {% for area in parent %}
+                        <a href="{% url 'routefinder:area' area.id %}">
+                            {% if not forloop.first %}<span> > </span> {% endif %}
+                            <span>{{area.name}}<span>
+                        </a>
+                    {% endfor %}
+                </nav>
+            </div>
         </header>
-        <h5>{{ area.name }}</h5>
-        <h4>{{ parent }}</h4>
-        <h3>{{ children }}</h3>
-        <h2>{{ features }}</h2>
-        <h2>{{ styles }}</h2>
-        <h1>{{ grades }}</h1>
+        <div class="content">
+            <section class="main">
+                <div class="sidebar left">
+                    <div class="sidebar-head">
+                        {{children.1}} in {{area.name}}
+                    </div>
+                    <div class="sidebar-body scroll">
+                        <ul>
+                            {% if children.1 == 'Routes' %}
+                                {% for child in children.0 %}
+                                    <li><a href="{% url 'routefinder:route' child.id %}">{{ child.name }}</a></li>
+                                {% endfor %}
+                            {% elif children.1 == 'Areas' %}
+                                {% for child in children.0 %}                   
+                                    <li><a href="{% url 'routefinder:area' child.id %}">{{ child.name }}</a></li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>        
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div class="content-head">
+                        <h5>{{area.name}}</h5>
+                    </div>
+                    <div>
+                        {{styles.rope_conv}}
+                    </div>
+                    <div id="terrain-images">
+                        <div class="terrain-image-container">
+                            <img src="{% static 'images/arete.gif' %}" class="terrain-image" style="opacity: {{terrain.arete}};" />
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>
+                                        {% if terrain.arete > 0.75 %}
+                                            <span>A great</span>
+                                        {% elif terrain.arete > 0.5 %}
+                                            <span>A good</span>
+                                        {% elif terrain.arete > 0.25 %}
+                                            <span>An OK</span>
+                                        {% else %}
+                                            <span>A bad</span>
+                                        {% endif %}
+                                        place for arete climbing
+                                    </h1>
+                                </div>
+                            </div>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/slab.gif' %}" class="terrain-image" style="opacity: {{terrain.slab}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>
+                                        {% if terrain.slab > 0.75 %}
+                                            <span>A great</span>
+                                        {% elif terrain.slab > 0.5 %}
+                                            <span>A good</span>
+                                        {% elif terrain.slab > 0.25 %}
+                                            <span>An OK</span>
+                                        {% else %}
+                                            <span>A bad</span>
+                                        {% endif %}
+                                        place for slab climbing
+                                    </h1>
+                                </div>
+                            </div>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/chimney.gif' %}" class="terrain-image" style="opacity: {{terrain.chimney}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>
+                                        {% if terrain.chimney > 0.75 %}
+                                            <span>A great</span>
+                                        {% elif terrain.chimney > 0.5 %}
+                                            <span>A good</span>
+                                        {% elif terrain.chimney > 0.25 %}
+                                            <span>An OK</span>
+                                        {% else %}
+                                            <span>A bad</span>
+                                        {% endif %}
+                                        place for chimney climbing
+                                    </h1>
+                                </div>
+                            </div>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/overhang.gif' %}" class="terrain-image" style="opacity: {{terrain.overhang}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                     <h1>
+                                        {% if terrain.overhang > 0.75 %}
+                                            <span>A great</span>
+                                        {% elif terrain.overhang > 0.5 %}
+                                            <span>A good</span>
+                                        {% elif terrain.overhang > 0.25 %}
+                                            <span>An OK</span>
+                                        {% else %}
+                                            <span>A bad</span>
+                                        {% endif %}
+                                        place for overhang climbing
+                                    </h1>
+                                </div>
+                            </div>
+                        </div><!--
+                        --><div class="terrain-image-container">
+                            <img src="{% static 'images/crack.gif' %}" class="terrain-image" style="opacity: {{terrain.crack}};"/>
+                            <div class="middle">
+                                <div class="text">
+                                    <h1>
+                                        {% if terrain.crack > 0.75 %}
+                                            <span>A great</span>
+                                        {% elif terrain.crack > 0.5 %}
+                                            <span>A good</span>
+                                        {% elif terrain.crack > 0.25 %}
+                                            <span>An OK</span>
+                                        {% else %}
+                                            <span>A bad</span>
+                                        {% endif %}
+                                        place for crack climbing
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                </div>
+            </section>
+        </div>
     </body>
 </html>

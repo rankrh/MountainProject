@@ -70,6 +70,9 @@ body {
     --secondary: #a48966;
     --secondary-alt: #bd9e78;
     --highlight: #87a8d9;
+    --highlight-mid: #ae715b;
+    --highlight-alt: #bc5c2c;
+
 }
 
 /* Text */
@@ -95,42 +98,49 @@ body {
     background-color: var(--background);
 }
 
-.main {
-    height: 84vh;
-    width: 100vw;
-}
+/* Headers and Footers */
 
-/* Header */
-.primary-header {
-    height: 6vh;
-    width: 100%;
-}
-
-/* Footer */
-
-.primary-footer {
-    margin-top: 6vh;
-    width: 100%;
-    height : 6vh;
-    position : fixed;
-    bottom : 0;
-}
-
-.primary-footer ul{
-    list-style: none;
-    margin: 12px auto;
-    text-align: center;
-}
-
-.primary-footer li {
+.container {
     display: inline;
-    padding: 10px;
+    min-width: 400px;
+}
+.primary-header {
+    width: 100%;
+    height: 70px;
+    min-width: 400px;
+    position: fixed;
+    background: var(--secondary);
+    z-index: 1;
+    top: 0;    
+}
+
+.primary-header ul{
+    list-style: none;
+}
+
+.primary-header li {
+    display: inline;
+    padding-right: 48px;
+    font-size: 24px;
+}
+
+#main-heading {
+    float: left;
+    font-size: 32px;
+    padding: 12px 64px 6px 10%;
+}
+
+.primary-nav {
+    float: right;
+    text-align: right;
+    padding: 12px 6% 6px 0;
 }
 
 /* Navigation */
 .area-nav {
-    height: 4vh;
-    margin: 4vh 12px;
+    margin: 16px auto;
+    width: 100%;
+    min-width: 600px;
 }
 
 /* Search Page */
@@ -191,13 +201,6 @@ input[type='submit'] {
     width: 140px;
     margin: 30px auto;
     padding: 4px;
-}
-
-.scroll {
-    overflow: hidden;
-    overflow-y: auto;
-    /* scrollbar-color: #575555 #677e91; */
-    scrollbar-width: thin;
 }
 
 .scroll::-webkit-scrollbar-track  {
@@ -299,7 +302,9 @@ input[type='submit'] {
 
 .style-label,
 .terrain-type,
+.sort-method,
 .grade,
+#sort,
 #submit,
 #pitch-max,
 #pitch-min,
@@ -313,7 +318,8 @@ input[type='submit'] {
     color: white;
 }
 
-.terrain-type {
+.terrain-type,
+.sort-method {
     margin: 8px 12px;
     width: 72px;
     padding: 4px 8px;
@@ -355,12 +361,20 @@ input[type='submit'] {
 }
 
 input:checked + .terrain-type,
+input:checked + .sort-method,
 input:checked + .boulder-type,
-input:checked + .rope-type,
+input:checked + .rope-type {
+    background: var(--highlight-alt);
+}
+
+.rope-type:hover,
+.boulder-type:hover,
 .terrain-type:hover,
+.sort-method:hover,
 .style-label:hover,
+#sort:hover,
 #submit:hover {
-    background: var(--highlight);
+    background: var(--highlight-mid);
 }
 
 #pitches,
@@ -414,64 +428,90 @@ input:checked + .rope-type,
 
 /* Routes Page */
 
-#area-routes {
-    float:left;
-    height: 100%;
-    width: 25vw;
+.content {
+    background: orange;
 }
-
-#similar-routes {
-    float:left;
-    height: 100%;
-    width: 25vw;
-}
-
-#route-info {
-    float:left;
-}
-
-#area-routes-title {
-    height: 48px;
+.main {
+    background: green;
     min-height: 48px;
-    margin-top: 12px;
-    overflow: auto;
-    width: 85%;
-    margin: 24px auto;
 }
-
-#similar-routes-title {
-    height: 48px;
+.sidebar {
+    background: blue;
     min-height: 48px;
-    margin-top: 12px;
-    overflow: auto;
-    width: 85%;
-    margin: 24px auto;
-
+}
+.main-content {
+    background: red;
+    min-height: 48px;
 }
 
-#area-routes-list {
-    width: 85%;
-    margin: 24px auto;
-    height: 440px;
+.sidebar-head,
+.content-head {
+    background: white;
 }
 
-#similar-routes-list {
-    width: 85%;
-    margin: 24px auto;
-    height: 440px;
+.sidebar-body {
+    background: purple;
 }
 
 
-#route-info {
-    width: 50vw;
+.scroll {
+    overflow: hidden;
+    overflow-y: auto;
+    /* scrollbar-color: #575555 #677e91; */
+    scrollbar-width: thin;
+}
+
+.content {
+    height: calc(100% - 70px);
+}
+
+.main {
+    width: 1300px;
     height: 100%;
+    padding-top: 28px;
+    margin: 70px auto 0 auto;
+    display: table;
 }
 
-#route-text {
-    position: relative;
-    height: 25%;
+.left, 
+.main-content {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+.main-content {
+    width: 700px;
+}
+
+.sidebar {
+    width: 300px;
+}
+
+.sidebar-head {
+    margin: 12px 8px;
+    height: 48px;
+    max-width: 292px;
+}
+
+.sidebar-body {
+    height: calc(100vh - 220px);
+}
+
+.content-head {
+    margin: 12px 12px;
+    height: 96px;
+    text-align: center;
+}
+
+#terrain-images {
+    height: 50%;
     margin: 2% 5%;
     float: top; 
+    display: inline-block;
+    position: relative;
+    width: 90%;
 }
 
 .terrain-image-container {
@@ -490,21 +530,10 @@ input:checked + .rope-type,
     opacity: 0.8;
 }
 
-
-#terrain-images {
-    height: 25%;
-    margin: 2% 5%;
-    float: top; 
-    display: inline-block;
-    position: relative;
-    width: 90%;
-}
-
 .terrain-image {
     display: block;
     width: 100%;
     height: auto;
-    border: 1px;
     border-radius: 10px;
     transition: .5s ease;
     backface-visibility: hidden;
@@ -522,13 +551,7 @@ input:checked + .rope-type,
     -ms-transform: translate(-50%, -50%);
 }
 
-#map {
-    margin: 2% 5%;
-    float: top; 
-}
-
 .text {
-    /* background-color: #677e91; */
     width: calc(100% - 8px);
     opacity: 1;
     height: auto;
@@ -536,59 +559,58 @@ input:checked + .rope-type,
     border: 4px solid #384856;
 }
 
-.rope-grades,
-.boulder-grades {
-    display: none;
-}
-
-#YDS,
-#Hueco {
-    display: inline;
-}
-
-#route-name {
+#grade-buttons {
     text-align: center;
     margin: auto;
 }
 
-#route-data {
-    text-align: center;
-    margin: auto;
+.rope-type,
+.boulder-type {
+    padding: 4px;
+    background: var(--highlight);
+    margin: 0 6px;
+    border-radius: 5px;
 }
-
 
 /* Results */
-
-#results,
-.route {
-    border: 1px solid green;
-}
 
 #results {
     width: 1200px;
     min-height: 400px;
+    margin-top: 60px
 }
 
+#filters,
 #center-col {
     width: 800px;
-    margin-left: 120px;
+    margin-left: 140px;
+}
+
+#filters {
+    min-height: 48px;
+    margin-top: 48px;
+    padding-top: 16px;
 }
 
 .route {
     height: 96px;
-    padding-left: 20px;
 }
 
-.route-name,
-.route-information,
-#center-col {
-    border: 1px solid red;
+.main-information:nth-child(even) {
+    background: var(--secondary);
 }
+
+.main-information:nth-child(odd) {
+    background: var(--secondary-alt);
+}
+
+
 .route-name {
     height: 30px;
+    background: var(--highlight);
 }
 
-.route-information {
+.main-information {
     height: 60px;
 }
 
@@ -600,3 +622,5 @@ input:checked + .rope-type,
 .font_rating {
     display: none;
 }
+
+
