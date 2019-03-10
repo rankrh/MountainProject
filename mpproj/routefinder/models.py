@@ -50,51 +50,7 @@ class Area(models.Model):
             children = Area.objects.filter(from_id=self.id)
             level = 'Areas'
         return children, level
-        
-    def styles(self):
-        if self.child_routes is not None:
-            child_styles = pd.Series(
-                [0] * (len(climbing_styles) + 1),
-                index = climbing_styles + ['alpine'])
-
-            for child in self.child_routes:
-                child_style = {
-                    'sport': child.sport,
-                    'trad': child.trad,
-                    'tr': child.tr,
-                    'boulder': child.boulder,
-                    'mixed': child.mixed,
-                    'aid': child.aid,
-                    'ice': child.ice,
-                    'snow': child.snow,
-                    'alpine': child.alpine
-                    }
-                for style, value in child_style.items():
-                    if value:
-                        child_styles[style] += 1
-            self.main_style = child_styles.idxmax()
-            return self.main_style
-
-    def grades(self):
-        if self.child_routes is not None and self.main_style is not None:
-            print(self.main_style)
-            number_of_children = len(self.child_routes)
-            if number_of_children > 0:
-                score = 0
-                
-                for child in self.child_routes:
-                    child_score = getattr(child, climb_style_to_system[self.main_style])
-                    if child_score is not None:
-                        score += child_score
-                    else:
-                        number_of_children -= 1
-
-                score = score // number_of_children
-
-                score = climb_style_to_grade[self.main_style][int(score)]
-
-                return score
-
+    
 
 class AreaTerrain(models.Model):
     slab = models.FloatField(blank=True, null=True)
@@ -109,31 +65,50 @@ class AreaTerrain(models.Model):
 
 
 class AreaGrades(models.Model):
-    id = models.FloatField(blank=True, primary_key=True)
-    sport = models.FloatField(blank=True, null=True)
-    trad = models.FloatField(blank=True, null=True)
-    tr = models.FloatField(blank=True, null=True)
-    boulder = models.FloatField(blank=True, null=True)
-    mixed = models.FloatField(blank=True, null=True)
+    id = models.BigIntegerField(blank=True, primary_key=True)
     aid = models.FloatField(blank=True, null=True)
-    ice = models.FloatField(blank=True, null=True)
-    snow = models.FloatField(blank=True, null=True)
-    alpine = models.FloatField(blank=True, null=True)
-    pitches = models.FloatField(blank=True, null=True)
-    length = models.FloatField(blank=True, null=True)
-    danger_conv = models.FloatField(blank=True, null=True)
-    bayes = models.FloatField(blank=True, null=True)
-    rope_conv = models.FloatField(blank=True, null=True)
-    boulder_conv = models.FloatField(blank=True, null=True)
-    mixed_conv = models.FloatField(blank=True, null=True)
     aid_conv = models.FloatField(blank=True, null=True)
+    aid_rating = models.TextField(blank=True, null=True)
+    alpine = models.FloatField(blank=True, null=True)
+    bayes = models.FloatField(blank=True, null=True)
+    boulder = models.FloatField(blank=True, null=True)
+    boulder_conv = models.FloatField(blank=True, null=True)
+    british_rating = models.TextField(blank=True, null=True)
+    danger_conv = models.FloatField(blank=True, null=True)
+    ewbanks_rating = models.TextField(blank=True, null=True)
+    font_rating = models.TextField(blank=True, null=True)
+    french_rating = models.TextField(blank=True, null=True)
+    hueco_rating = models.TextField(blank=True, null=True)
+    ice = models.FloatField(blank=True, null=True)
     ice_conv = models.FloatField(blank=True, null=True)
-    snow_conv = models.FloatField(blank=True, null=True)
+    ice_rating = models.TextField(blank=True, null=True)
+    length = models.FloatField(blank=True, null=True)
+    mixed = models.FloatField(blank=True, null=True)
+    mixed_conv = models.FloatField(blank=True, null=True)
+    mixed_rating = models.TextField(blank=True, null=True)
     nccs_conv = models.FloatField(blank=True, null=True)
+    nccs_rating = models.TextField(blank=True, null=True)
+    pitches = models.FloatField(blank=True, null=True)
+    rope_conv = models.FloatField(blank=True, null=True)
+    snow = models.FloatField(blank=True, null=True)
+    snow_conv = models.FloatField(blank=True, null=True)
+    snow_rating = models.TextField(blank=True, null=True)
+    sport = models.FloatField(blank=True, null=True)
+    tr = models.FloatField(blank=True, null=True)
+    trad = models.FloatField(blank=True, null=True)
+    uiaa_rating = models.TextField(blank=True, null=True)
+    yds_rating = models.TextField(blank=True, null=True)
+    za_rating = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'area_grades'
+        db_table = 'area_grades' 
+
+    def styles(self):
+        s = {style: self[style] for style in climbing_styles + ['alpine']}
+    
+        return s
+
 
 class AreaLinks(models.Model):
     from_id = models.BigIntegerField(blank=True, null=True)

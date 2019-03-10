@@ -863,6 +863,7 @@ def MPAnalyzer():
             'rope_conv': INTEGER(),
             'aid': BOOLEAN(),
             'aid_rating' : TEXT(),
+            'aid_conv': INTEGER(),
             'snow': BOOLEAN(),
             'snow_rating' : TEXT(),
             'snow_conv': INTEGER(),
@@ -879,8 +880,6 @@ def MPAnalyzer():
             'alpine': BOOLEAN(),
             'nccs_rating' : TEXT(),
             'nccs_conv': INTEGER(),
-            'aid_rating': TEXT(),
-            'aid_conv': INTEGER(),
             'danger_rating' : TEXT(),
             'danger_conv': INTEGER(),
             'pitches': INTEGER(),
@@ -907,51 +906,9 @@ def MPAnalyzer():
     
     def get_area_terrain(*styles):
         query = "SELECT * FROM route_links"
-        areas = pd.read_sql(query, con=engine, index_col='area')
-        
-        areas.index = areas.index.fillna(0)
-        
-        query = "SELECT "
-        
-        for style in styles:
-            query += style + ', '
-            
-        query = query[:-2]
-        
-        query += " FROM routes_scored"
-        
-        terrain = pd.read_sql(query, con=engine, index_col='id')
-        
-        def get_terrain(area):
-                
-            area_terrain = terrain.loc[area['id']]   
-            area_terrain = area_terrain.quantile(0.95)
-            area_terrain = area_terrain ** 2
-            area_terrain = area_terrain / area_terrain.max()
-            
-            return area_terrain
-            
-        areas = areas.groupby('area').progress_apply(get_terrain)
-        areas.index.rename('id', inplace=True)
-        
-        
-        dtype = {
-            'id': INTEGER(),
-            }
-        
-        for style in styles:
-            dtype[style] = FLOAT()
-        
-        areas.to_sql('area_terrain',
-                     con=engine,
-                     if_exists='replace',
-                     dtype=dtype)
-
-    def get_styles_and_grades():
-        query = "SELECT * FROM route_links"
         routes_in_area = pd.read_sql(
             query, con=engine, index_col='area').squeeze()
-        
+                
         query = """
             SELECT
                 route_id, sport, trad, tr, boulder, mixed, aid, ice, snow,
@@ -968,39 +925,99 @@ def MPAnalyzer():
             'snow', 'alpine']
         
         other = ['pitches', 'length', 'danger_conv', 'bayes']
-
+        
         grades = [
             'rope_conv', 'boulder_conv', 'mixed_conv', 'aid_conv',
-            'ice_conv', 'snow_conv', 'nccs_conv']
+            'ice_conv', 'snow_conv', 'nccs_conv']        
         
-        def get_styles_and_grades(area):
+        def area_styles_and_grades(area):
         
             area_routes = routes.loc[area]
-            number_of_routes = len(area_routes)
             
-            style = (
-                area_routes[climbing_styles+other].sum() / number_of_routes)
+            style = area_routes[climbing_styles+other].mean()
             
-            grade = area_routes[grades].sum() / number_of_routes
-            grade = grade.astype('int32')
+            grade = area_routes[grades].mean().round()
+            
+            grade_std = area_routes[grades].std().round()
+            grade_std.index = grade_std.index + '_std'
             
             area_information = style.append(grade)
+            area_information = area_information.append(grade_std)
             
             area_information = area_information.to_frame().transpose()
             
             return area_information
             
-            
+        
+        def get_conversion(area):
+                    
+            if area.sport or area.trad or area.tr:
+                
+                score = area.rope_conv
+                score = int(area.rope_conv)
+        
+                score_std =  area.rope_conv_std
+                if score_std == score_std:
+                    score_std = int(area.rope_conv_std)
+                else:
+                    score_std = score
+        
+                for system in rope_systems:
+                    area[system] = system_to_grade[system][score]
+                    area[system+'_std'] = system_to_grade[system][score_std]
+            else:
+                area.rope_conv = None
+                area.rope_conv_std = None
+                    
+            if area.boulder:
+                score = area.boulder_conv
+                score = int(score)
+        
+                score_std = area.boulder_conv_std
+                if score_std == score_std:
+                    score_std = int(score_std)
+                else:
+                    score_std = score
+                
+                for system in boulder_systems:
+                    area[system] = system_to_grade[system][score]
+                    area[system+'_std'] = system_to_grade[system][score_std]
+            else:
+                area.boulder_conv = None
+                area.boulder_conv_std = None
+                
+            for system, data in misc_system_to_grade.items():
+                if area[system]:
+                    score = area[data['conversion']]
+                    score_std = area[data['conversion'] + '_std']
+                    score = int(score)
+        
+                    if score_std == score_std:
+                        score_std = int(score_std)
+                    else:
+                        score_std = score
+        
+                    area[data['rating']] = data['grades'][score]
+                                
+            return area
+        
         routes_in_area = routes_in_area.groupby(routes_in_area.index)
         area_information = routes_in_area.progress_apply(
-            get_styles_and_grades)
+            area_styles_and_grades)
         area_information.index = area_information.index.droplevel(1)
         area_information.index = area_information.index.rename('id')
         
+        area_information = area_information.progress_apply(get_conversion, axis=1)
+        
+        print(area_information)
+        
+            
+            
         area_information.to_sql(
             'area_grades',
             con=engine,
-            if_exists='replace')                    
+            if_exists='replace')     
+                   
 
     # Fills in empty location data
     if click.confirm("Find location and rating data?"):

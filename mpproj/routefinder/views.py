@@ -21,13 +21,16 @@ def browse(request):
 
 def area(request, area_id):
     area_data = get_object_or_404(Area, pk=area_id)
+    area_terrain = get_object_or_404(AreaTerrain, pk=area_id)
+    area_styles = get_object_or_404(AreaGrades, pk=area_id)
 
     context = {
         'area': area_data,
         'parent': area_data.parents(),
         'children': area_data.children(),
-        'terrain': get_object_or_404(AreaTerrain, pk=area_id),
-        'styles': get_object_or_404(AreaGrades, pk=area_id)
+        'terrain': area_terrain,
+        'styles': area_styles.styles(),
+        'rating':area_styles.bayes,
     }
 
     return render(request, 'routefinder/area.html', context)
