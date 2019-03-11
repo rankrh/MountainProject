@@ -733,7 +733,7 @@ def MPScraper():
         aid_rate = re.findall('[^\d](A[\d\+\-]+|C[\d\+\-]+)', grades)
 
         # Returns 'M' followed by any number
-        mixed_rate = re.findall('(M[0-4]+)', grades)
+        mixed_rate = re.findall('(M[0-6\+\-]+)', grades)
 
         # Returns X OR R OR PG13 as long as they aren't followed by UIAA
         danger = re.findall('(X|R|PG13)(?![\s\+UIVX-]+)', grades)
@@ -782,8 +782,12 @@ def MPScraper():
             'V16-17', 'V17-', 'V17']
 
         mixed_conv = [
-            'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11',
-            'M12']
+            'M0-', 'M0', 'M0+', 'M0-1', 'M1-', 'M1', 'M1+', 'M1-2', 'M2-',
+            'M2', 'M2+', 'M2-3', 'M3-', 'M3', 'M3+', 'M3-4', 'M4-', 'M4',
+            'M4+', 'M4-5', 'M5-', 'M5', 'M5+', 'M5-6', 'M6-', 'M6', 'M6+',
+            'M6-7', 'M7-', 'M7', 'M7+', 'M7-8', 'M8-', 'M8', 'M8+', 'M8-9',
+            'M9-', 'M9', 'M9+', 'M9-10', 'M10-', 'M10', 'M10+', 'M10-11',
+            'M11-', 'M11', 'M11+', 'M11-12']
 
         aid_conv = [
             '0', '0+', '1', '1+' '2', '2+', '3', '3+', '4', '4+', '5', '6']

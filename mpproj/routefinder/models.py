@@ -105,9 +105,36 @@ class AreaGrades(models.Model):
         db_table = 'area_grades' 
 
     def styles(self):
-        s = {style: self[style] for style in climbing_styles + ['alpine']}
-    
-        return s
+        route_styles = pd.DataFrame(
+            data={
+                'style': [self.sport, self.trad, self.tr, self.boulder, self.aid, self.mixed, self.ice, self.snow, self.alpine],
+                'grade': [
+                    [self.yds_rating, self.french_rating, self.ewbanks_rating, self.uiaa_rating, self.za_rating, self.british_rating],
+                    [self.yds_rating, self.french_rating, self.ewbanks_rating, self.uiaa_rating, self.za_rating, self.british_rating],
+                    [self.yds_rating, self.french_rating, self.ewbanks_rating, self.uiaa_rating, self.za_rating, self.british_rating],
+                    [self.hueco_rating, self.font_rating],
+                    self.aid_rating,
+                    self.mixed_rating,
+                    self.ice_rating,
+                    self.snow_rating,
+                    self.nccs_rating
+                ],
+                'grade_std': [
+                    [self.yds_rating_std, self.french_rating_std, self.ewbanks_rating_std, self.uiaa_rating_std, self.za_rating_std, self.british_rating_std],
+                    [self.yds_rating_std, self.french_rating_std, self.ewbanks_rating_std, self.uiaa_rating_std, self.za_rating_std, self.british_rating_std],
+                    [self.yds_rating_std, self.french_rating_std, self.ewbanks_rating_std, self.uiaa_rating_std, self.za_rating_std, self.british_rating_std],
+                    [self.hueco_rating_std, self.font_rating_std],
+                    self.aid_rating_std,
+                    self.mixed_rating_std,
+                    self.ice_rating_std,
+                    self.snow_rating_std,
+                    self.nccs_rating_std
+                ]
+            },
+            index=climbing_styles+['alpine']
+        )
+        print(route_styles)
+        return route_styles
 
 
 class AreaLinks(models.Model):

@@ -888,9 +888,6 @@ def MPAnalyzer():
             'area_group': INTEGER(),
             'area_counts': INTEGER()}
 
-
-            
-
         for style in styles:
             dtype[style] = FLOAT()
 
@@ -938,7 +935,9 @@ def MPAnalyzer():
             
             grade = area_routes[grades].mean().round()
             
-            grade_std = area_routes[grades].std().round()
+            grade_std = area_routes[grades].std() + grade
+            grade_std = grade_std.round()
+    
             grade_std.index = grade_std.index + '_std'
             
             area_information = style.append(grade)
