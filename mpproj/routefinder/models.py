@@ -65,77 +65,115 @@ class AreaTerrain(models.Model):
 
 
 class AreaGrades(models.Model):
-    id = models.BigIntegerField(blank=True, primary_key=True)
+    id = models.FloatField(primary_key=True)
     aid = models.FloatField(blank=True, null=True)
     aid_conv = models.FloatField(blank=True, null=True)
+    aid_conv_std = models.FloatField(blank=True, null=True)
     aid_rating = models.TextField(blank=True, null=True)
+    aid_rating_std = models.TextField(blank=True, null=True)
     alpine = models.FloatField(blank=True, null=True)
+    alpine_rating = models.TextField(blank=True, null=True)
+    alpine_rating_std = models.TextField(blank=True, null=True)
     bayes = models.FloatField(blank=True, null=True)
     boulder = models.FloatField(blank=True, null=True)
     boulder_conv = models.FloatField(blank=True, null=True)
+    boulder_conv_std = models.FloatField(blank=True, null=True)
     british_rating = models.TextField(blank=True, null=True)
+    british_rating_std = models.TextField(blank=True, null=True)
     danger_conv = models.FloatField(blank=True, null=True)
     ewbanks_rating = models.TextField(blank=True, null=True)
+    ewbanks_rating_std = models.TextField(blank=True, null=True)
     font_rating = models.TextField(blank=True, null=True)
+    font_rating_std = models.TextField(blank=True, null=True)
     french_rating = models.TextField(blank=True, null=True)
+    french_rating_std = models.TextField(blank=True, null=True)
     hueco_rating = models.TextField(blank=True, null=True)
+    hueco_rating_std = models.TextField(blank=True, null=True)
     ice = models.FloatField(blank=True, null=True)
     ice_conv = models.FloatField(blank=True, null=True)
+    ice_conv_std = models.FloatField(blank=True, null=True)
     ice_rating = models.TextField(blank=True, null=True)
+    ice_rating_std = models.TextField(blank=True, null=True)
     length = models.FloatField(blank=True, null=True)
     mixed = models.FloatField(blank=True, null=True)
     mixed_conv = models.FloatField(blank=True, null=True)
+    mixed_conv_std = models.FloatField(blank=True, null=True)
     mixed_rating = models.TextField(blank=True, null=True)
+    mixed_rating_std = models.TextField(blank=True, null=True)
     nccs_conv = models.FloatField(blank=True, null=True)
-    nccs_rating = models.TextField(blank=True, null=True)
+    nccs_conv_std = models.FloatField(blank=True, null=True)
     pitches = models.FloatField(blank=True, null=True)
     rope_conv = models.FloatField(blank=True, null=True)
+    rope_conv_std = models.FloatField(blank=True, null=True)
     snow = models.FloatField(blank=True, null=True)
     snow_conv = models.FloatField(blank=True, null=True)
+    snow_conv_std = models.FloatField(blank=True, null=True)
     snow_rating = models.TextField(blank=True, null=True)
+    snow_rating_std = models.TextField(blank=True, null=True)
     sport = models.FloatField(blank=True, null=True)
     tr = models.FloatField(blank=True, null=True)
     trad = models.FloatField(blank=True, null=True)
     uiaa_rating = models.TextField(blank=True, null=True)
+    uiaa_rating_std = models.TextField(blank=True, null=True)
     yds_rating = models.TextField(blank=True, null=True)
+    yds_rating_std = models.TextField(blank=True, null=True)
     za_rating = models.TextField(blank=True, null=True)
+    za_rating_std = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'area_grades' 
+        db_table = 'area_grades'
 
-    def styles(self):
-        route_styles = pd.DataFrame(
-            data={
-                'style': [self.sport, self.trad, self.tr, self.boulder, self.aid, self.mixed, self.ice, self.snow, self.alpine],
-                'grade': [
-                    [self.yds_rating, self.french_rating, self.ewbanks_rating, self.uiaa_rating, self.za_rating, self.british_rating],
-                    [self.yds_rating, self.french_rating, self.ewbanks_rating, self.uiaa_rating, self.za_rating, self.british_rating],
-                    [self.yds_rating, self.french_rating, self.ewbanks_rating, self.uiaa_rating, self.za_rating, self.british_rating],
-                    [self.hueco_rating, self.font_rating],
-                    self.aid_rating,
-                    self.mixed_rating,
-                    self.ice_rating,
-                    self.snow_rating,
-                    self.nccs_rating
-                ],
-                'grade_std': [
-                    [self.yds_rating_std, self.french_rating_std, self.ewbanks_rating_std, self.uiaa_rating_std, self.za_rating_std, self.british_rating_std],
-                    [self.yds_rating_std, self.french_rating_std, self.ewbanks_rating_std, self.uiaa_rating_std, self.za_rating_std, self.british_rating_std],
-                    [self.yds_rating_std, self.french_rating_std, self.ewbanks_rating_std, self.uiaa_rating_std, self.za_rating_std, self.british_rating_std],
-                    [self.hueco_rating_std, self.font_rating_std],
-                    self.aid_rating_std,
-                    self.mixed_rating_std,
-                    self.ice_rating_std,
-                    self.snow_rating_std,
-                    self.nccs_rating_std
-                ]
-            },
+    def get_top_styles(self):
+        route_styles = pd.Series(
+            [self.sport, self.trad, self.tr, self.boulder, self.aid, self.mixed, self.ice, self.snow, self.alpine],
             index=climbing_styles+['alpine']
         )
-        print(route_styles)
+        return route_styles.sort_values(ascending=False)
+
+
+    def styles(self):
+        route_styles = self.get_top_styles()
+
+        score = 0
+        num_types = 0
+        while score < 0.75:
+            num_types += 1
+            styles_to_sum = route_styles.iloc[:num_types]
+            score = styles_to_sum.sum()
+        route_styles = route_styles.iloc[:num_types]
         return route_styles
 
+    def grade_avg(self):
+
+        top_style = self.get_top_styles().idxmax()
+        if top_style in ['sport', 'trad', 'tr']:
+            area_avg = {}
+            for system in rope_systems:
+                area_avg[system] = getattr(self, system)
+            top_style = 'rope'
+        elif top_style is 'boulder':
+            area_avg = {}
+            for system in boulder_systems:
+                area_avg[system] = getattr(self, system)
+        else:
+            area_avg = {top_style + '_rating': getattr(self, top_style + '_rating')} 
+        return (top_style, area_avg)
+
+    def grade_std(self):
+
+        top_style = self.get_top_styles().idxmax()
+        if top_style in ['sport', 'trad', 'tr']:
+            area_avg = {}
+            for system in rope_systems:
+                area_avg[system] = getattr(self, system+'_std')
+        elif top_style is 'boulder':
+            area_avg = {}
+            for system in boulder_systems:
+                area_avg[system] = getattr(self, system+'_std')
+        else:
+            area_avg = {top_style + '_rating': getattr(self, top_style + '_rating_std')} 
+        return area_avg
 
 class AreaLinks(models.Model):
     from_id = models.BigIntegerField(blank=True, null=True)
@@ -275,7 +313,7 @@ class Route(models.Model):
             filters["pitches__lte"] = 1
         else:
             filters["pitches__lte"] = self.pitches + 2
-            filters["pitches__gte"] = self.pitches - 2
+            filters["pitches__gte"] = max(self.pitches - 2, 2)
 
         other_routes = Route.objects.filter(**filters)
         other_routes = other_routes.exclude(name=self.name)

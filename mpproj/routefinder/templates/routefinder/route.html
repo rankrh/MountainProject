@@ -5,6 +5,7 @@
         <meta charset="UTF-8">
         <title>{{ route.name }}</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
         <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
@@ -34,11 +35,11 @@
                 <div class="sidebar left">
                     <div class="sidebar-head">
                         {% with areas|last as area %}
-                            <h4>Other Routes in {{ area.name }}</h4>
+                            <h2>Other Routes in {{ area.name }}</h2>
                         {% endwith %}
                     </div>
                     <div class="sidebar-body scroll">
-                        <ul>
+                        <ul class="sub-element">
                             {% for area_route in area_routes %}
                                 <li><a href="{% url 'routefinder:route' area_route.id %}">{{ area_route.name }}</a></li>
                             {% endfor %}
@@ -47,10 +48,11 @@
                 </div>
                 <div class="main-content">
                     <div class="content-head">
-                        <h5><a href="{{route.url}}">{{route.name}}</a></h5>
+                        <a href="{{route.url}}"><h4>{{route.name}}</h4></a>
+                        <p>{{route.bayes}}/4</p>
                     </div>
-                    <div class="content-text">
-                        <h3>
+                    <div id="description">
+                        <h2>
                             A
                             {% if route.pitches > 0 %}
                                 {{ route.pitches|floatformat:"0" }} pitch 
@@ -58,21 +60,41 @@
                                 {{route.length|floatformat:"0" }}-foot long
                             {% endif %}
 
-                            {% for system, grade in route.rope_grades.items %}
-                                {% if grade is not None %}
-                                    <span class="{{system}}" onclick="NextSystem(this, 'rope');">
-                                        {{grade}}
-                                    </span>
+
+                            {% for style in styles %}
+                                {% if forloop.last and forloop.first %}
+                                    {{ style }}
+                                {% elif not forloop.last and forloop.first %}
+                                    {{ style }}
+                                {% elif not forloop.last %}
+                                    , {{ style }}
+                                {% else %}
+                                    and {{ style }}
                                 {% endif %}
                             {% endfor %}
 
-                            {% for system, grade in route.boulder_grades.items %}
-                                {% if grade is not None %}
-                                    <span class="{{system}}" onclick="NextSystem(this, 'boulder');">
-                                        <label>{{grade}} </label>
-                                    </span>
-                                {% endif %}
-                            {% endfor %}
+                            route rated
+                            <span class = "clickable">
+                                {% for system, grade in route.rope_grades.items %}
+                                    {% if grade is not None %}
+                                        <span class="{{system}}" onclick="NextSystem(this, 'rope');">
+                                            {{grade}}
+                                        </span>
+                                    {% endif %}
+
+                                    {% if grade in "['3rd', '4th']" %}
+                                        class
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% for system, grade in route.boulder_grades.items %}
+                                    {% if grade is not None %}
+                                        <span class="{{system}}" onclick="NextSystem(this, 'boulder');">
+                                            {{grade}}
+                                        </span>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
 
                             {% if route.mixed_rating is not None %}
                                 {{route.mixed_rating}}
@@ -90,22 +112,6 @@
                                 {{route.ice_rating}}
                             {% endif %}
 
-
-
-                            {% for style in styles %}
-                                {% if forloop.last and forloop.first %}
-                                    {{ style }}
-                                {% elif not forloop.last and forloop.first %}
-                                    {{ style }}
-                                {% elif not forloop.last %}
-                                    , {{ style }}
-                                {% else %}
-                                    and {{ style }}
-                                {% endif %}
-                            {% endfor %}
-
-                            route.
-
                             {% if route.danger_conv > 0 %}
                                 ({{ route.danger_rating }})
                             {% endif %}
@@ -116,7 +122,7 @@
             
 
             
-                        </h3>
+                        </h2>
                     </div>
                     <div id="terrain-images">
                         <div class="terrain-image-container">
@@ -163,10 +169,10 @@
                 </div>
                 <div class="sidebar right">
                     <div class="sidebar-head">
-                        <h4>Routes similar to {{ route.name }}</h4>
+                        <h2>Routes similar to {{ route.name }}</h2>
                     </div>
                     <div class="sidebar-body scroll">
-                        <ul>
+                        <ul class="sub-element">
                             {% for similar_route in similar_routes %}
                                 <li><a href="{% url 'routefinder:route' similar_route.id %}">{{ similar_route.name }}</a></li>
                             {% endfor %}

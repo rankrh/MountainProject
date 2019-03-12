@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import *
 from .models import Results
 from .models import Route
 from .models import Area
@@ -21,17 +22,58 @@ def browse(request):
 
 def area(request, area_id):
     area_data = get_object_or_404(Area, pk=area_id)
-    area_terrain = get_object_or_404(AreaTerrain, pk=area_id)
-    area_styles = get_object_or_404(AreaGrades, pk=area_id)
+    try:
+        area_terrain = AreaTerrain.objects.get(pk=area_id)
+    except ObjectDoesNotExist:
+        area_terrain = {
+            'arete': 0.15,
+            'chimney': 0.15,
+            'crack': 0.15,
+            'slab': 0.15,
+            'overhang': 0.15
+        }
+    try:
+        area_styles = AreaGrades.objects.get(pk=area_id)
+    except:
+        area_styles = None
 
-    context = {
-        'area': area_data,
-        'parent': area_data.parents(),
-        'children': area_data.children(),
-        'terrain': area_terrain,
-        'styles': area_styles.styles(),
-        'rating':area_styles.bayes,
-    }
+
+    if area_styles is not None:
+        pitches = area_styles.pitches
+        if pitches is not None:
+            pitches = round(pitches)
+
+        length = area_styles.length
+        if length is not None:
+            length = round(length)
+        
+        rating = area_styles.bayes
+        if rating is not None:
+            rating = round(rating, 1)
+
+        context = {
+            'area': area_data,
+            'parent': area_data.parents(),
+            'children': area_data.children(),
+            'terrain': area_terrain,
+            'styles': area_styles.styles(),
+            'grade_avg': area_styles.grade_avg(),
+            'grade_std': area_styles.grade_std(),
+            'rating': rating,
+            'commitment': area_styles.alpine_rating,
+            'pitches': pitches,
+            'length': length,
+        }
+    else:
+        context = {
+            'area': area_data,
+            'parent': area_data.parents(),
+            'children': area_data.children(),
+            'terrain': area_terrain,
+            'styles': None,
+            'rating': '?',
+        }
+
 
     return render(request, 'routefinder/area.html', context)
 
@@ -79,12 +121,12 @@ def results(request):
 
 def search(request):
     context = {
-        'rope_grades': rope_conv,
-        'boulder_grades': boulder_conv,
-        'mixxed_grades': mixed_conv,
-        'aid_grades': aid_conv,
-        'snow_grades': snow_conv,
-        'ice_grades': ice_conv,
+        'rope_grades': yds_rating,
+        'boulder_grades': hueco_rating,
+        'mixed_grades': mixed_rating,
+        'aid_grades': aid_rating,
+        'snow_grades': snow_rating,
+        'ice_grades': ice_rating,
         'pitch_count': [p for p in range(11)],
         'danger_levels': ['G', 'PG13', 'R', 'All Danger Levels'],
         'commitment_levels':['I', 'II', 'III', 'IV', 'All Commitment Levels'],

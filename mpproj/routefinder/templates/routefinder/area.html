@@ -5,6 +5,8 @@
         <meta charset="UTF-8">
         <title>{{ area.name }}</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
+        <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
         <header class='primary-header'>
@@ -32,10 +34,10 @@
             <section class="main">
                 <div class="sidebar left">
                     <div class="sidebar-head">
-                        {{children.1}} in {{area.name}}
+                        <h2>{{children.1}} in {{area.name}}</h2>
                     </div>
                     <div class="sidebar-body scroll">
-                        <ul>
+                        <ul class="sub-element">
                             {% if children.1 == 'Routes' %}
                                 {% for child in children.0 %}
                                     <li><a href="{% url 'routefinder:route' child.id %}">{{ child.name }}</a></li>
@@ -50,10 +52,79 @@
                 </div>
                 <div class="main-content">
                     <div class="content-head">
-                        <h5>{{area.name}}</h5>
+                        <a href="{{area.url}}"><h4>{{area.name}}</h4></a>
+                        <h1>{{rating}}/4</h1>
                     </div>
-                    <div>
-                        {{styles}}
+                    <div id="description">
+                        <div id="area-type">
+                            <h2>
+                                {{area.name}} is best for 
+                                {% for style in styles.index %}
+                                    {% if forloop.first and forloop.last %}
+                                        <span>{{style}}</span>
+                                    {% elif forloop.last %}
+                                        <span>and {{style}}</span>
+                                    {% else %}
+                                        <span>{{style}},</span>
+                                    {% endif %}
+                                {% endfor %}
+                                routes.
+                            </h2>
+                        </div>
+                        <div id="area-grades">
+                            <div id="average-grade">
+                                <div class="area-heading">
+                                    <h2>
+                                        A great place if you climb:
+                                    </h2>
+                                </div>
+                                <div class="area-content clickable">
+                                    {% for system, grade in grade_avg.1.items %}
+                                        <h2 class="{{system}}" onclick="NextSystem(this, '{{grade_avg.0}}');">{{grade}}</h2>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div id="std-grade">
+                                <div class="area-heading">
+                                    <h2>
+                                        Best if you climb at least:
+                                    </h2>        
+                                </div>
+                                <div class="area-content clickable">
+                                    {% for system, grade in grade_std.items %}
+                                        <h2 class="{{system}}" onclick="NextSystem(this, '{{grade_avg.0}}');">{{grade}}</h2>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if pitches > 1 or length > 1 %}
+                                <div id="average-length">
+                                    <div class="area-heading">
+                                        <h2>
+                                            The average route length is:
+                                        </h2>
+                                    </div>
+                                    <div class="area-content">
+                                        {% if pitches > 1 %}
+                                            <h2>{{pitches}} pitches</h2>
+                                        {% elif length > 1 %}
+                                            <h2>{{length}} feet long</h2>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if area.alpine_rating is not None %}
+                                <div id="average-nccs">
+                                    <div class="area-heading">
+                                        <h2>
+                                            The average NCCS commitment level is:
+                                        </h2>
+                                    </div>
+                                    <div class="area-content">
+                                        <h2>{{area.alpine_rating}}</h2>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                     <div id="terrain-images">
                         <div class="terrain-image-container">

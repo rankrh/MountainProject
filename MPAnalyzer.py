@@ -949,47 +949,62 @@ def MPAnalyzer():
             
         
         def get_conversion(area):
+            while True:
+                if area.sport or area.trad or area.tr:
                     
-            if area.sport or area.trad or area.tr:
+                    score = area.rope_conv
+                    try:
+                        score = int(area.rope_conv)
+                    except:
+                        error_log.write(str(area.name))
+                        break 
                 
-                score = area.rope_conv
-                score = int(area.rope_conv)
-        
-                score_std =  area.rope_conv_std
-                if score_std == score_std:
-                    score_std = int(area.rope_conv_std)
+                    score_std =  area.rope_conv_std
+                    if score_std == score_std:
+                        score_std = int(area.rope_conv_std)
+                    else:
+                        score_std = score
+            
+                    for system in rope_systems:
+                        area[system] = system_to_grade[system][score]
+                        area[system+'_std'] = system_to_grade[system][score_std]
                 else:
-                    score_std = score
-        
-                for system in rope_systems:
-                    area[system] = system_to_grade[system][score]
-                    area[system+'_std'] = system_to_grade[system][score_std]
-            else:
-                area.rope_conv = None
-                area.rope_conv_std = None
+                    area.rope_conv = None
+                    area.rope_conv_std = None
+                break
                     
-            if area.boulder:
-                score = area.boulder_conv
-                score = int(score)
-        
-                score_std = area.boulder_conv_std
-                if score_std == score_std:
-                    score_std = int(score_std)
+            while True:
+                if area.boulder:
+                    score = area.boulder_conv
+                    try:
+                        score = int(score)
+                    except:
+                        error_log.write(str(area.name))
+                        break 
+            
+                    score_std = area.boulder_conv_std
+                    if score_std == score_std:
+                        score_std = int(score_std)
+                    else:
+                        score_std = score
+                    
+                    for system in boulder_systems:
+                        area[system] = system_to_grade[system][score]
+                        area[system+'_std'] = system_to_grade[system][score_std]
                 else:
-                    score_std = score
-                
-                for system in boulder_systems:
-                    area[system] = system_to_grade[system][score]
-                    area[system+'_std'] = system_to_grade[system][score_std]
-            else:
-                area.boulder_conv = None
-                area.boulder_conv_std = None
-                
+                    area.boulder_conv = None
+                    area.boulder_conv_std = None
+                break
+             
             for system, data in misc_system_to_grade.items():
                 if area[system]:
                     score = area[data['conversion']]
                     score_std = area[data['conversion'] + '_std']
-                    score = int(score)
+                    try:
+                        score = int(score)
+                    except:
+                        error_log.write(str(area.name))
+                        continue
         
                     if score_std == score_std:
                         score_std = int(score_std)

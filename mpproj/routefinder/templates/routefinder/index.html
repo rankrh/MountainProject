@@ -5,6 +5,7 @@
         <meta charset="UTF-8">
         <title>Search</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
         <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
@@ -144,25 +145,25 @@
                     </div>
                     <div class="route-style">
                             <label for="aid" id="aid-label" class="style-label">Aid
-                                    <input type="checkbox" id="aid" name="aid" value="True" onclick="ToggleGrade('aid');">
-                                </label><!--
-                                --><select name="aid-min" id="aid-min" class="grade" disabled>
-                                    {% for grade in aid_grades %}
-                                        <option value="{{ forloop.counter0 }}">
-                                            <p>{{ grade }}</p>
-                                        </option>
-                                        {% endfor %}
-                                </select><!--
-                                --><select name="aid-max" id="aid-max" class="grade" disabled>
+                                <input type="checkbox" id="aid" name="aid" value="True" onclick="ToggleGrade('aid');">
+                            </label><!--
+                            --><select name="aid-min" id="aid-min" class="grade" disabled>
                                 {% for grade in aid_grades %}
-                                    <option value="{{ forloop.counter0 }}"
-                                        {% if forloop.last %}
-                                            selected = "selected"
-                                        {% endif %}>
-                                        <p>{{ grade }}</p>
+                                    <option value="{{ forloop.counter0 }}">
+                                        <p>A{{ grade }}</p>
                                     </option>
                                     {% endfor %}
-                                </select>
+                            </select><!--
+                            --><select name="aid-max" id="aid-max" class="grade" disabled>
+                            {% for grade in aid_grades %}
+                                <option value="{{ forloop.counter0 }}"
+                                    {% if forloop.last %}
+                                        selected = "selected"
+                                    {% endif %}>
+                                    <p>A{{ grade }}</p>
+                                </option>
+                                {% endfor %}
+                            </select>
                     </div>
                     <div class="route-style">
                             <label for="snow" id="snow-label" class="style-label">Snow
@@ -193,7 +194,7 @@
                                 --><select name="ice-min" id="ice-min" class="grade" disabled>
                                     {% for grade in ice_grades %}
                                         <option value="{{ forloop.counter0 }}">
-                                            <p>{{ grade }}</p>
+                                            <p>W/A {{ grade }}</p>
                                         </option>
                                         {% endfor %}
                                 </select><!--
@@ -203,7 +204,7 @@
                                         {% if forloop.last %}
                                             selected = "selected"
                                         {% endif %}>
-                                        <p>{{ grade }}</p>
+                                        <p>W/A {{ grade }}</p>
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -216,7 +217,7 @@
                     </fieldset>
                     <fieldset id="terrain">
                         <div id="terrain-label">
-                            <h4>Terrain Types</h4>
+                            <h2>Terrain Types</h2>
                         </div>
                         <div>
                             {% for terrain in terrain_types %}
