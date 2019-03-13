@@ -20,6 +20,7 @@ def browse(request):
     context = {}
     return render(request, 'routefinder/browse.html', context)
 
+
 def area(request, area_id):
     area_data = get_object_or_404(Area, pk=area_id)
     try:
@@ -55,6 +56,7 @@ def area(request, area_id):
             'area': area_data,
             'parent': area_data.parents(),
             'children': area_data.children(),
+            'classics': area_data.classics(),
             'terrain': area_terrain,
             'styles': area_styles.styles(),
             'grade_avg': area_styles.grade_avg(),
@@ -98,22 +100,10 @@ def route(request, route_id):
 def results(request):
 
     get_request = Results.parse_get_request(request.GET)
-    try:
-        sort = get_request['sort']
-    except:
-        sort = 'value'
-
-    best_routes = Results.best_routes(get_request, sort=sort)
-
-    user_location = get_request['location']
-    if user_location is '':
-        user_location = None
 
     context = {
-        'user_location': user_location,
-        'best_routes': best_routes,
-        'form': SortMethod(),
-        'get_request': request.GET,
+        'results': Results.best_routes(get_request),
+        'location': get_request['location']
     }
 
     return render(request, 'routefinder/results.html', context)

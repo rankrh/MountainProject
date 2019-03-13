@@ -21,13 +21,18 @@
                     </ul>
                 </nav>
                 <nav class="area-nav">
+                    {{parent}}
                     {% for area in areas %}
+                        {% if not forloop.first %}
+                            <span>
+                                    > 
+                            </span>
+                        {% endif %}
                         <a href="{% url 'routefinder:area' area.id %}">
-                            {% if not forloop.first %}<span> > </span> {% endif %}
-                            <span>{{area.name}}<span>
+                            <span class="clickable">{{area.name}}<span>
                         </a>
                     {% endfor %}
-                </nav>
+                </nav>            
             </div>
         </header>
         <div class="content">
@@ -74,7 +79,7 @@
                             {% endfor %}
 
                             route rated
-                            <span class = "clickable">
+                            <span class = "clickable noselect">
                                 {% for system, grade in route.rope_grades.items %}
                                     {% if grade is not None %}
                                         <span class="{{system}}" onclick="NextSystem(this, 'rope');">

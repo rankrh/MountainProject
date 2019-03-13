@@ -20,6 +20,7 @@ import re
 import click
 from tqdm import tqdm
 from sqlalchemy.types import TEXT, INTEGER, BOOLEAN, FLOAT
+from mpproj.routefinder.StyleInformation import *
 
 
 def MPAnalyzer():
@@ -324,8 +325,8 @@ def MPAnalyzer():
         according to the number of votes cast.
 
                 Bayesian rating = (r * v) + (a * 10) / (v + 10)
-
-                    s = Route rating
+                
+                    r = Route rating
                     v = Number of votes
                     a = Average rating across all routes
 
@@ -911,7 +912,7 @@ def MPAnalyzer():
                 route_id, sport, trad, tr, boulder, mixed, aid, ice, snow,
                 alpine, rope_conv, boulder_conv, mixed_conv, aid_conv,
                 ice_conv, snow_conv,nccs_conv, pitches, length,
-                danger_conv, bayes
+                danger_conv, stars, votes
             FROM routes
             """
         routes = pd.read_sql(query, con=engine, index_col='route_id')
@@ -921,7 +922,7 @@ def MPAnalyzer():
             'sport', 'trad', 'tr', 'boulder', 'mixed', 'aid', 'ice',
             'snow', 'alpine']
         
-        other = ['pitches', 'length', 'danger_conv', 'bayes']
+        other = ['pitches', 'length', 'danger_conv']
         
         grades = [
             'rope_conv', 'boulder_conv', 'mixed_conv', 'aid_conv',
@@ -940,8 +941,20 @@ def MPAnalyzer():
     
             grade_std.index = grade_std.index + '_std'
             
+            
+
+            score_total = area_routes.stars.sum()
+            votes_total = area_routes.votes.sum()
+            avg = area_routes.stars.mean()
+
+            
+            bayes = (score_total / votes_total) + ((10 * avg)
+                / (votes_total + 10))
+
             area_information = style.append(grade)
             area_information = area_information.append(grade_std)
+            area_information['bayes'] = bayes
+            
             
             area_information = area_information.to_frame().transpose()
             
@@ -956,8 +969,7 @@ def MPAnalyzer():
                     try:
                         score = int(area.rope_conv)
                     except:
-                        error_log.write(str(area.name))
-                        break 
+                        break
                 
                     score_std =  area.rope_conv_std
                     if score_std == score_std:
@@ -1021,12 +1033,9 @@ def MPAnalyzer():
         area_information.index = area_information.index.droplevel(1)
         area_information.index = area_information.index.rename('id')
         
-        area_information = area_information.progress_apply(get_conversion, axis=1)
-        
-        print(area_information)
-        
-            
-            
+        area_information = area_information.progress_apply(
+                get_conversion, axis=1)
+                    
         area_information.to_sql(
             'area_grades',
             con=engine,
@@ -1063,7 +1072,10 @@ def MPAnalyzer():
 
                 cursor.execute(f'''
                     UPDATE Routes
-                    SET bayes = {rate}, area_group = {group}, area_counts = {cnt}
+                    SET
+                        bayes = {rate},
+                        area_group = {group},
+                        area_counts = {cnt}
                     WHERE route_id = {route}''')
         conn.commit()
 
@@ -1077,8 +1089,6 @@ def MPAnalyzer():
     if click.confirm("Find area terrain scores"):
         get_area_terrain('arete', 'chimney', 'crack', 'slab', 'overhang')
         
-    if click.fonfirm("Find area styles and grades?"):
-        get_styles_and_grades()
         
     print('Complete')
 

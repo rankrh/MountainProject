@@ -11,9 +11,11 @@
     <body>
         <header class='primary-header'>
             <div class="container">
-                <h5 id="main-heading">
-                    RouteFinder
-                </h5>            
+                <a href="{% url 'routefinder:search' %}">
+                    <h5 id="main-heading">
+                        RouteFinder
+                    </h5>            
+                </a>
                 <nav class="primary-nav">
                     <ul>
                         <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--

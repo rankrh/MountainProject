@@ -10,9 +10,11 @@
     <body>
         <header class='primary-header'>
             <div class="container">
-                <h5 id="main-heading">
-                    RouteFinder
-                </h5>            
+                <a href="{% url 'routefinder:search' %}">
+                    <h5 id="main-heading">
+                        RouteFinder
+                    </h5>            
+                </a>
                 <nav class="primary-nav">
                     <ul>
                         <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
@@ -20,136 +22,111 @@
                     </ul>
                 </nav>
             </div>
-        </header> 
-        <form id="filters" method="GET" action="{% url 'routefinder:results'%}">
-            {% for sort_method in form.sort %}
-                <label for="{{sort_method.id_for_label}}">
-                    {{ sort_method.tag }}
-                    <span class="sort-method">
-                        {{sort_method.choice_label}}
-                    </span>
-                </label>
-            {% endfor %}
-        </form>
+        </header>
         <div id="results">
-            <div id="center-col">
-                {% if best_routes is not None %}
-                    {% for route in best_routes %}
-                        <div class="route">
-                            <a href="{% url 'routefinder:route' route.id %}">
-                                <div class="route-name">
-                                    <h4>
-                                        {{route.name}}
-                                    </h4>
-                                </div>
-                            </a>
-                            <div class="route-information">
-                                <div class="basics">
-                                    <h3>
-                                        <span>A
-                                            {% if route.pitches > 0 %}
-                                                {{ route.pitches|floatformat:"0" }} pitch
-                                            {% elif route.length > 0 %}
-                                                {{route.length|floatformat:"0"}}-foot long
-                                            {% endif %}
-                                        </span>
+            <div class="padding">
+                <div id="center-col" class="scroll">
+                    {% if results is not None %}
+                        {% for route in results %}
+                            <div class="route">
+                                <a href="{% url 'routefinder:route' route.id %}">
+                                    <div class="route-name">
+                                        <h2>
+                                            {{route.name}} ({{route.bayes}}/4)
+                                        </h2>
+                                    </div>
+                                </a>
+                                <div class="route-information">
+                                    <div class="basics">
+                                        <h2>
+                                            <span>A
+                                                {% if route.pitches > 0 %}
+                                                    {{ route.pitches|floatformat:"0" }} pitch
+                                                {% elif route.length > 0 %}
+                                                    {{route.length|floatformat:"0"}}-foot long
+                                                {% endif %}
+                                            </span>
 
-                                        {% for system, grade in route.rope_grades.items %}
-                                            {% if grade is not None %}
-                                                <span class="{{system}}" onclick="NextSystem(this, 'rope');">
-                                                    <label>{{grade}} </label>
-                                                </span>
-                                            {% endif %}
-                                        {% endfor %}
+                                            {% for system, grade in route.rope_grades.items %}
+                                                {% if grade is not None %}
+                                                    <span class="{{system}}" onclick="NextSystem(this, 'rope');">
+                                                        <label>{{grade}} </label>
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
 
-                                        {% for system, grade in route.boulder_grades.items %}
-                                            {% if grade is not None %}
-                                                <span class="{{system}}" onclick="NextSystem(this, 'boulder');">
-                                                    <label>{{grade}} </label>
-                                                </span>
-                                            {% endif %}
-                                        {% endfor %}
+                                            {% for system, grade in route.boulder_grades.items %}
+                                                {% if grade is not None %}
+                                                    <span class="{{system}}" onclick="NextSystem(this, 'boulder');">
+                                                        <label>{{grade}} </label>
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
 
-                                        <span>
-                                            {% if route.mixed_rating is not None %}
-                                                {{route.mixed_rating}}
-                                            {% endif %}
-
-                                            {% if route.aid_rating is not None %}
-                                                {{route.aid_rating}}
-                                            {% endif %}
-
-                                            {% if route.snow_rating is not None %}
-                                                {{route.snow_rating}}
-                                            {% endif %}
-
-                                            {% if route.ice_rating is not None %}
-                                                {{route.ice_rating}}
-                                            {% endif %}
-
-                                            {{route.style}} route
-                                            
-                                            {% if route.terrain is not None %}
-                                                with {{route.terrain}} features
-                                            {% endif %}
-                                            
-                                            {% if route.danger_conv > 0 %}
-                                                ({{ route.danger_rating }})
-                                            {% endif %}
-
-                                            {% if route.nccs_conv > 0 %}
-                                                (NCCS: {{route.nccs_rating }})
-                                            {% endif %}
-
-                                            {% if route.area_counts > 1 %}
-                                                near {{route.area_counts}} relevant routes
-                                            {% elif route.area_counts == 1 %}
-                                                near 1 relevant route
-                                            {% endif %}
-                                        </span>
-                                    </h3>
-                                </div>
-                                <div class="route-location">
-                                    {% if user_location is not None %}
-                                        <h3>
-                                            {{route.distance|floatformat:"0"}} miles away.  ({{route.bayes}} / 4)
-                                        </h3>
-                                    {% endif %}
-                                    <h2>
-                                        {% for area in route.area %}
-                                            <a href="{% url 'routefinder:area' area.id %}">
-                                                {% if not forloop.first %}
-                                                    <span> > </span>
+                                            <span>
+                                                {% if route.mixed_rating is not None %}
+                                                    {{route.mixed_rating}}
                                                 {% endif %}
 
-                                                <span>{{area.name}}<span>
-                                            </a>
-                                        {% endfor %}
-                                    </h2>
-                                </div>    
+                                                {% if route.aid_rating is not None %}
+                                                    {{route.aid_rating}}
+                                                {% endif %}
+
+                                                {% if route.snow_rating is not None %}
+                                                    {{route.snow_rating}}
+                                                {% endif %}
+
+                                                {% if route.ice_rating is not None %}
+                                                    {{route.ice_rating}}
+                                                {% endif %}
+
+                                                {{route.style}} route
+                                                
+                                                {% if route.terrain is not None %}
+                                                    with {{route.terrain}} features
+                                                {% endif %}
+                                                
+                                                {% if route.danger_conv > 0 %}
+                                                    ({{ route.danger_rating }})
+                                                {% endif %}
+
+                                                {% if route.nccs_conv > 0 %}
+                                                    (NCCS: {{route.nccs_rating }})
+                                                {% endif %}
+
+                                                {% if route.area_counts > 1 %}
+                                                    near {{route.area_counts}} relevant routes
+                                                {% elif route.area_counts == 1 %}
+                                                    near 1 relevant route
+                                                {% endif %}
+                                            </span>
+                                        </h2>
+                                    </div>
+                                    <div class="route-location">
+                                        {% if location is not None %}
+                                            <h2>
+                                                {{route.distance|floatformat:"0"}} miles away.
+                                            </h2>
+                                        {% endif %}
+                                        <h1>
+                                            {% for area in route.area %}
+                                                <a href="{% url 'routefinder:area' area.id %}">
+                                                    {% if not forloop.first %}
+                                                        <span> > </span>
+                                                    {% endif %}
+
+                                                    <span>{{area.name}}<span>
+                                                </a>
+                                            {% endfor %}
+                                        </h1>
+                                    </div>    
+                                </div>
                             </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
             </div>
         </div>
-        <!-- {% if best_routes is not None %}
-            {% for route in best_routes %}
-                <p class="route">
-                    <h1><a href="{% url 'routefinder:route' route.id %}">{{ route.name }}</a></h1>
-                    <p>{{ route.bayes }} -- {{ route.style }} -- {{ route.grade }} -- {{ route.features }} -- {{ route.area_group }}</p>
-                </section>
-                {% endfor %}
-        {% else %}
-            <p>No routes fit that description</p>
-            {% endif %} -->
-        <footer>
-            <nav class="primary-footer">
-                <ul>
-                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
-                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
-                </ul>
-            </nav>
-        </footer>
+        </div>
     </body>
 </html>

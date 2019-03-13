@@ -11,9 +11,11 @@
     <body>
         <header class='primary-header'>
             <div class="container">
-                <h5 id="main-heading">
-                    RouteFinder
-                </h5>            
+                <a href="{% url 'routefinder:search' %}">
+                    <h5 id="main-heading">
+                        RouteFinder
+                    </h5>            
+                </a>
                 <nav class="primary-nav">
                     <ul>
                         <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
@@ -22,16 +24,20 @@
                 </nav>
                 <nav class="area-nav">
                     {% for area in parent %}
+                        {% if not forloop.first %}
+                            <span>
+                                 > 
+                            </span>
+                        {% endif %}
                         <a href="{% url 'routefinder:area' area.id %}">
-                            {% if not forloop.first %}<span> > </span> {% endif %}
-                            <span>{{area.name}}<span>
+                            <span class="clickable">{{area.name}}<span>
                         </a>
                     {% endfor %}
                 </nav>
             </div>
         </header>
         <div class="content">
-            <section class="main">
+            <div class="main">
                 <div class="sidebar left">
                     <div class="sidebar-head">
                         <h2>{{children.1}} in {{area.name}}</h2>
@@ -78,7 +84,7 @@
                                         A great place if you climb:
                                     </h2>
                                 </div>
-                                <div class="area-content clickable">
+                                <div class="area-content clickable noselect">
                                     {% for system, grade in grade_avg.1.items %}
                                         <h2 class="{{system}}" onclick="NextSystem(this, '{{grade_avg.0}}');">{{grade}}</h2>
                                     {% endfor %}
@@ -90,7 +96,7 @@
                                         Best if you climb at least:
                                     </h2>        
                                 </div>
-                                <div class="area-content clickable">
+                                <div class="area-content clickable noselect">
                                     {% for system, grade in grade_std.items %}
                                         <h2 class="{{system}}" onclick="NextSystem(this, '{{grade_avg.0}}');">{{grade}}</h2>
                                     {% endfor %}
@@ -224,7 +230,19 @@
                         </div>
                     </div>  
                 </div>
-            </section>
+                <div class="sidebar right">
+                    <div class="sidebar-head">
+                        <h2>Classics in {{area.name}}</h2>
+                    </div>
+                    <div class="sidebar-body scroll">
+                        <ul class="sub-element">
+                            {% for route in classics %}
+                                <li><a href="{% url 'routefinder:route' route.id %}">{{ route }}</a></li>
+                            {% endfor %}
+                        </ul>    
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 </html>

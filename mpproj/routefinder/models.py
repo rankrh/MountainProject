@@ -50,6 +50,17 @@ class Area(models.Model):
             children = Area.objects.filter(from_id=self.id)
             level = 'Areas'
         return children, level
+
+    def classics(self):
+
+        routes = RouteLinks.objects.filter(area=self.id)
+        routes = Route.objects.filter(
+            id__in=routes,
+            bayes__gte=2.5).order_by(
+                '-bayes'
+            )[:12]
+        
+        return routes
     
 
 class AreaTerrain(models.Model):
@@ -174,6 +185,7 @@ class AreaGrades(models.Model):
         else:
             area_avg = {top_style + '_rating': getattr(self, top_style + '_rating_std')} 
         return area_avg
+
 
 class AreaLinks(models.Model):
     from_id = models.BigIntegerField(blank=True, null=True)
@@ -421,9 +433,11 @@ class Results(models.Model):
             return area_group
 
         def get_parent_areas(pk):
+
+            
             parents =  get_object_or_404(Area, pk=pk)
-            parents = parents.parent_areas()
-            return parents[::-1]
+            parents = parents.parents()
+            return parents
 
         try:
             pitch_min = get_request['pitch-min']
@@ -580,14 +594,7 @@ class Results(models.Model):
 
         routes = routes.sort_values(by=sort, ascending=sort_methods[sort])
 
-        display_columns = [
-            'id', 'name', 'bayes', 'terrain', 'style', 'pitches',
-            'length', 'url', 'area_counts', 'rope_grades',
-            'boulder_grades', 'mixed_rating', 'aid_rating', 'snow_rating',
-            'ice_rating', 'distance', 'area']
-
         routes['area_counts'] = routes['area_counts'] - 1
-        routes = routes[display_columns]
 
         routes = routes.to_dict(orient='records')
 
