@@ -10,7 +10,6 @@
     </head>
     <body>
         <header class='primary-header'>
-            <div class="container">
                 <h5 id="main-heading">
                     RouteFinder
                 </h5>            
@@ -21,8 +20,7 @@
                     </ul>
                 </nav>
                 <nav class="area-nav">
-                    {{parent}}
-                    {% for area in areas %}
+                    {% for area in parent %}
                         {% if not forloop.first %}
                             <span>
                                     > 
@@ -33,14 +31,13 @@
                         </a>
                     {% endfor %}
                 </nav>            
-            </div>
-        </header>
-        <div class="content">
+            </header>
+            <div class="content">
             <div class="main">
                 <div class="sidebar left">
                     <div class="sidebar-head">
-                        {% with areas|last as area %}
-                            <h2>Other Routes in {{ area.name }}</h2>
+                        {% with parent|last as area %}
+                            <h2>Other Routes in {{ area }}</h2>
                         {% endwith %}
                     </div>
                     <div class="sidebar-body scroll">

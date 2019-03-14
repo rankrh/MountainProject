@@ -1,0 +1,51 @@
+Rank 	State 	Sq. Miles 	% Of U.S.
+1 	 Alaska 	665,384.0 	17.53%
+2 	 Texas 	268,596.5 	7.07%
+3 	 California 	163,694.7 	4.31%
+4 	 Montana 	147,039.7 	3.87%
+5 	 New Mexico 	121,590.3 	3.20%
+6 	 Arizona 	113,990.3 	3.00%
+7 	 Nevada 	110,571.8 	2.91%
+8 	 Colorado 	104,093.7 	2.74%
+9 	 Oregon 	98,378.5 	2.59%
+10 	 Wyoming 	97,813.0 	2.58%
+11 	 Michigan 	96,713.5 	2.55%
+12 	 Minnesota 	86,935.8 	2.29%
+13 	 Utah 	84,896.9 	2.24%
+14 	 Idaho 	83,569.0 	2.20%
+15 	 Kansas 	82,278.4 	2.17%
+16 	 Nebraska 	77,347.8 	2.04%
+17 	 South Dakota 	77,115.7 	2.03%
+18 	 Washington 	71,298.0 	1.88%
+19 	 North Dakota 	70,698.3 	1.86%
+20 	 Oklahoma 	69,898.9 	1.84%
+21 	 Missouri 	69,707.0 	1.84%
+22 	 Florida 	65,757.7 	1.73%
+23 	 Wisconsin 	65,496.4 	1.73%
+24 	 Georgia 	59,425.2 	1.57%
+25 	 Illinois 	57,913.6 	1.53%
+26 	 Iowa 	56,272.8 	1.48%
+27 	 New York 	54,555.0 	1.44%
+28 	 North Carolina 	53,819.2 	1.42%
+29 	 Arkansas 	53,178.6 	1.40%
+30 	 Alabama 	52,420.1 	1.38%
+31 	 Louisiana 	52,378.1 	1.38%
+32 	 Mississippi 	48,431.8 	1.28%
+33 	 Pennsylvania 	46,054.4 	1.21%
+34 	 Ohio 	44,825.6 	1.18%
+35 	 Virginia 	42,774.9 	1.13%
+36 	 Tennessee 	42,144.3 	1.11%
+37 	 Kentucky 	40,407.8 	1.06%
+38 	 Indiana 	36,419.6 	0.96%
+39 	 Maine 	35,379.7 	0.93%
+40 	 South Carolina 	32,020.5 	0.84%
+41 	 West Virginia 	24,230.0 	0.64%
+42 	 Maryland 	12,405.9 	0.33%
+43 	 Hawaii 	10,931.7 	0.29%
+44 	 Massachusetts 	10,554.4 	0.28%
+45 	 Vermont 	9,616.4 	0.25%
+46 	 New Hampshire 	9,349.2 	0.25%
+47 	 New Jersey 	8,722.6 	0.23%
+48 	 Connecticut 	5,543.4 	0.15%
+49 	 Delaware 	2,488.7 	0.07%
+50 	 Rhode Island 	1,544.9 	0.04%

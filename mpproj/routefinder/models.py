@@ -38,7 +38,6 @@ class Area(models.Model):
 
         for area in AreaLinks.objects.filter(pk=self.id).order_by('from_id'):
             parent_areas.append(get_object_or_404(Area, pk=area.from_id))
-            print(area.id)
         parent_areas.append(self)
 
         return parent_areas
@@ -51,14 +50,14 @@ class Area(models.Model):
             level = 'Areas'
         return children, level
 
-    def classics(self):
+    def classics(self, limit=12):
 
         routes = RouteLinks.objects.filter(area=self.id)
         routes = Route.objects.filter(
             id__in=routes,
             bayes__gte=2.5).order_by(
                 '-bayes'
-            )[:12]
+            )[:limit]
         
         return routes
     

@@ -17,7 +17,16 @@ import pandas as pd
 
 
 def browse(request):
-    context = {}
+    base_areas = Area.objects.filter(from_id=None).order_by('id')
+
+    areas = []
+
+    for area in base_areas:
+        sub_areas = Area.objects.filter(from_id=area.id).order_by('id')
+        areas.append({area: sub_areas})
+
+    context = {
+        'areas': areas}
     return render(request, 'routefinder/browse.html', context)
 
 
@@ -35,7 +44,7 @@ def area(request, area_id):
         }
     try:
         area_styles = AreaGrades.objects.get(pk=area_id)
-    except:
+    except ObjectDoesNotExist:
         area_styles = None
 
 
@@ -85,7 +94,7 @@ def route(request, route_id):
 
     context = {
         'route': route_data,
-        'areas': route_data.areas(),
+        'parent': route_data.areas(),
         'area_routes': route_data.area_routes(),
         'similar_routes': route_data.similar_routes(),
         'terrain': route_data.terrain(),

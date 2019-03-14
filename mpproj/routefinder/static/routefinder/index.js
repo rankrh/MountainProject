@@ -75,3 +75,21 @@ function NextSystem(this_style, system) {
         current_system[i].style.display = 'none';
     }
 }
+
+function ReadMore(sub_area_class) {
+    var sub_areas = document.getElementsByClassName(sub_area_class);
+    var number_of_areas = sub_areas.length
+
+    for (var i=0; i<number_of_areas; i++) {
+        sub_areas[i].style.display = 'block'
+    }
+}
+
+function ReadLess(sub_area_class) {
+    var sub_areas = document.getElementsByClassName(sub_area_class);
+    var number_of_areas = sub_areas.length
+
+    for (var i=2; i<number_of_areas; i++) {
+        sub_areas[i].style.display = 'none'
+    }
+}

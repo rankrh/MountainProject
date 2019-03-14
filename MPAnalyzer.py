@@ -928,6 +928,8 @@ def MPAnalyzer():
             'rope_conv', 'boulder_conv', 'mixed_conv', 'aid_conv',
             'ice_conv', 'snow_conv', 'nccs_conv']        
         
+        average_stars = routes.stars.mean()
+        
         def area_styles_and_grades(area):
         
             area_routes = routes.loc[area]
@@ -941,20 +943,13 @@ def MPAnalyzer():
     
             grade_std.index = grade_std.index + '_std'
             
-            
-
-            score_total = area_routes.stars.sum()
+            score_total = (area_routes.stars * area_routes.votes).sum()
             votes_total = area_routes.votes.sum()
-            avg = area_routes.stars.mean()
-
             
-            bayes = (score_total / votes_total) + ((10 * avg)
-                / (votes_total + 10))
-
+            bayes = (score_total + 10 * average_stars) / (votes_total + 10)
             area_information = style.append(grade)
             area_information = area_information.append(grade_std)
-            area_information['bayes'] = bayes
-            
+            area_information['bayes'] = bayes            
             
             area_information = area_information.to_frame().transpose()
             
@@ -976,8 +971,11 @@ def MPAnalyzer():
                         score_std = int(area.rope_conv_std)
                     else:
                         score_std = score
-            
+                                    
                     for system in rope_systems:
+                        if score_std >= len(system_to_grade[system]):
+                            score_std = -1        
+
                         area[system] = system_to_grade[system][score]
                         area[system+'_std'] = system_to_grade[system][score_std]
                 else:
@@ -991,7 +989,6 @@ def MPAnalyzer():
                     try:
                         score = int(score)
                     except:
-                        error_log.write(str(area.name))
                         break 
             
                     score_std = area.boulder_conv_std
@@ -999,8 +996,10 @@ def MPAnalyzer():
                         score_std = int(score_std)
                     else:
                         score_std = score
-                    
+                                        
                     for system in boulder_systems:
+                        if score_std >= len(system_to_grade[system]):
+                            score_std = -1        
                         area[system] = system_to_grade[system][score]
                         area[system+'_std'] = system_to_grade[system][score_std]
                 else:
@@ -1015,7 +1014,6 @@ def MPAnalyzer():
                     try:
                         score = int(score)
                     except:
-                        error_log.write(str(area.name))
                         continue
         
                     if score_std == score_std:
@@ -1023,7 +1021,12 @@ def MPAnalyzer():
                     else:
                         score_std = score
         
+                    if score_std >= len(data['grades']):
+                        score_std = -1       
+
+        
                     area[data['rating']] = data['grades'][score]
+                    area[data['rating']+'_std'] = data['grades'][score_std]
                                 
             return area
         
@@ -1039,8 +1042,160 @@ def MPAnalyzer():
         area_information.to_sql(
             'area_grades',
             con=engine,
-            if_exists='replace')     
-                   
+            if_exists='replace')
+        
+        
+        countries = pd.read_csv('country_land_data.csv', encoding='latin-1')
+        countries.columns = ['name', 'land_area']
+        countries.set_index('name', inplace=True)
+        
+        countries.land_area = countries.land_area.map(lambda x: re.findall("([\d.]+)", x)[0])
+        countries.land_area = countries.land_area.astype('float64')
+        
+        states = pd.read_csv('state_land_data.csv')
+        states.columns=['region', 'land_area']
+        states.set_index('region', inplace=True)
+        states.land_area = states.land_area.astype('int32')
+        
+        land_area = pd.concat([states, countries]).sort_values(by='land_area')
+                
+        cursor.execute('''
+           SELECT id
+           FROM areas
+           WHERE
+               name = 'International' AND
+               from_id is Null''')
+        
+        international_id = cursor.fetchone()[0]
+        
+        country_ids =  pd.read_sql(f"""
+            SELECT id
+            FROM areas
+            WHERE
+                from_id = {international_id}""", con=engine).squeeze().tolist()
+        country_ids = tuple(country_ids)
+                
+        areas = pd.read_sql(f"""
+            SELECT
+                id,
+                name,
+                from_id
+            FROM areas
+            WHERE
+                from_id is Null OR
+                from_id = {international_id} OR
+                from_id IN {country_ids}""",
+            con=conn,
+            index_col='name')
+        
+        areas = pd.concat([areas, land_area], axis=1, sort=True)
+        areas = areas[~areas.land_area.isna() & ~areas.id.isna()]
+        areas.reset_index(inplace=True)
+        areas.set_index('id', inplace=True)
+        areas.index = areas.index.astype('int32')
+        areas.land_area = areas.land_area.astype('int32')
+        
+        area_ids = tuple(areas.index.tolist())
+        
+        bayes = pd.read_sql(f"""
+            SELECT
+                id,
+                bayes
+            FROM area_grades
+            WHERE id in {area_ids}""",
+            con=engine,
+            index_col='id')
+        
+        num_routes = pd.read_sql(f"""
+            SELECT *
+            FROM route_links
+            WHERE area in {area_ids}""",
+            con=engine,
+            index_col='area')
+        
+        num_routes = num_routes.groupby(num_routes.index)
+        num_routes = num_routes.apply(lambda x: len(x))
+        num_routes.index = num_routes.index.astype('int32')
+        num_routes.name = 'num_routes'
+        
+        areas = pd.concat([areas, bayes], axis=1)
+        areas = pd.concat([areas, num_routes], axis=1)
+        areas = areas[~areas.bayes.isna()]
+        
+        areas['density'] = areas.num_routes / areas.land_area
+        areas.bayes = areas.bayes * areas.density
+        areas.bayes = np.log(areas.bayes)
+        areas.bayes = 4 * (areas.bayes - areas.bayes.min()) / (areas.bayes.max() - areas.bayes.min())
+        
+        
+        
+        areas = areas.sort_values(by='bayes')
+        areas = areas['bayes'].to_frame()
+        
+        def update_sql(area):
+            rating = area.squeeze()
+            area_id = area.name
+            print(rating, area_id)
+            
+            cursor.execute(f'''
+               UPDATE area_grades
+               SET bayes = {rating}
+               WHERE id = {area_id}''')
+        
+        areas.apply(update_sql, axis=1)
+        
+        conn.commit()
+        
+
+    def get_links(route, route_links):
+        
+        route_id = route.name
+        
+        parents = [route.squeeze()]
+        base = False
+        
+        while not base:
+            try:
+                grandparent = route_links.loc[parents[-1]]['from_id']
+                parents.append(grandparent)
+            except:
+                base = True
+                
+        parents = pd.DataFrame({
+            'id': route_id,
+            'area': parents,
+            })
+                
+        parents.to_sql(
+            'route_links',
+            con=engine,
+            if_exists='append',
+            index=False)
+        
+        
+    def get_children(area):
+        try:
+            children = area_links.loc[area]
+        except:
+            return
+        
+        if type(children) is np.int64:
+            
+            children = pd.Series(
+                    data=children,
+                    index=[area],
+                    name='id')
+            children.index.name = 'from_id'
+    
+        for child in children:
+            grandchildren = get_children(child)
+            if grandchildren is not None:
+                grandchildren.index = [area] * len(grandchildren)
+                children = pd.concat([children, grandchildren])
+        
+        return children
+        
+
 
     # Fills in empty location data
     if click.confirm("Find location and rating data?"):
@@ -1086,10 +1241,50 @@ def MPAnalyzer():
         # Gets route scores for climbing styles
         find_route_styles('arete', 'chimney', 'crack', 'slab', 'overhang')
         
+    if click.confirm("Get Route links"):
+        query = "SELECT id, area_id FROM routes_scored"
+        routes = pd.read_sql(query, con=conn, index_col='id')
+            
+        routes['area_id'] = routes['area_id'].astype('int32')
+        query = "SELECT id, from_id FROM areas"
+        route_links = pd.read_sql(query, con=conn, index_col='id')
+        
+        cursor.execute('''DROP TABLE route_links''')
+        conn.commit()
+    
+        routes.progress_apply(
+            get_links,
+            args=(route_links,),
+            axis=1)
+
+    if click.confirm("Get area links"):
+        query = "SELECT id, from_id FROM areas"
+        area_links = pd.read_sql(query, con=engine)
+        area_links = area_links.dropna()
+        area_links = area_links.set_index('from_id').squeeze()
+        
+        area_links.index = area_links.index.astype('int32')
+        
+        all_children = pd.DataFrame()
+        for area in tqdm(area_links.index.unique()):
+            children = get_children(area)
+            all_children = pd.concat([all_children, children])
+            
+            
+        all_children.index.name = 'from_id'
+        all_children.columns=['id']
+        
+        all_children.to_sql(
+            'area_links',
+            con=engine,
+            if_exists='replace')
+
+
+
     if click.confirm("Find area terrain scores"):
+        
         get_area_terrain('arete', 'chimney', 'crack', 'slab', 'overhang')
-        
-        
+    
     print('Complete')
 
 

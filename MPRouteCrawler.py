@@ -34,6 +34,8 @@ the first route on the page has been scraped, and then get all routes before
 that.
 """
 
+
+from mpproj.routefinder.StyleInformation import *
 from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
@@ -1037,96 +1039,10 @@ def MPScraper():
         # Commits
         conn.commit()
         
-    def get_parent_areas(route):
-        
-        query = "SELECT id, area_id FROM routes_scored"
-        routes = pd.read_sql(query, con=conn, index_col='id')
-        
-        routes['area_id'] = routes['area_id'].astype('int32')
-        
-        query = "SELECT id, from_id FROM areas"
-        links = pd.read_sql(query, con=conn, index_col='id')
-
-        route_id = route.name
-        parents = [route['area_id']]
-        
-        base = False
-        
-        while not base:
-            try:
-                grandparent = links.loc[parents[-1]]['from_id']
-                parents.append(grandparent)
-            except:
-                base = True
-                
-        link = pd.DataFrame({
-            'id': route_id,
-            'area': parents,
-            })
-    
-        link.to_sql(
-            'route_links',
-            con=engine,
-            if_exists='append',
-            index=False)
-        
-        
-        query = "SELECT id, from_id FROM areas"
-        links = pd.read_sql(query, con=engine)
-        links = links.dropna()
-        links = links.set_index('from_id').squeeze()
-        
-        links.index = links.index.astype('int32')
-        
-        
-        all_children = pd.DataFrame()
-        def get_children(area):
-            try:
-                children = links.loc[area]
-            except:
-                return
-            
-            if type(children) is np.int64:
-                
-                children = pd.Series(
-                        data=children,
-                        index=[area],
-                        name='id')
-                children.index.name = 'from_id'
-        
-            for child in children:
-                grandchildren = get_children(child)
-                if grandchildren is not None:
-                    grandchildren.index = [area] * len(grandchildren)
-                    children = pd.concat([children, grandchildren])
-                    
-            return children
-            
-        
-        for area in tqdm(links.index.unique()):
-            children = get_children(area)
-            all_children = pd.concat([all_children, children])
-            
-            
-        all_children.index.name = 'from_id'
-        all_children.columns=['id']
-        
-        all_children.to_sql(
-            'area_links',
-            con=engine,
-            if_exists='replace')
-        
-        
-        
-        
     get_regions()
     while True:
         get_areas(region_id=None)
         
-        
-    routes.progress_apply(get_parent_areas, axis=1)
-
-
 
 if __name__ == '__main__':
     while True:

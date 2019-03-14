@@ -5,18 +5,51 @@
         <meta charset="UTF-8">
         <title>Browse</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
         <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
-        <header>
-            <nav class="primary-header">
-                <ul>
-                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
-                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
-                </ul>
-            </nav>
+        <header class='primary-header'>
+            <div class="container">
+                <h5 id="main-heading">
+                    RouteFinder
+                </h5>            
+                <nav class="primary-nav">
+                    <ul>
+                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                    </ul>
+                </nav>
+            </div>
         </header>
-        Enter your name: <input type="text" id="fname" onblur="myFunction()">
-        <p>When you leave the input field, a function is triggered which transforms the input text to upper case.</p>
+        <div id="results">
+                <div class="padding">
+                    <div>
+                        {% for area_group in areas %}
+                            {% for main_area, sub_areas in area_group.items %}
+                                <div class="area-group"
+                                    onmouseenter="ReadMore('{{main_area}}-sub-areas');"
+                                    onmouseleave="ReadLess('{{main_area}}-sub-areas');">
+                                    <a href="{% url 'routefinder:area' main_area.id %}">
+                                        <h3>
+                                            {{main_area}}
+                                        </h3>
+                                    </a>
+                                    <ul class="sub-areas">
+                                        {% for area in sub_areas %}
+                                            <li class="{{main_area}}-sub-areas">
+                                                <a href="{% url 'routefinder:area' area.id %}">
+                                                    {{area}}
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>      
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
 </html>

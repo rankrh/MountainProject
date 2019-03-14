@@ -9,19 +9,27 @@
     </head>
     <body>
         <header class='primary-header'>
-            <div class="container">
-                <a href="{% url 'routefinder:search' %}">
-                    <h5 id="main-heading">
-                        RouteFinder
-                    </h5>            
-                </a>
-                <nav class="primary-nav">
-                    <ul>
-                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
-                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
-                    </ul>
-                </nav>
-            </div>
+            <h5 id="main-heading">
+                RouteFinder
+            </h5>            
+            <nav class="primary-nav">
+                <ul>
+                    <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                    --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                </ul>
+            </nav>
+            <nav class="area-nav">
+                {% for area in parent %}
+                    {% if not forloop.first %}
+                        <span>
+                                > 
+                        </span>
+                    {% endif %}
+                    <a href="{% url 'routefinder:area' area.id %}">
+                        <span class="clickable">{{area.name}}<span>
+                    </a>
+                {% endfor %}
+            </nav>            
         </header>
         <div id="results">
             <div class="padding">
