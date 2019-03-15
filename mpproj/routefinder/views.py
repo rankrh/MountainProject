@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import render
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import *
 from .models import Results
@@ -10,13 +11,46 @@ from .models import Area
 from .models import AreaTerrain
 from .models import AreaGrades
 from .models import AreaLinks
+from .models import TerrainTypes
 from .StyleInformation import *
 from .forms import SortMethod
 import os
 import pandas as pd
 
 
+def search(request):
+    context = {
+        'rope_grades': yds_rating,
+        'boulder_grades': hueco_rating,
+        'mixed_grades': mixed_rating,
+        'aid_grades': aid_rating,
+        'snow_grades': snow_rating,
+        'ice_grades': ice_rating,
+        'pitch_count': [p for p in range(11)],
+        'danger_levels': ['G', 'PG13', 'R', 'All Danger Levels'],
+        'commitment_levels':['I', 'II', 'III', 'IV', 'All Commitment Levels'],
+        'terrain_types': ['arete', 'crack', 'chimney', 'slab', 'overhang']}
+    return render(request, 'routefinder/index.html', context)
+
+
+def results(request):
+
+    get_request = Results.parse_get_request(request.GET)
+
+    context = {
+        'results': Results.best_routes(get_request),
+        'location': get_request['location']
+    }
+
+    return render(request, 'routefinder/results.html', context)
+
+
 def browse(request):
+
+    return render(request, 'routefinder/browse.html', {})
+
+
+def location(request):
     base_areas = Area.objects.filter(from_id=None).order_by('id')
 
     areas = []
@@ -27,8 +61,32 @@ def browse(request):
 
     context = {
         'areas': areas}
-    return render(request, 'routefinder/browse.html', context)
+    return render(request, 'routefinder/location.html', context)
 
+
+def style(request):
+
+    return render(request, 'routefinder/style.html', {})
+
+
+def terrain(request):
+
+    return render(request, 'routefinder/terrain.html', {})
+
+def terrain_style(request, terrain_type):
+
+    if terrain_type not in terrain_types:
+        raise Http404
+    
+    areas = TerrainTypes.get_areas(terrain_type)
+    routes = TerrainTypes.get_routes(terrain_type)
+    context = {
+        'terrain': terrain_type,
+        'areas': areas,
+        'routes': routes,
+    }
+
+    return render(request, 'routefinder/terrain_style.html', context)
 
 def area(request, area_id):
     area_data = get_object_or_404(Area, pk=area_id)
@@ -106,29 +164,4 @@ def route(request, route_id):
     return render(request, 'routefinder/route.html', context)
 
 
-def results(request):
-
-    get_request = Results.parse_get_request(request.GET)
-
-    context = {
-        'results': Results.best_routes(get_request),
-        'location': get_request['location']
-    }
-
-    return render(request, 'routefinder/results.html', context)
-
-
-def search(request):
-    context = {
-        'rope_grades': yds_rating,
-        'boulder_grades': hueco_rating,
-        'mixed_grades': mixed_rating,
-        'aid_grades': aid_rating,
-        'snow_grades': snow_rating,
-        'ice_grades': ice_rating,
-        'pitch_count': [p for p in range(11)],
-        'danger_levels': ['G', 'PG13', 'R', 'All Danger Levels'],
-        'commitment_levels':['I', 'II', 'III', 'IV', 'All Commitment Levels'],
-        'terrain_types': ['arete', 'crack', 'chimney', 'slab', 'overhang']}
-    return render(request, 'routefinder/index.html', context)
 

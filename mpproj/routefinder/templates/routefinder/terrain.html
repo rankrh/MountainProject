@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Terrain</title>
+        <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
+        <script src="{% static 'routefinder/index.js' %}"></script>
+    </head>
+    <body>
+        <header class='primary-header'>
+            <div class="container">
+                <h5 id="main-heading">
+                    RouteFinder
+                </h5>            
+                <nav class="primary-nav">
+                    <ul>
+                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+        <div class="row">
+            <a class="col-1-5 image-label" href="arete">
+                <img src="{% static 'images/arete.gif' %}" class="terrain-image" />
+                <h3>Aretes</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="slab">
+                <img src="{% static 'images/slab.gif' %}" class="terrain-image"/>
+                <h3>Slab</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="chimney">
+                    <img src="{% static 'images/chimney.gif' %}" class="terrain-image"/>
+                <h3>Chimney</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="overhang">
+                    <img src="{% static 'images/overhang.gif' %}" class="terrain-image"/>
+                <h3>Overhangs</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href='crack'>
+                    <img src="{% static 'images/crack.gif' %}" class="terrain-image"/>
+                <h3>Cracks</h3>
+            </a>
+            
+        </div>
+    </body>
+</html>

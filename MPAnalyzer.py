@@ -898,6 +898,35 @@ def MPAnalyzer():
             con=engine,
             if_exists='replace',
             dtype=dtype)
+        
+        route_terrain = pd.read_sql("""
+            SELECT
+                id,
+                slab,
+                overhang,
+                arete,
+                chimney,
+                crack
+            FROM routes_scored""",
+            con=engine,
+            index_col='id')
+                
+        for i in range(5):
+            feature = terrain_types[i]
+            other_features = terrain_types[:i] + terrain_types[i+1:]
+            other_features = route_terrain[other_features]
+            route_terrain[feature+'_diff'] = route_terrain[feature] * (
+                                            route_terrain[feature]
+                                            - other_features.sum(axis=1))
+            
+        terrain_diff = [terrain + '_diff' for terrain in terrain_types]
+        
+        route_terrain = route_terrain[terrain_diff]
+        
+        route_terrain.to_sql(
+            'route_terrain_disparity',
+            if_exists='replace',
+            con=engine)
 
         return
             
@@ -1146,6 +1175,42 @@ def MPAnalyzer():
         
         conn.commit()
         
+        area_terrain= pd.read_sql("""
+            SELECT *
+            FROM area_terrain""",
+            con=engine,
+            index_col='id')
+        
+        terrain_types = ['slab', 'arete', 'overhang', 'chimney', 'crack']
+        
+        number_of_routes = pd.read_sql("""
+            SELECT *
+            FROM route_links""",
+            con=engine,
+            index_col='area')
+        
+        number_of_routes = number_of_routes.groupby(number_of_routes.index)
+        number_of_routes = number_of_routes.apply(lambda x: len(x)).squeeze()
+        number_of_routes = np.log(number_of_routes)
+        number_of_routes.name = 'route_count'
+        
+        area_terrain = pd.concat([area_terrain, number_of_routes], axis=1)
+        
+        for i in range(5):
+            feature = terrain_types[i]
+            other_features = terrain_types[:i] + terrain_types[i+1:]
+            other_features = area_terrain[other_features]
+            area_terrain[feature+'_diff'] = (
+                area_terrain[feature]
+                    * (area_terrain[feature] - other_features.sum(axis=1))
+                * area_terrain.route_count)
+            
+        
+        area_terrain.to_sql(
+            'area_terrain',
+            if_exists='replace',
+            con=engine)
+        
 
     def get_links(route, route_links):
         
@@ -1165,6 +1230,8 @@ def MPAnalyzer():
             'id': route_id,
             'area': parents,
             })
+            
+        parents = parents.dropna(how='any')
                 
         parents.to_sql(
             'route_links',
@@ -1278,8 +1345,6 @@ def MPAnalyzer():
             'area_links',
             con=engine,
             if_exists='replace')
-
-
 
     if click.confirm("Find area terrain scores"):
         

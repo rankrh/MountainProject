@@ -132,6 +132,27 @@ body {
     margin: 0 1.5%;
 }
 
+.col-1-5 {
+    width: 18%;
+    height: 98%;
+    display: inline-block;
+    padding: 1%;
+}
+
+.image-label:hover {
+    /* background: linear-gradient(var(--secondary-container-color), var(--main-container-color)); */
+    box-shadow: 2px 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);
+    border-radius: 10px;
+}
+
+.image-label h3{
+    text-align: center;
+    margin-top: 24px;
+    border-bottom: 1px solid var(--highlight-mid);
+    border-top: 1px solid var(--highlight-mid);
+    padding: 12px 0;
+}
+
 .container {
     display: inline;
     min-width: 400px;
@@ -174,7 +195,7 @@ body {
 .area-nav {
     width: 600px;
     margin-left: 388px;
-    display: inline-block
+    float: left;
 }
 
 /* Search Page */
@@ -652,16 +673,20 @@ input:checked + .rope-type {
 .padding {
     width: 800px;
     margin-left: 140px;
-    clear: both;
-    }
-
-
-.padding {
     min-height: 500px;
     border-radius: 15px;
     background: linear-gradient(var(--main-container-color), var(--secondary-container-color));
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);
     padding: 24px;
+}
+
+.row {
+    width: 80%;
+    border-radius: 15px;
+    background: linear-gradient(var(--main-container-color), var(--secondary-container-color));
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.24);
+    padding: 24px;
+    margin: 36px auto;
 }
 
 #filters {

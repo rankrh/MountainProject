@@ -22,14 +22,16 @@
                 </nav>
             </div>
         </header>
-        <div id="results">
-                <div class="padding">
-                    <a href="{% url 'routefinder:browse' %}">Browse</a>
-                    <a href="{% url 'routefinder:style' %}">Style</a>
-                    <a href="{% url 'routefinder:terrain' %}">Terrain</a>
-                    <a href="{% url 'routefinder:location' %}">Location</a>
-                </div>
-            </div>
+        <div>
+            <ul>
+                {% for route in routes %}
+                    <li>
+                        <a href="{% url 'routefinder:route' route.id %}">
+                            {{route}}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
     </body>
 </html>

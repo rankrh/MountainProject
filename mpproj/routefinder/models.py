@@ -15,10 +15,12 @@ password = config.config()['password']
 database = config.config()['database']
 
 connection = f'postgresql://{user}:{password}@{host}:5432/{database}'
-engine = create_engine(connection)
+engine = create_engine(connection) 
+
 
 
 class Area(models.Model):
+    id = models.FloatField(primary_key=True)
     name = models.TextField(blank=True, null=True)
     url = models.TextField(unique=True, blank=True, null=True)
     from_id = models.IntegerField(blank=True, null=True)
@@ -195,6 +197,7 @@ class AreaLinks(models.Model):
 
 
 class RouteLinks(models.Model):
+    id = models.FloatField(primary_key=True)
     area = models.FloatField(blank=True, null=True)
 
     class Meta:
@@ -263,9 +266,9 @@ class Route(models.Model):
 
     def areas(self):
         parents = []
-
         for area in RouteLinks.objects.filter(pk=self.id).order_by('area'):
-            parents.append(get_object_or_404(Area, pk=area.area))
+            if area.area is not None:
+                parents.append(get_object_or_404(Area, pk=area.area))
         return parents
 
 
@@ -627,7 +630,19 @@ class Results(models.Model):
 
         return get_request
     
+class TerrainTypes(models.Model):
+    def get_areas(terrain_type):
+        return terrain_type
+        
+    def get_routes(terrain_type):
 
+        filters = {
+            terrain_type + '__gte': 0.95,
+            'bayes__gte': 3.5}
+
+        routes = Route.objects.filter(**filters).order_by('-bayes')
+
+        return routes
 
 
 
