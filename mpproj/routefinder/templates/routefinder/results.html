@@ -5,6 +5,7 @@
         <meta charset="UTF-8">
         <title>Results</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
         <script src="{% static 'routefinder/index.js' %}"></script>
     </head>
     <body>
@@ -34,6 +35,9 @@
         <div id="results">
             <div class="padding">
                 <div id="center-col" class="scroll">
+                    <div class="browse-head">
+                        <h3>Results</h3>
+                    </div>                
                     {% if results is not None %}
                         {% for route in results %}
                             <div class="route">
@@ -44,8 +48,8 @@
                                         </h2>
                                     </div>
                                 </a>
-                                <div class="route-information">
-                                    <div class="basics">
+                                <div>
+                                    <div>
                                         <h2>
                                             <span>A
                                                 {% if route.pitches > 0 %}
@@ -110,7 +114,7 @@
                                             </span>
                                         </h2>
                                     </div>
-                                    <div class="route-location">
+                                    <div>
                                         {% if location is not None %}
                                             <h2>
                                                 {{route.distance|floatformat:"0"}} miles away.

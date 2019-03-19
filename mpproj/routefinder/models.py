@@ -18,7 +18,6 @@ connection = f'postgresql://{user}:{password}@{host}:5432/{database}'
 engine = create_engine(connection) 
 
 
-
 class Area(models.Model):
     id = models.FloatField(primary_key=True)
     name = models.TextField(blank=True, null=True)
@@ -26,58 +25,16 @@ class Area(models.Model):
     from_id = models.IntegerField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
-    
-    class Meta:
-        managed = False
-        db_table = 'areas'
-        ordering = ['from_id']
-
-    def __str__(self):
-        return self.name
-
-    def parents(self):
-        parent_areas = []
-
-        for area in AreaLinks.objects.filter(pk=self.id).order_by('from_id'):
-            parent_areas.append(get_object_or_404(Area, pk=area.from_id))
-        parent_areas.append(self)
-
-        return parent_areas
-
-    def children(self):
-        level = 'Routes'
-        children = Route.objects.filter(area_id=self.id)
-        if len(children) == 0:
-            children = Area.objects.filter(from_id=self.id)
-            level = 'Areas'
-        return children, level
-
-    def classics(self, limit=12):
-
-        routes = RouteLinks.objects.filter(area=self.id)
-        routes = Route.objects.filter(
-            id__in=routes,
-            bayes__gte=2.5).order_by(
-                '-bayes'
-            )[:limit]
-        
-        return routes
-    
-
-class AreaTerrain(models.Model):
-    slab = models.FloatField(blank=True, null=True)
     arete = models.FloatField(blank=True, null=True)
-    crack = models.FloatField(blank=True, null=True)
     chimney = models.FloatField(blank=True, null=True)
+    slab = models.FloatField(blank=True, null=True)
     overhang = models.FloatField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'area_terrain'
-
-
-class AreaGrades(models.Model):
-    id = models.FloatField(primary_key=True)
+    crack = models.FloatField(blank=True, null=True)
+    arete_diff = models.FloatField(blank=True, null=True)
+    chimney_diff = models.FloatField(blank=True, null=True)
+    slab_diff = models.FloatField(blank=True, null=True)
+    overhang_diff = models.FloatField(blank=True, null=True)
+    crack_diff = models.FloatField(blank=True, null=True)
     aid = models.FloatField(blank=True, null=True)
     aid_conv = models.FloatField(blank=True, null=True)
     aid_conv_std = models.FloatField(blank=True, null=True)
@@ -131,10 +88,42 @@ class AreaGrades(models.Model):
     yds_rating_std = models.TextField(blank=True, null=True)
     za_rating = models.TextField(blank=True, null=True)
     za_rating_std = models.TextField(blank=True, null=True)
-
+    
     class Meta:
         managed = False
-        db_table = 'area_grades'
+        db_table = 'areas'
+        ordering = ['from_id']
+
+    def __str__(self):
+        return self.name
+
+    def parents(self):
+        parent_areas = []
+
+        for area in AreaLinks.objects.filter(pk=self.id).order_by('from_id'):
+            parent_areas.append(get_object_or_404(Area, pk=area.from_id))
+        parent_areas.append(self)
+
+        return parent_areas
+
+    def children(self):
+        level = 'Routes'
+        children = Route.objects.filter(area_id=self.id)
+        if len(children) == 0:
+            children = Area.objects.filter(from_id=self.id)
+            level = 'Areas'
+        return children, level
+
+    def classics(self, limit=12):
+
+        routes = RouteLinks.objects.filter(area=self.id)
+        routes = Route.objects.filter(
+            id__in=routes,
+            bayes__gte=2.5).order_by(
+                '-bayes'
+            )[:limit]
+        
+        return routes
 
     def get_top_styles(self):
         route_styles = pd.Series(
@@ -142,7 +131,6 @@ class AreaGrades(models.Model):
             index=climbing_styles+['alpine']
         )
         return route_styles.sort_values(ascending=False)
-
 
     def styles(self):
         route_styles = self.get_top_styles()
@@ -187,6 +175,14 @@ class AreaGrades(models.Model):
             area_avg = {top_style + '_rating': getattr(self, top_style + '_rating_std')} 
         return area_avg
 
+    def terrain(self):
+        area_terrain = pd.Series(
+            data = [self.arete, self.chimney, self.slab, self.overhang, self.crack],
+            index = terrain_types)
+
+        area_terrain[area_terrain < 0.15] = 0.15
+
+        return area_terrain
 
 class AreaLinks(models.Model):
     from_id = models.BigIntegerField(blank=True, null=True)
@@ -211,7 +207,6 @@ class Route(models.Model):
     crack = models.FloatField(blank=True, null=True)
     slab = models.FloatField(blank=True, null=True)
     overhang = models.FloatField(blank=True, null=True)
-    word_count = models.FloatField(blank=True, null=True)
     name = models.TextField(blank=True, null=True)
     url = models.TextField(blank=True, null=True)
     stars = models.FloatField(blank=True, null=True)
@@ -255,7 +250,6 @@ class Route(models.Model):
     area_id = models.FloatField(blank=True, null=True)
     area_group = models.FloatField(blank=True, null=True)
     area_counts = models.FloatField(blank=True, null=True)
-    error = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
@@ -631,18 +625,37 @@ class Results(models.Model):
         return get_request
     
 class TerrainTypes(models.Model):
-    def get_areas(terrain_type):
-        return terrain_type
+    def get_areas(terrain_type, **filters):
+
+        filters[terrain_type + '_diff__gte'] =  0.95
+        areas = Area.objects.filter(**filters).order_by('-bayes')[:50]
+
+        return areas
         
-    def get_routes(terrain_type):
+    def get_routes(terrain_type, **filters):
 
-        filters = {
-            terrain_type + '__gte': 0.95,
-            'bayes__gte': 3.5}
-
-        routes = Route.objects.filter(**filters).order_by('-bayes')
+        filters[terrain_type + '__gte'] = 0.95
+        filters['bayes__gte'] = 3.0
+        routes = Route.objects.filter(**filters).order_by('-'+terrain_type)[:50]
 
         return routes
+
+class StyleTypes(models.Model):
+    def get_routes(style, **filters):
+        
+        filters[style] = True
+        filters['bayes__gte'] = 3.5
+
+        routes = Route.objects.filter(**filters).order_by('-bayes')[:50]
+
+        return routes
+
+    def get_areas(style, **filters):
+
+        filters[style+'__gte'] = 0.75
+
+        areas = Area.objects.filter(**filters).order_by('-bayes')[:50]
+        return areas
 
 
 

@@ -8,10 +8,9 @@ from django.core.exceptions import *
 from .models import Results
 from .models import Route
 from .models import Area
-from .models import AreaTerrain
-from .models import AreaGrades
 from .models import AreaLinks
 from .models import TerrainTypes
+from .models import StyleTypes
 from .StyleInformation import *
 from .forms import SortMethod
 import os
@@ -73,49 +72,59 @@ def terrain(request):
 
     return render(request, 'routefinder/terrain.html', {})
 
+
 def terrain_style(request, terrain_type):
 
     if terrain_type not in terrain_types:
         raise Http404
     
-    areas = TerrainTypes.get_areas(terrain_type)
     routes = TerrainTypes.get_routes(terrain_type)
+
+    parents = [get_object_or_404(Route, pk=route.id).areas() for route in routes]
+
+    routes = [(routes[i], parents[i]) for i in range(len(routes))]
     context = {
         'terrain': terrain_type,
-        'areas': areas,
         'routes': routes,
     }
 
     return render(request, 'routefinder/terrain_style.html', context)
 
+
+def terrain_areas(request, terrain_type):
+    if terrain_type not in terrain_types:
+        raise Http404
+    
+    areas = TerrainTypes.get_areas(terrain_type)
+
+    area_objects = [get_object_or_404(Area, pk=area.id) for area in areas]
+    parents = [area.parents() for area in area_objects]
+    styles = [area.styles() for area in area_objects]
+    grades = [area.grade_avg() for area in area_objects]
+
+    areas = [(areas[i], parents[i][:-1], styles[i], grades[i]) for i in range(len(areas))]
+
+    context = {
+        'terrain': terrain_type,
+        'areas': areas,
+    }
+
+    return render(request, 'routefinder/terrain_areas.html', context)
+
+
 def area(request, area_id):
     area_data = get_object_or_404(Area, pk=area_id)
-    try:
-        area_terrain = AreaTerrain.objects.get(pk=area_id)
-    except ObjectDoesNotExist:
-        area_terrain = {
-            'arete': 0.15,
-            'chimney': 0.15,
-            'crack': 0.15,
-            'slab': 0.15,
-            'overhang': 0.15
-        }
-    try:
-        area_styles = AreaGrades.objects.get(pk=area_id)
-    except ObjectDoesNotExist:
-        area_styles = None
 
-
-    if area_styles is not None:
-        pitches = area_styles.pitches
+    if area_data is not None:
+        pitches = area_data.pitches
         if pitches is not None:
             pitches = round(pitches)
 
-        length = area_styles.length
+        length = area_data.length
         if length is not None:
             length = round(length)
         
-        rating = area_styles.bayes
+        rating = area_data.bayes
         if rating is not None:
             rating = round(rating, 1)
 
@@ -124,12 +133,12 @@ def area(request, area_id):
             'parent': area_data.parents(),
             'children': area_data.children(),
             'classics': area_data.classics(),
-            'terrain': area_terrain,
-            'styles': area_styles.styles(),
-            'grade_avg': area_styles.grade_avg(),
-            'grade_std': area_styles.grade_std(),
+            'terrain': area_data.terrain(),
+            'styles': area_data.styles(),
+            'grade_avg': area_data.grade_avg(),
+            'grade_std': area_data.grade_std(),
             'rating': rating,
-            'commitment': area_styles.alpine_rating,
+            'commitment': area_data.alpine_rating,
             'pitches': pitches,
             'length': length,
         }
@@ -164,4 +173,42 @@ def route(request, route_id):
     return render(request, 'routefinder/route.html', context)
 
 
+def climbing_style(request, climbing_style):
+
+    if climbing_style not in climbing_styles + ['alpine', 'all']:
+        raise Http404
+    
+    routes = StyleTypes.get_routes(climbing_style)
+
+    parents = [get_object_or_404(Route, pk=route.id).areas() for route in routes]
+
+    routes = [(routes[i], parents[i]) for i in range(len(routes))]
+
+    context = {
+        'style': climbing_style,
+        'routes': routes,
+    }
+    return render(request, 'routefinder/climbing_style.html', context)
+
+
+def area_style(request, climbing_style):
+
+
+    if climbing_style not in climbing_styles:
+        raise Http404
+    
+    areas = StyleTypes.get_areas(climbing_style)
+
+    area_objects = [get_object_or_404(Area, pk=area.id) for area in areas]
+    parents = [area.parents() for area in area_objects]
+    styles = [area.styles() for area in area_objects]
+    grades = [area.grade_avg() for area in area_objects]
+
+    areas = [(areas[i], parents[i][:-1], styles[i], grades[i]) for i in range(len(areas))]
+
+    context = {
+        'areas': areas,
+        'style': climbing_style,
+    }
+    return render(request, 'routefinder/area_style.html', context)
 

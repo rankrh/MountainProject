@@ -22,14 +22,20 @@
                 </nav>
             </div>
         </header>
-        <div id="results">
-                <div class="padding">
-                    <a href="{% url 'routefinder:browse' %}">Browse</a>
-                    <a href="{% url 'routefinder:style' %}">Style</a>
-                    <a href="{% url 'routefinder:terrain' %}">Terrain</a>
-                    <a href="{% url 'routefinder:location' %}">Location</a>
-                </div>
-            </div>
+        <div class="row">
+            <h4 style="text-align: center; margin-bottom: 24px;">Browse By</h4>
+            <a class="col image-label" href="{% url 'routefinder:style' %}">
+                <img src="{% static 'images/all.png' %}" class="terrain-image" />
+                <h3>Style</h3>
+            </a><!--
+            --><a class="col image-label"href="{% url 'routefinder:terrain' %}">
+                <img src="{% static 'images/overhang.gif' %}" class="terrain-image"/>
+                <h3>Terrain</h3>
+            </a><!--
+            --><a class="col image-label" href="{% url 'routefinder:location' %}">
+                    <img src="{% static 'images/globe.png' %}" class="terrain-image"/>
+                <h3>Location</h3>
+            </a>
         </div>
     </body>
 </html>

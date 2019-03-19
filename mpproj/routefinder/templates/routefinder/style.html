@@ -3,7 +3,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Browse</title>
+        <title>Styles</title>
         <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
         <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
         <script src="{% static 'routefinder/index.js' %}"></script>
@@ -22,10 +22,48 @@
                 </nav>
             </div>
         </header>
-        <div id="results">
-                <div class="padding">
-                </div>
-            </div>
+        <div class="row">
+            <a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'sport' %}">
+                <img src="{% static 'images/sport.png' %}" class="terrain-image" />
+                <h3>Sport</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'trad' %}">
+                <img src="{% static 'images/trad.png' %}" class="terrain-image"/>
+                <h3>Trad</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'tr' %}">
+                    <img src="{% static 'images/tr.png' %}" class="terrain-image"/>
+                <h3>Top Rope</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'boulder' %}">
+                    <img src="{% static 'images/boulder.png' %}" class="terrain-image"/>
+                <h3>Boulder</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'aid' %}">
+                    <img src="{% static 'images/aid.png' %}" class="terrain-image"/>
+                <h3>Aid</h3>
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'snow' %}">
+                    <img src="{% static 'images/snow.png' %}" class="terrain-image"/>
+                <h3>Snow</h3>      
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'ice' %}">
+                    <img src="{% static 'images/ice.png' %}" class="terrain-image"/>
+                <h3>Ice</h3>  
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'mixed' %}">
+                    <img src="{% static 'images/mixed.png' %}" class="terrain-image"/>
+                <h3>Mixed</h3>  
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'alpine' %}">
+                <img src="{% static 'images/alpine.png' %}" class="terrain-image"/>
+                <h3>Alpine</h3>  
+            </a><!--
+            --><a class="col-1-5 image-label" href="{% url 'routefinder:climbing_style' 'all' %}">
+                <img src="{% static 'images/all.png' %}" class="terrain-image"/>
+                <h3>Any</h3>  
+            </a>
+
         </div>
     </body>
 </html>

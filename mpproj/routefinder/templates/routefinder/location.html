@@ -27,9 +27,7 @@
                     <div>
                         {% for area_group in areas %}
                             {% for main_area, sub_areas in area_group.items %}
-                                <div class="area-group"
-                                    onmouseenter="ReadMore('{{main_area}}-sub-areas');"
-                                    onmouseleave="ReadLess('{{main_area}}-sub-areas');">
+                                <div class="area-group scroll">
                                     <a href="{% url 'routefinder:area' main_area.id %}">
                                         <h3>
                                             {{main_area}}

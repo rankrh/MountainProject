@@ -19,7 +19,6 @@ import psycopg2
 import re
 import click
 from tqdm import tqdm
-from sqlalchemy.types import TEXT, INTEGER, BOOLEAN, FLOAT
 from mpproj.routefinder.StyleInformation import *
 
 
@@ -844,373 +843,21 @@ def MPAnalyzer():
 
         updated.rename_axis('id', inplace=True)
         
-        # Datatypes for columns
-        dtype = {
-            'id': INTEGER(),
-            'name': TEXT(),
-            'url': TEXT(),
-            'bayes': FLOAT(),
-            'latitude': FLOAT(),
-            'longitude': FLOAT(),
-            'trad': BOOLEAN(),
-            'tr': BOOLEAN(),
-            'sport': BOOLEAN(),
-            'yds_rating' : TEXT(),
-            'french_rating' : TEXT(),
-            'ewbanks_rating' : TEXT(),
-            'uiaa_rating' : TEXT(),
-            'za_rating' : TEXT(),
-            'british_rating' : TEXT(),
-            'rope_conv': INTEGER(),
-            'aid': BOOLEAN(),
-            'aid_rating' : TEXT(),
-            'aid_conv': INTEGER(),
-            'snow': BOOLEAN(),
-            'snow_rating' : TEXT(),
-            'snow_conv': INTEGER(),
-            'ice': BOOLEAN(),
-            'ice_rating' : TEXT(),
-            'ice_conv': INTEGER(),
-            'mixed': BOOLEAN(),
-            'mixed_rating' : TEXT(),
-            'mixed_conv': INTEGER(),
-            'boulder': BOOLEAN(),
-            'hueco_rating' : TEXT(),
-            'font_rating' : TEXT(),
-            'boulder_conv': INTEGER(),
-            'alpine': BOOLEAN(),
-            'nccs_rating' : TEXT(),
-            'nccs_conv': INTEGER(),
-            'danger_rating' : TEXT(),
-            'danger_conv': INTEGER(),
-            'pitches': INTEGER(),
-            'length': INTEGER(),
-            'area_id': INTEGER(),
-            'area_group': INTEGER(),
-            'area_counts': INTEGER()}
-
-        for style in styles:
-            dtype[style] = FLOAT()
+        for i in range(5):
+            feature = terrain_types[i]
+            other_features = terrain_types[:i] + terrain_types[i+1:]
+            other_features = updated[other_features]
+            updated[feature+'_diff'] = updated[feature] * (
+                                            updated[feature]
+                                            - other_features.sum(axis=1))
 
         # Write to Database        
         updated.to_sql(
             'Routes_scored',
             con=engine,
-            if_exists='replace',
-            dtype=dtype)
-        
-        route_terrain = pd.read_sql("""
-            SELECT
-                id,
-                slab,
-                overhang,
-                arete,
-                chimney,
-                crack
-            FROM routes_scored""",
-            con=engine,
-            index_col='id')
-                
-        for i in range(5):
-            feature = terrain_types[i]
-            other_features = terrain_types[:i] + terrain_types[i+1:]
-            other_features = route_terrain[other_features]
-            route_terrain[feature+'_diff'] = route_terrain[feature] * (
-                                            route_terrain[feature]
-                                            - other_features.sum(axis=1))
-            
-        terrain_diff = [terrain + '_diff' for terrain in terrain_types]
-        
-        route_terrain = route_terrain[terrain_diff]
-        
-        route_terrain.to_sql(
-            'route_terrain_disparity',
-            if_exists='replace',
-            con=engine)
-
-        return
-            
-    
-    def get_area_terrain(*styles):
-        query = "SELECT * FROM route_links"
-        routes_in_area = pd.read_sql(
-            query, con=engine, index_col='area').squeeze()
-                
-        query = """
-            SELECT
-                route_id, sport, trad, tr, boulder, mixed, aid, ice, snow,
-                alpine, rope_conv, boulder_conv, mixed_conv, aid_conv,
-                ice_conv, snow_conv,nccs_conv, pitches, length,
-                danger_conv, stars, votes
-            FROM routes
-            """
-        routes = pd.read_sql(query, con=engine, index_col='route_id')
-        
-        
-        climbing_styles = [
-            'sport', 'trad', 'tr', 'boulder', 'mixed', 'aid', 'ice',
-            'snow', 'alpine']
-        
-        other = ['pitches', 'length', 'danger_conv']
-        
-        grades = [
-            'rope_conv', 'boulder_conv', 'mixed_conv', 'aid_conv',
-            'ice_conv', 'snow_conv', 'nccs_conv']        
-        
-        average_stars = routes.stars.mean()
-        
-        def area_styles_and_grades(area):
-        
-            area_routes = routes.loc[area]
-            
-            style = area_routes[climbing_styles+other].mean()
-            
-            grade = area_routes[grades].mean().round()
-            
-            grade_std = area_routes[grades].std() + grade
-            grade_std = grade_std.round()
-    
-            grade_std.index = grade_std.index + '_std'
-            
-            score_total = (area_routes.stars * area_routes.votes).sum()
-            votes_total = area_routes.votes.sum()
-            
-            bayes = (score_total + 10 * average_stars) / (votes_total + 10)
-            area_information = style.append(grade)
-            area_information = area_information.append(grade_std)
-            area_information['bayes'] = bayes            
-            
-            area_information = area_information.to_frame().transpose()
-            
-            return area_information
-            
-        
-        def get_conversion(area):
-            while True:
-                if area.sport or area.trad or area.tr:
-                    
-                    score = area.rope_conv
-                    try:
-                        score = int(area.rope_conv)
-                    except:
-                        break
-                
-                    score_std =  area.rope_conv_std
-                    if score_std == score_std:
-                        score_std = int(area.rope_conv_std)
-                    else:
-                        score_std = score
-                                    
-                    for system in rope_systems:
-                        if score_std >= len(system_to_grade[system]):
-                            score_std = -1        
-
-                        area[system] = system_to_grade[system][score]
-                        area[system+'_std'] = system_to_grade[system][score_std]
-                else:
-                    area.rope_conv = None
-                    area.rope_conv_std = None
-                break
-                    
-            while True:
-                if area.boulder:
-                    score = area.boulder_conv
-                    try:
-                        score = int(score)
-                    except:
-                        break 
-            
-                    score_std = area.boulder_conv_std
-                    if score_std == score_std:
-                        score_std = int(score_std)
-                    else:
-                        score_std = score
-                                        
-                    for system in boulder_systems:
-                        if score_std >= len(system_to_grade[system]):
-                            score_std = -1        
-                        area[system] = system_to_grade[system][score]
-                        area[system+'_std'] = system_to_grade[system][score_std]
-                else:
-                    area.boulder_conv = None
-                    area.boulder_conv_std = None
-                break
-             
-            for system, data in misc_system_to_grade.items():
-                if area[system]:
-                    score = area[data['conversion']]
-                    score_std = area[data['conversion'] + '_std']
-                    try:
-                        score = int(score)
-                    except:
-                        continue
-        
-                    if score_std == score_std:
-                        score_std = int(score_std)
-                    else:
-                        score_std = score
-        
-                    if score_std >= len(data['grades']):
-                        score_std = -1       
-
-        
-                    area[data['rating']] = data['grades'][score]
-                    area[data['rating']+'_std'] = data['grades'][score_std]
-                                
-            return area
-        
-        routes_in_area = routes_in_area.groupby(routes_in_area.index)
-        area_information = routes_in_area.progress_apply(
-            area_styles_and_grades)
-        area_information.index = area_information.index.droplevel(1)
-        area_information.index = area_information.index.rename('id')
-        
-        area_information = area_information.progress_apply(
-                get_conversion, axis=1)
-                    
-        area_information.to_sql(
-            'area_grades',
-            con=engine,
             if_exists='replace')
         
-        
-        countries = pd.read_csv('country_land_data.csv', encoding='latin-1')
-        countries.columns = ['name', 'land_area']
-        countries.set_index('name', inplace=True)
-        
-        countries.land_area = countries.land_area.map(lambda x: re.findall("([\d.]+)", x)[0])
-        countries.land_area = countries.land_area.astype('float64')
-        
-        states = pd.read_csv('state_land_data.csv')
-        states.columns=['region', 'land_area']
-        states.set_index('region', inplace=True)
-        states.land_area = states.land_area.astype('int32')
-        
-        land_area = pd.concat([states, countries]).sort_values(by='land_area')
-                
-        cursor.execute('''
-           SELECT id
-           FROM areas
-           WHERE
-               name = 'International' AND
-               from_id is Null''')
-        
-        international_id = cursor.fetchone()[0]
-        
-        country_ids =  pd.read_sql(f"""
-            SELECT id
-            FROM areas
-            WHERE
-                from_id = {international_id}""", con=engine).squeeze().tolist()
-        country_ids = tuple(country_ids)
-                
-        areas = pd.read_sql(f"""
-            SELECT
-                id,
-                name,
-                from_id
-            FROM areas
-            WHERE
-                from_id is Null OR
-                from_id = {international_id} OR
-                from_id IN {country_ids}""",
-            con=conn,
-            index_col='name')
-        
-        areas = pd.concat([areas, land_area], axis=1, sort=True)
-        areas = areas[~areas.land_area.isna() & ~areas.id.isna()]
-        areas.reset_index(inplace=True)
-        areas.set_index('id', inplace=True)
-        areas.index = areas.index.astype('int32')
-        areas.land_area = areas.land_area.astype('int32')
-        
-        area_ids = tuple(areas.index.tolist())
-        
-        bayes = pd.read_sql(f"""
-            SELECT
-                id,
-                bayes
-            FROM area_grades
-            WHERE id in {area_ids}""",
-            con=engine,
-            index_col='id')
-        
-        num_routes = pd.read_sql(f"""
-            SELECT *
-            FROM route_links
-            WHERE area in {area_ids}""",
-            con=engine,
-            index_col='area')
-        
-        num_routes = num_routes.groupby(num_routes.index)
-        num_routes = num_routes.apply(lambda x: len(x))
-        num_routes.index = num_routes.index.astype('int32')
-        num_routes.name = 'num_routes'
-        
-        areas = pd.concat([areas, bayes], axis=1)
-        areas = pd.concat([areas, num_routes], axis=1)
-        areas = areas[~areas.bayes.isna()]
-        
-        areas['density'] = areas.num_routes / areas.land_area
-        areas.bayes = areas.bayes * areas.density
-        areas.bayes = np.log(areas.bayes)
-        areas.bayes = 4 * (areas.bayes - areas.bayes.min()) / (areas.bayes.max() - areas.bayes.min())
-        
-        
-        
-        areas = areas.sort_values(by='bayes')
-        areas = areas['bayes'].to_frame()
-        
-        def update_sql(area):
-            rating = area.squeeze()
-            area_id = area.name
-            print(rating, area_id)
-            
-            cursor.execute(f'''
-               UPDATE area_grades
-               SET bayes = {rating}
-               WHERE id = {area_id}''')
-        
-        areas.apply(update_sql, axis=1)
-        
-        conn.commit()
-        
-        area_terrain= pd.read_sql("""
-            SELECT *
-            FROM area_terrain""",
-            con=engine,
-            index_col='id')
-        
-        terrain_types = ['slab', 'arete', 'overhang', 'chimney', 'crack']
-        
-        number_of_routes = pd.read_sql("""
-            SELECT *
-            FROM route_links""",
-            con=engine,
-            index_col='area')
-        
-        number_of_routes = number_of_routes.groupby(number_of_routes.index)
-        number_of_routes = number_of_routes.apply(lambda x: len(x)).squeeze()
-        number_of_routes = np.log(number_of_routes)
-        number_of_routes.name = 'route_count'
-        
-        area_terrain = pd.concat([area_terrain, number_of_routes], axis=1)
-        
-        for i in range(5):
-            feature = terrain_types[i]
-            other_features = terrain_types[:i] + terrain_types[i+1:]
-            other_features = area_terrain[other_features]
-            area_terrain[feature+'_diff'] = (
-                area_terrain[feature]
-                    * (area_terrain[feature] - other_features.sum(axis=1))
-                * area_terrain.route_count)
-            
-        
-        area_terrain.to_sql(
-            'area_terrain',
-            if_exists='replace',
-            con=engine)
-        
+        return
 
     def get_links(route, route_links):
         
@@ -1261,8 +908,328 @@ def MPAnalyzer():
                 children = pd.concat([children, grandchildren])
         
         return children
+    
+    def get_area_details(*styles):
+    
+        routes = pd.read_sql("""
+           SELECT *
+           FROM routes_scored""",
+           con=engine,
+           index_col='id')
         
-
+        terrain_info = routes[terrain_types]
+        
+        average_stars = routes.stars.mean()
+        other = ['alpine', 'pitches', 'length', 'danger_conv']
+        
+        def grade_areas():
+            routes_in_area = pd.read_sql("""
+                 SELECT *
+                 FROM route_links""",
+                 con=engine,
+                 index_col='area').squeeze()
+            routes_in_area = routes_in_area.groupby(routes_in_area.index)
+            
+            def area_styles_and_grades(area):
+                area_routes = routes.loc[area]
+                
+                style = area_routes[climbing_styles+other].mean()
+                
+                grade = area_routes[grades].mean().round()
+                
+                grade_std = area_routes[grades].std() + grade
+                grade_std = grade_std.round()
+        
+                grade_std.index = grade_std.index + '_std'
+                
+                score_total = (area_routes.stars * area_routes.votes).sum()
+                votes_total = area_routes.votes.sum()
+                
+                bayes = (score_total + 10 * average_stars) / (votes_total + 10)
+                area_information = style.append(grade)
+                area_information = area_information.append(grade_std)
+                area_information['bayes'] = bayes            
+                
+                area_information = area_information.to_frame().transpose()
+                
+                return area_information
+                
+            
+            def get_conversion(area):
+                while True:
+                    if area.sport or area.trad or area.tr:
+                        
+                        score = area.rope_conv
+                        try:
+                            score = int(area.rope_conv)
+                        except:
+                            break
+                    
+                        score_std =  area.rope_conv_std
+                        if score_std == score_std:
+                            score_std = int(area.rope_conv_std)
+                        else:
+                            score_std = score
+                                        
+                        for system in rope_systems:
+                            if score_std >= len(system_to_grade[system]):
+                                score_std = -1        
+        
+                            area[system] = system_to_grade[system][score]
+                            area[system+'_std'] = system_to_grade[system][score_std]
+                    else:
+                        area.rope_conv = None
+                        area.rope_conv_std = None
+                    break
+                        
+                while True:
+                    if area.boulder:
+                        score = area.boulder_conv
+                        try:
+                            score = int(score)
+                        except:
+                            break 
+                
+                        score_std = area.boulder_conv_std
+                        if score_std == score_std:
+                            score_std = int(score_std)
+                        else:
+                            score_std = score
+                                            
+                        for system in boulder_systems:
+                            if score_std >= len(system_to_grade[system]):
+                                score_std = -1        
+                            area[system] = system_to_grade[system][score]
+                            area[system+'_std'] = system_to_grade[system][score_std]
+                    else:
+                        area.boulder_conv = None
+                        area.boulder_conv_std = None
+                    break
+                 
+                for system, data in misc_system_to_grade.items():
+                    if area[system]:
+                        score = area[data['conversion']]
+                        score_std = area[data['conversion'] + '_std']
+                        try:
+                            score = int(score)
+                        except:
+                            continue
+            
+                        if score_std == score_std:
+                            score_std = int(score_std)
+                        else:
+                            score_std = score
+            
+                        if score_std >= len(data['grades']):
+                            score_std = -1       
+        
+            
+                        area[data['rating']] = data['grades'][score]
+                        area[data['rating']+'_std'] = data['grades'][score_std]
+                                    
+                return area
+            
+            def get_grades():
+                # Get grades for each area
+                print('Getting routes in area')
+                area_information = routes_in_area.progress_apply(
+                    area_styles_and_grades)
+                area_information.index = area_information.index.droplevel(1)
+                area_information.index = area_information.index.rename('id')
+                print('Getting area information')
+                area_information = area_information.progress_apply(
+                    get_conversion, axis=1)
+                
+                areas = pd.read_sql(
+                    'SELECT * FROM areas',
+                    con=engine,
+                    index_col='id')
+                
+                areas = areas.update(grades)
+                
+                print(areas)
+                print('NOT UPDATED--ENSURE CORRECT')
+                
+#                areas.to_sql(
+#                    'areas',
+#                    if_exists='replace',
+#                    con=engine) 
+                
+            def area_terrain(area):   
+                
+                num_routes = len(area)
+    
+                area_terrain_info = terrain_info.loc[area].quantile(.95)
+                area_terrain_info = area_terrain_info / area_terrain_info.max()
+                area_terrain_info = area_terrain_info.to_frame().transpose()
+    
+                for i in range(5):
+                    feature = terrain_types[i]
+                    other_features = terrain_types[:i] + terrain_types[i+1:]
+                    other_features = area_terrain_info[other_features]
+    
+    
+                    area_terrain_info[feature+'_diff'] = (
+                        area_terrain_info[feature] 
+                        * (area_terrain_info[feature] - other_features.sum(axis=1))
+                        * np.log(num_routes + np.e))
+                return area_terrain_info
+            
+            def get_terrain():
+                
+                area_terrain_info = routes_in_area.progress_apply(area_terrain)
+                area_terrain_info.index = area_terrain_info.index.droplevel(1)
+                area_terrain_info.index.rename('id', inplace=True)
+                
+                for terrain_type in terrain_types:
+                    area_terrain_info[terrain_type + '_diff'] = (
+                        (area_terrain_info[terrain_type + '_diff']
+                            - area_terrain_info[terrain_type + '_diff'].min())
+                        / (area_terrain_info[terrain_type + '_diff'].max()
+                            - area_terrain_info[terrain_type + '_diff'].min()))
+                
+                area_terrain_info.index = area_terrain_info.index.astype('int32')
+                area_terrain_info.dropna(inplace=True)
+                
+                areas = pd.read_sql('SELECT * FROM areas', con=engine, index_col='id')
+                areas = areas.update(terrain)
+                
+                print(areas)
+                print('NOT UPDATED--ENSURE CORRECT')
+#                areas.to_sql(
+#                    'areas',
+#                    if_exists='replace',
+#                    con=engine)
+                            
+            get_grades()
+            get_terrain()
+                
+            
+        def get_base_areas():                
+            cursor.execute('''
+               SELECT id
+               FROM areas
+               WHERE
+                   name = 'International' AND
+                   from_id is Null''')
+            
+            international_id = cursor.fetchone()[0]
+            
+            cursor.execute(f"""
+                SELECT id
+                FROM areas
+                WHERE
+                    from_id = {international_id}""")
+            country_ids = cursor.fetchall()
+            
+            country_ids = [
+                country_id for sublist in country_ids for country_id in sublist]
+            
+            
+            base_areas = [international_id] + [
+                country_id for country_id in country_ids]
+            
+            return tuple(base_areas)
+        
+        def base_area_land_area():
+            countries = pd.read_csv('country_land_data.csv', encoding='latin-1')
+            countries.columns = ['name', 'land_area']
+            countries.set_index('name', inplace=True)
+            
+            countries.land_area = countries.land_area.map(
+                lambda x: re.findall("([\d.]+)", x)[0])
+            countries.land_area = countries.land_area.astype('float64')
+            
+            states = pd.read_csv('state_land_data.csv')
+            states.columns=['region', 'land_area']
+            states.set_index('region', inplace=True)
+            states.land_area = states.land_area.astype('int32')
+            
+            land_area = pd.concat([states, countries]).sort_values(by='land_area')
+            return land_area        
+    
+        
+        def update_sql(area):
+            rating = area.squeeze()
+            area_id = area.name
+            
+            cursor.execute(f'''
+               UPDATE areas
+               SET bayes = {rating}
+               WHERE id = {area_id}''')
+        
+        def update_base_area_grades():
+        
+            base_areas = get_base_areas()
+            base_areas = pd.read_sql(f"""
+                SELECT
+                    id,
+                    name,
+                    from_id
+                FROM areas
+                WHERE
+                    from_id IN {base_areas} OR 
+                    from_id IS NULL""",
+                con=conn,
+                index_col='name')
+                
+            base_areas = pd.concat(
+                [base_areas, base_area_land_area()],
+                axis=1,
+                sort=True)
+            base_areas = base_areas[
+                ~base_areas.land_area.isna()
+                & ~base_areas.id.isna()]
+            base_areas.reset_index(inplace=True)
+            base_areas.set_index('id', inplace=True)
+            base_areas.index = base_areas.index.astype('int32')
+            base_areas.land_area = base_areas.land_area.astype('int32')
+            
+            base_area_ids = tuple(base_areas.index.tolist())
+            
+            bayes = pd.read_sql(f"""
+                SELECT
+                    id,
+                    bayes
+                FROM areas
+                WHERE id in {base_area_ids}""",
+                con=engine,
+                index_col='id')
+            
+            base_routes = pd.read_sql(f"""
+                SELECT *
+                FROM route_links
+                WHERE area in {base_area_ids}""",
+                con=engine,
+                index_col='area')
+                
+            base_routes = base_routes.groupby(base_routes.index)
+            base_routes = base_routes.apply(lambda x: len(x))
+            base_routes.index = base_routes.index.astype('int32')
+            base_routes.name = 'base_routes'
+            
+            base_areas = pd.concat([base_areas, bayes], axis=1)
+            base_areas = pd.concat([base_areas, base_routes], axis=1)
+            base_areas = base_areas[~base_areas.bayes.isna()]
+            
+            base_areas['density'] = base_areas.base_routes / base_areas.land_area
+            base_areas.bayes = base_areas.bayes * base_areas.density
+        
+            base_areas.bayes = np.log(base_areas.bayes)
+            base_areas.bayes = (
+                4 * (base_areas.bayes - base_areas.bayes.min())
+                / (base_areas.bayes.max() - base_areas.bayes.min()))
+                
+            base_areas = base_areas.sort_values(by='bayes')
+            base_areas = base_areas['bayes'].to_frame()
+                            
+            base_areas.progress_apply(update_sql, axis=1)
+            
+            conn.commit()
+            
+            
+        grade_areas()
+        update_base_area_grades()
 
     # Fills in empty location data
     if click.confirm("Find location and rating data?"):
@@ -1345,10 +1312,9 @@ def MPAnalyzer():
             'area_links',
             con=engine,
             if_exists='replace')
-
-    if click.confirm("Find area terrain scores"):
         
-        get_area_terrain('arete', 'chimney', 'crack', 'slab', 'overhang')
+    if click.confirm('Update area terrain and scores'):        
+        get_area_details('arete', 'chimney', 'crack', 'slab', 'overhang')
     
     print('Complete')
 

@@ -154,6 +154,18 @@ boulder_systems = [
     'hueco_rating',
     'font_rating']
 
+misc_systems = [
+    'aid_rating',
+    'mixed_rating',
+    'snow_rating',
+    'ice_rating',
+    'nccs_rating',
+]
+
+grades = ['rope_conv', 'boulder_conv', 'mixed_conv', 'aid_conv', 'ice_conv', 'snow_conv', 'nccs_conv']        
+
+all_systems = rope_systems + boulder_systems + misc_systems
+
 system_to_grade = {
     'yds_rating': yds_rating,
     'french_rating': french_rating,

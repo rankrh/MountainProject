@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Browse</title>
+        <link rel='stylesheet' type="text/css" href="{% static 'routefinder/style.css' %}">
+        <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet"> 
+        <script src="{% static 'routefinder/index.js' %}"></script>
+    </head>
+    <body>
+        <header class='primary-header'>
+            <div class="container">
+                <h5 id="main-heading">
+                    RouteFinder
+                </h5>            
+                <nav class="primary-nav">
+                    <ul>
+                        <li><a href="{% url 'routefinder:search' %}">Search</a></li><!--
+                        --><li><a href="{% url 'routefinder:browse' %}">Browse</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+        <div id="results">
+            <div class="padding">
+                <div id="center-col">
+                    <div class='browse-head'>
+                        <h3>The World's Best {{terrain.capitalize}} Climbing Areas</h3>
+                        <div>
+                            <a href="{% url 'routefinder:climbing_style' style %}">
+                                <h1>Go to the World's Best {{terrain.capitalize}} Routes</h1>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="scroll">
+                        {% for area, parents, style, grades in areas %}
+                            <div class="route">
+                                <a href="{% url 'routefinder:area' area.id %}" class="area-name">
+                                    <h2>
+                                        {{area.name}} ({{area.bayes|floatformat:"1"}}/4)
+                                    </h2>
+                                </a> 
+                                <span style="float: left">
+                                    <h2>
+                                        Primarily a
+                                        {% for style in style.index %}
+                                            {% if forloop.first and forloop.last %}
+                                                {{style}}
+                                            {% elif forloop.last %}
+                                                and {{style}}
+                                            {% else %}
+                                                {{style}},
+                                            {% endif %}
+                                        {% endfor %} area.
+                                        The average route grade is 
+                                    </h2>
+                                </span>
+                                <span class="clickable noselect" style="float: left">
+                                    {% for system, grade in grades.1.items %}
+                                            <h2 class="{{system}}" onclick="NextSystem(this, '{{grades.0}}');">{{grade}}</h2>
+                                    {% endfor %}
+                                </span>
+                                <br>
+                                <h2>
+                                    {% for area in parents %}
+                                        <a href="{% url 'routefinder:area' area.id %}">
+                                            {{area}}
+                                        </a>
+                                        {% if not forloop.last %}
+                                            >
+                                        {% endif %}
+                                    {% endfor %}
+                                </h2>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
