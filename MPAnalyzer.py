@@ -45,7 +45,8 @@ def MPAnalyzer():
     '''
 
     print('Connecting to the PostgreSQL database...', end='')
-    engine = create_engine('postgresql+psycopg2://postgres:postgres@localhost:5432/routes')
+    engine = create_engine(
+        'postgresql+psycopg2://postgres:postgres@localhost:5432/routes')
     params = config.config()
     conn = psycopg2.connect(**params)
     cursor = conn.cursor()
@@ -107,7 +108,9 @@ def MPAnalyzer():
 
         print('Getting IDF', flush=True)
         routes = routes.groupby('word', group_keys=False)
-        routes = routes.progress_apply(idf, num_docs=num_docs).set_index('route_id')
+        routes = routes.progress_apply(
+            idf,
+            num_docs=num_docs).set_index('route_id')
 
         print('Calculating TFIDF', flush=True)
         routes['tfidf'] = routes['tf'] * routes['idf']
@@ -124,6 +127,16 @@ def MPAnalyzer():
         routes.to_sql('TFIDF', con=engine, if_exists='replace', chunksize=1000)
 
     def weed_out(table, min_occur, max_occur):
+        '''Removes words that are too common or too rare
+        
+        Args:
+            table(Series): Instances of a word
+            min_occur: Fewest number acceptable
+            max_occur: Greatest number acceptable
+            
+        Returns:
+            table: updated series'''
+        
         if min_occur < len(table) < max_occur:
             return table.reset_index()
 
@@ -214,7 +227,10 @@ def MPAnalyzer():
             while lat == None or long == None:
                 # Gets latitude and longitude from parent area
                 cursor.execute(f'''
-                    SELECT latitude, longitude, from_id
+                    SELECT
+                        latitude,
+                        longitude,
+                        from_id
                     FROM Areas
                     WHERE id = {fid}
                     LIMIT 1''')
@@ -224,12 +240,20 @@ def MPAnalyzer():
             # Updates DB
             cursor.execute(f'''
                 UPDATE Routes
-                SET latitude = {lat}, longitude = {long}
+                SET
+                    latitude = {lat},
+                    longitude = {long}
                 WHERE route_id = {rid}''')
             conn.commit()
             cursor.execute('''
-                SELECT route_id, area_id, name
-                FROM Routes WHERE latitude is Null OR longitude is Null
+                SELECT
+                    route_id,
+                    area_id,
+                    name
+                FROM Routes
+                WHERE
+                    latitude is Null
+                    OR longitude is Null
                 LIMIT 1''')
             route = cursor.fetchone()
 
@@ -510,8 +534,12 @@ def MPAnalyzer():
                     from the Database.'''
     
             # Formats query to include list of unique words
-            query = f'''SELECT DISTINCT(word), idf
-                       FROM "TFIDF" WHERE word IN {words}'''
+            query = f'''
+                SELECT
+                    DISTINCT(word),
+                    idf
+                FROM "TFIDF"
+                WHERE word IN {words}'''
             # Pulls SQL data into Pandas dataframe
             archetypes = pd.read_sql(query, con=conn, index_col='word')
     
@@ -522,17 +550,28 @@ def MPAnalyzer():
             word in each route description.
     
             Args:
+                route_ids: Optional.  Allows for a slice to be parsed.
             Returns:
                 routes(Pandas Series): MultiIndex series with indexes
                 'route_id' and 'word' and column 'tfidfn' - Normalized TFIDF'''
     
             # Pulls route_id, word, and normalized TFIDF value
             if route_ids is None:
-                query = 'SELECT route_id, word, tfidfn FROM "TFIDF"'
+                query = '''
+                    SELECT
+                        route_id,
+                        word,
+                        tfidfn
+                    FROM "TFIDF"'''
             else:
                 route_ids = tuple(route_ids)
-                query = f'''SELECT route_id, word, tfidfn FROM "TFIDF"
-                           WHERE route_id in {route_ids}'''
+                query = f'''
+                    SELECT
+                        route_id,
+                        word,
+                        tfidfn
+                    FROM "TFIDF"
+                    WHERE route_id in {route_ids}'''
     
             # Creates Pandas Dataframe
             routes = pd.read_sql(
@@ -547,6 +586,7 @@ def MPAnalyzer():
             '''Finds length of route description in words.
     
             Args:
+                route_ids: Optional. Allows for a slice to be parsed
             Returns:
                 word_count(Pandas dataframe): Dataframe with index route_id and
                     column 'word_count' - length of a route description in
@@ -557,8 +597,12 @@ def MPAnalyzer():
                 query = 'SELECT route_id, word_count FROM Words'
             else:
                 route_ids = tuple(route_ids)
-                query = f'''SELECT route_id, word_count FROM Words
-                           WHERE route_id in {route_ids}'''
+                query = f'''
+                    SELECT
+                        route_id,
+                        word_count
+                    FROM Words
+                    WHERE route_id in {route_ids}'''
     
             # Calculates document length
             word_count = pd.read_sql(query,
@@ -631,6 +675,7 @@ def MPAnalyzer():
                     would expect when adding new styles.
                 routes(Pandas dataframe): Holds cosine similarity for each
                     route/style combination'''
+
             if click.confirm('Rescore archetypes?'):
                 # Gets Term-Frequency data for words in archetype documents
                 archetypes = archetypal_tf(*styles, path=path)
@@ -645,11 +690,14 @@ def MPAnalyzer():
                 # Multiplies TF by IDF values to get TFIDF score
                 archetypes = archetypes.mul(idf['idf'], axis=0)
                 # Normalizes TFIDF scores
-                archetypes = normalize(table=archetypes,
-                                    inplace=True,
-                                    *styles)
-                archetypes = archetypes.rename(columns={'index': 'word'})\
-                                    .set_index('word')
+                archetypes = normalize(
+                    table=archetypes,
+                    inplace=True,
+                    *styles)
+                archetypes = archetypes.rename(
+                    columns={'index': 'word'}
+                    ).set_index('word')
+                
                 # Writes to CSV
                 archetypes.to_csv(path + 'TFIDF.csv')
     
@@ -685,10 +733,7 @@ def MPAnalyzer():
                                     1               0
                                     0               1
                                     1               1
-    
-            (Note: We will actually take the log of the word count. The law of
-            diminishing returns applies in this case.)
-    
+        
             When both word count and cosine similarity is high, the
             believability of the cosine score is at its highest.  This is
             analagous to a route that scores well with the 'overhang' document,
@@ -824,10 +869,12 @@ def MPAnalyzer():
         word_count = get_word_count()
 
         print('Scoring routes')
-        routes = score_routes(*styles,
-                              word_count=word_count,
-                              path=path,
-                              routes=routes)
+        routes = score_routes(
+            *styles,
+            word_count=word_count,
+            path=path,
+            routes=routes)
+        
         print('Getting weighted scores')
         routes = weighted_scores(*styles, table=routes, inplace=True)
         
@@ -837,8 +884,12 @@ def MPAnalyzer():
         
         # Combines columns in the routes dataframe with the full database if
         # they don't already exist in the full database
-        updated = pd.concat([routes[~routes.index.isin(all_routes.index)],
-                                    all_routes], sort=False)
+        updated = pd.concat(
+            [routes[
+                ~routes.index.isin(all_routes.index)],
+                all_routes],
+            sort=False)
+    
         updated.update(routes)
 
         updated.rename_axis('id', inplace=True)
@@ -860,6 +911,14 @@ def MPAnalyzer():
         return
 
     def get_links(route, route_links):
+        """Gets links between a route and all parent areas
+        
+        Args:
+            route(Series): Route information
+            route_links(Series): Links between areas
+        Returns:
+            Updated SQL"""
+        
         
         route_id = route.name
         
@@ -888,8 +947,18 @@ def MPAnalyzer():
         
         
     def get_children(area):
+        """Gets area children for all areas
+        
+        Args:
+            area(Series): area information
+            
+        Returns:
+            Updated SQL"""
+            
+        # Checks if child area in area DB
         try:
             children = area_links.loc[area]
+        # If not, this is a base level area
         except:
             return
         
@@ -910,6 +979,14 @@ def MPAnalyzer():
         return children
     
     def get_area_details(*styles):
+        """Gets route data for each area and creates a summary.
+        
+        Args:
+            styles: terrain styles
+        
+        Returns:
+            Updated SQL
+        """
     
         routes = pd.read_sql("""
            SELECT *
@@ -1048,7 +1125,6 @@ def MPAnalyzer():
                 areas = areas.update(grades)
                 
                 print(areas)
-                print('NOT UPDATED--ENSURE CORRECT')
                 
 #                areas.to_sql(
 #                    'areas',
@@ -1095,7 +1171,6 @@ def MPAnalyzer():
                 areas = areas.update(terrain)
                 
                 print(areas)
-                print('NOT UPDATED--ENSURE CORRECT')
 #                areas.to_sql(
 #                    'areas',
 #                    if_exists='replace',
