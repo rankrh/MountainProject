@@ -1,8 +1,6 @@
 # Mountain Project
 Scrapes Mountain Project (MP) and helps find the best areas for your climbing preferences.
 
-https://youtu.be/N_6gbT_i4VY
-
 The ultimate purpose of the program is to help users optimize their time by finding climbing areas based on their preferences.  By combining metrics such as distance to user, type/difficulty of routes, and concentration of routes, we can find where climbers can make best use of their time.  MP lets users search by a variety of different metrics, including route quality, number of pitches, route type, and difficulty, as well as by geographic location.  This approach has limitations.  This program not only improves upon some of these metrics, such as the way that route quality is measured, but also adds new functionality.
 
 ## Ratings
@@ -20,3 +18,8 @@ MP's search function only allows users to search by one climbing style at a time
 
 ### Danger and Commitment
 The program also lets users weed-out routes that are too risky or require too much time commitment.  (NB Commitment isn't supported yet, but will soon.)
+
+
+##Desktop Version(Beta)
+A kivy-based desktop application not fully fleshed out.
+https://youtu.be/N_6gbT_i4VY
